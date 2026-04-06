@@ -1748,22 +1748,25 @@ def _msmc_em_step(
         x0[n_free] = math.log(rho)
 
     def neg_Q_scipy(x):
-        # Clamp log-space params to prevent overflow
-        x_c = np.clip(x, -20.0, 20.0)
         lam_test = np.empty(n_states, dtype=np.float64)
         for i in range(n_states):
-            lam_test[i] = math.exp(x_c[par_map[i]])
-        rho_test = math.exp(x_c[n_free]) if not fixed_rho else rho
-        return -_msmc_log_likelihood(
+            lam_test[i] = math.exp(x[par_map[i]])
+        rho_test = math.exp(x[n_free]) if not fixed_rho else rho
+        val = -_msmc_log_likelihood(
             total_transitions, total_emissions, boundaries,
             rho_test, lam_test, mu,
         )
+        if not np.isfinite(val):
+            return 1e10
+        return val
 
+    bounds = [(-4.0, 10.0)] * n_opt_params  # lambda in [0.018, 22026]
     result = sp_minimize(
-        neg_Q_scipy, x0, method="Powell",
+        neg_Q_scipy, x0, method="L-BFGS-B",
+        bounds=bounds,
         options={"maxiter": 200, "ftol": 3e-8},
     )
-    x_opt = np.clip(result.x, -20.0, 20.0)
+    x_opt = result.x
 
     # Extract optimized parameters
     lambda_vec_new = np.empty(n_states, dtype=np.float64)
@@ -1847,17 +1850,13 @@ def _build_segments_for_pair(positions, n_called, pair_obs):
 # ---------------------------------------------------------------------------
 
 def _estimate_theta(segments_list, pairs):
-    """Estimate theta from the data (fraction of heterozygous sites).
+    """Estimate theta from expanded segments, matching D code's getTheta.
 
-    Parameters
-    ----------
-    segments_list : list of dicts
-    pairs : list of (int, int)
-
-    Returns
-    -------
-    float
-        Estimated theta (per-site heterozygosity / 2).
+    The D code operates on expanded SegSite_t arrays (with missing-gap
+    markers). We replicate this by first expanding the raw data via
+    ``_build_segments_for_pair``, then computing theta over the expanded
+    segments. This matters because missing-gap markers update ``lastPos``,
+    changing inter-site distance calculations.
     """
     total_hets = 0
     total_called = 0
@@ -1873,11 +1872,17 @@ def _estimate_theta(segments_list, pairs):
                 continue
 
             pair_obs = obs_dict[pair_key]
-            last_pos = 0
 
-            for i in range(len(positions)):
-                pos = int(positions[i])
-                obs = int(pair_obs[i])
+            # Expand segments like the D code's readSegSites
+            seg_pos, seg_obs = _build_segments_for_pair(
+                positions, n_called, pair_obs
+            )
+
+            # Now compute theta on expanded segments (matches D getTheta)
+            last_pos = 0
+            for i in range(len(seg_pos)):
+                pos = int(seg_pos[i])
+                obs = int(seg_obs[i])
 
                 if obs > 0:
                     if last_pos > 0:
@@ -1885,6 +1890,7 @@ def _estimate_theta(segments_list, pairs):
                     if obs > 1:
                         total_hets += 1
 
+                # lastPos updates unconditionally (matches D code)
                 last_pos = pos
 
     if total_called == 0:
