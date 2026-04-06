@@ -1729,13 +1729,14 @@ def _msmc_em_step(
         total_transitions, total_emissions, boundaries, rho, lambda_vec, mu
     )
 
-    # M-step: optimize lambda_vec (and optionally rho) using Powell
+    # M-step: optimize lambda_vec (and optionally rho) using scipy Powell
+    from scipy.optimize import minimize as sp_minimize
+
     n_free = par_map.max() + 1
     n_opt_params = n_free + (0 if fixed_rho else 1)
 
     x0 = np.empty(n_opt_params, dtype=np.float64)
     for i in range(n_free):
-        # Use the lambda of the first interval in each segment group
         idx = 0
         for j in range(lambda_vec.shape[0]):
             if par_map[j] == i:
@@ -1746,10 +1747,23 @@ def _msmc_em_step(
     if not fixed_rho:
         x0[n_free] = math.log(rho)
 
-    x_opt, neg_q_after = _powell_minimize(
-        x0, total_transitions, total_emissions, boundaries, mu,
-        n_states, par_map, fixed_rho, rho,
+    def neg_Q_scipy(x):
+        # Clamp log-space params to prevent overflow
+        x_c = np.clip(x, -20.0, 20.0)
+        lam_test = np.empty(n_states, dtype=np.float64)
+        for i in range(n_states):
+            lam_test[i] = math.exp(x_c[par_map[i]])
+        rho_test = math.exp(x_c[n_free]) if not fixed_rho else rho
+        return -_msmc_log_likelihood(
+            total_transitions, total_emissions, boundaries,
+            rho_test, lam_test, mu,
+        )
+
+    result = sp_minimize(
+        neg_Q_scipy, x0, method="Powell",
+        options={"maxiter": 200, "ftol": 3e-8},
     )
+    x_opt = np.clip(result.x, -20.0, 20.0)
 
     # Extract optimized parameters
     lambda_vec_new = np.empty(n_states, dtype=np.float64)
@@ -1761,7 +1775,7 @@ def _msmc_em_step(
     else:
         rho_new = math.exp(x_opt[n_free])
 
-    q_after = -neg_q_after
+    q_after = -result.fun
 
     return lambda_vec_new, rho_new, total_ll, q_after
 
