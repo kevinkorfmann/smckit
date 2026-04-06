@@ -12,3 +12,4 @@ build/
 .venv/
 env/
 vendor/psmc/
+vendor/msmc2/
