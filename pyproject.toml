@@ -37,6 +37,7 @@ dev = [
 docs = [
     "sphinx",
     "sphinx-rtd-theme",
+    "myst-parser",
 ]
 
 [tool.hatch.build.targets.wheel]
