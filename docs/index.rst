@@ -100,7 +100,7 @@ Python environment.
      - ✓
      - ✗
      - `<= 3.36e-03` rel err on `N1/N2`
-     - Public upstream bridge runs the vendored Python fitter; native fitter remains the tracked in-repo approximation.
+     - Public upstream bridge runs the vendored Python fitter; the native path is working and closely tracked against it, with upstream still acting as the fidelity baseline.
    * - eSMC2
      - ✓
      - ✓
@@ -242,7 +242,7 @@ Quick Feature-to-Tool Table
      - two-population MSMC or MSMC2 follow-up analysis
      - `.combined.msmc2.final.txt`
      - `N1(t)`, `N2(t)`, `m(t)`, `M(t)`
-     - best when migration summaries matter more than raw coalescence-rate curves
+     - working native and upstream paths, with upstream still the safest baseline when exact oracle provenance matters
    * - :doc:`SMC++ <methods/smcpp>`
      - many unphased genomes
      - `.smc` or `.smc.gz`
