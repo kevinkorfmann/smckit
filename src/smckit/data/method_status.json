@@ -52,12 +52,12 @@
     "display_name": "eSMC2",
     "upstream": "✓",
     "native": "✓",
-    "native_default_eligible": false,
-    "native_trusted_for_docs": false,
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
     "tracked_agreement": "<= 0.3605% max tracked Xi rel err",
-    "notes": "Both paths exist; tracked fit parity is enforced for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped pop_vect=[3,3], with upstream still preferred outside that matrix.",
+    "notes": "Native and upstream are interchangeable on the tracked public `.psmcfa` and `multihetsep` input-family matrix, plus the fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped-state oracle cases.",
     "install_extra": "esmc2",
-    "native_warning": "The native eSMC2 path is convenient for packaged quickstarts, but the docs do not treat it as trustworthy enough for general-use defaults yet. Prefer the upstream R-backed path for fidelity-sensitive work."
+    "native_warning": null
   },
   {
     "method": "smcpp",
@@ -88,7 +88,7 @@
     "display_name": "SSM",
     "upstream": "n/a",
     "native": "✓",
-    "native_default_eligible": false,
+    "native_default_eligible": null,
     "native_trusted_for_docs": false,
     "tracked_agreement": "—",
     "notes": "Novel in-repo extension framework rather than an upstream compatibility target.",

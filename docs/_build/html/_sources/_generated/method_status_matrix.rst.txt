@@ -34,9 +34,9 @@
    * - eSMC2
      - ✓
      - ✓
-     - ✗
+     - ✓
      - `<= 0.3605% max tracked Xi rel err`
-     - Both paths exist; tracked fit parity is enforced for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped pop_vect=[3,3], with upstream still preferred outside that matrix.
+     - Native and upstream are interchangeable on the tracked public `.psmcfa` and `multihetsep` input-family matrix, plus the fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped-state oracle cases.
    * - SMC++
      - ✓
      - ✓
@@ -52,6 +52,6 @@
    * - SSM
      - n/a
      - ✓
-     - ✗
+     - n/a
      - `—`
      - Novel in-repo extension framework rather than an upstream compatibility target.

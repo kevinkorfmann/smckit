@@ -29,7 +29,11 @@ def _render_method_status_matrix() -> None:
         "     - Notes",
     ]
     for entry in data:
-        eligible = "✓" if entry["native_default_eligible"] else "✗"
+        default_eligible = entry["native_default_eligible"]
+        if default_eligible is None:
+            eligible = "n/a"
+        else:
+            eligible = "✓" if default_eligible else "✗"
         lines.extend(
             [
                 f"   * - {entry['display_name']}",
