@@ -109,8 +109,8 @@ plot or further analyze the results.
 
 ## Where to go next
 
-- **[Installation](installation.md)** — install smckit and optional
-  dependencies.
+- **[Installation](installation.md)** — install smckit from PyPI or from a
+  source checkout, with optional dependencies.
 - **[Quickstart: PSMC](quickstart-psmc.md)** — run your first PSMC analysis
   end-to-end.
 - **[Quickstart: ASMC](quickstart-asmc.md)** — decode pairwise coalescence

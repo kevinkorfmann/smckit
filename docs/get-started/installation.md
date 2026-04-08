@@ -5,7 +5,25 @@ smckit has two installation layers:
 1. install the Python package itself
 2. enable the upstream tools you want to preserve and run
 
-## Base install
+## Install from PyPI
+
+For normal use, install the published package:
+
+```bash
+pip install smckit
+```
+
+Optional extras:
+
+```bash
+pip install "smckit[jax]"
+pip install "smckit[dev]"
+pip install "smckit[docs]"
+```
+
+## Install from source
+
+Use a source checkout if you are contributing to smckit or need the repository's vendored upstream tool sources:
 
 ```bash
 git clone https://github.com/kevinkorfmann/smckit.git
@@ -26,6 +44,8 @@ Optional JAX support for the SSM extension:
 ```bash
 pip install -e ".[jax]"
 ```
+
+If you only want the runtime package, prefer the PyPI install above.
 
 ## Upstream tool readiness
 
