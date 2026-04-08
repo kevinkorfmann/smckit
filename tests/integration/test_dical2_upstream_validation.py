@@ -106,6 +106,24 @@ def _run_exp_native(*, record_meta_trace: bool = False) -> dict:
     ).results["dical2"]
 
 
+def _run_im_upstream() -> dict:
+    return dical2(
+        _read_im_data(),
+        implementation="upstream",
+        upstream_options=IM_NATIVE_OPTIONS,
+        **IM_COMMON,
+    ).results["dical2"]
+
+
+def _run_im_native() -> dict:
+    return dical2(
+        _read_im_data(),
+        implementation="native",
+        native_options=IM_NATIVE_OPTIONS,
+        **IM_COMMON,
+    ).results["dical2"]
+
+
 def test_dical2_upstream_backend_runs_end_to_end() -> None:
     res = _run_exp_upstream()
     assert res["implementation"] == "upstream"
@@ -205,11 +223,7 @@ def test_dical2_native_loguniform_exp_records_meta_trace() -> None:
     assert generation_one["best_log_likelihood"] == pytest.approx(native["log_likelihood"])
 
 
-@pytest.mark.xfail(
-    reason="Native diCal2 full exp meta-start search is not yet interchangeable with upstream.",
-    strict=False,
-)
-def test_dical2_native_loguniform_exp_full_search_matches_upstream_fit() -> None:
+def test_dical2_native_loguniform_exp_full_search_matches_upstream_params() -> None:
     upstream = _run_exp_upstream()
     native = _run_exp_native()
 
@@ -219,7 +233,6 @@ def test_dical2_native_loguniform_exp_full_search_matches_upstream_fit() -> None
         rtol=1e-8,
         atol=1e-8,
     )
-    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
     assert float(np.asarray(native["growth_rates"], dtype=float)[0]) == pytest.approx(
         float(np.asarray(upstream["growth_rates"], dtype=float)[0]),
         abs=1e-8,
@@ -227,18 +240,8 @@ def test_dical2_native_loguniform_exp_full_search_matches_upstream_fit() -> None
 
 
 def test_dical2_native_im_runs_independently() -> None:
-    upstream = dical2(
-        _read_im_data(),
-        implementation="upstream",
-        upstream_options=IM_NATIVE_OPTIONS,
-        **IM_COMMON,
-    ).results["dical2"]
-    native = dical2(
-        _read_im_data(),
-        implementation="native",
-        native_options=IM_NATIVE_OPTIONS,
-        **IM_COMMON,
-    ).results["dical2"]
+    upstream = _run_im_upstream()
+    native = _run_im_native()
 
     assert native["resolved_options"]["interval_type"] == upstream["resolved_options"]["interval_type"]
     assert native["resolved_options"]["interval_params"] == upstream["resolved_options"]["interval_params"]
@@ -249,6 +252,32 @@ def test_dical2_native_im_runs_independently() -> None:
     assert native["n_iterations"] >= 1
     assert len(np.asarray(native["time"])) == len(np.asarray(upstream["time"]))
     assert len(native["structured_ne"]) == len(upstream["structured_ne"])
+
+
+def test_dical2_native_im_full_search_matches_upstream_params() -> None:
+    upstream = _run_im_upstream()
+    native = _run_im_native()
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-8,
+        atol=1e-8,
+    )
+
+
+@pytest.mark.xfail(
+    reason="Native diCal2 fixed-point log-likelihood still differs slightly from upstream on README fixtures.",
+    strict=False,
+)
+def test_dical2_native_full_search_matches_upstream_fit_value() -> None:
+    exp_upstream = _run_exp_upstream()
+    exp_native = _run_exp_native()
+    im_upstream = _run_im_upstream()
+    im_native = _run_im_native()
+
+    assert exp_native["log_likelihood"] == pytest.approx(exp_upstream["log_likelihood"], abs=1e-8)
+    assert im_native["log_likelihood"] == pytest.approx(im_upstream["log_likelihood"], abs=1e-8)
 
 
 def test_dical2_native_loguniform_exp_matches_upstream_curve_at_oracle_params() -> None:
@@ -289,12 +318,7 @@ def test_dical2_native_loguniform_exp_matches_upstream_curve_at_oracle_params() 
 
 
 def test_dical2_native_im_matches_upstream_demography_at_oracle_params() -> None:
-    upstream = dical2(
-        _read_im_data(),
-        implementation="upstream",
-        upstream_options=IM_NATIVE_OPTIONS,
-        **IM_COMMON,
-    ).results["dical2"]
+    upstream = _run_im_upstream()
     native = dical2(
         _read_im_data(),
         implementation="native",

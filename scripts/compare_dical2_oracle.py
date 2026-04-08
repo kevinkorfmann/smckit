@@ -208,8 +208,8 @@ def _run_oracle(example: dict) -> tuple[float | None, list[float] | None]:
         text=True,
         check=True,
     )
-    log_likelihood = None
-    params = None
+    best_log_likelihood = None
+    best_params = None
     for line in proc.stdout.splitlines():
         if not line or line.startswith("# ["):
             continue
@@ -220,7 +220,10 @@ def _run_oracle(example: dict) -> tuple[float | None, list[float] | None]:
                 params = [float(x) for x in parts[2:-1]]
             except ValueError:
                 continue
-    return log_likelihood, params
+            if best_log_likelihood is None or log_likelihood > best_log_likelihood:
+                best_log_likelihood = log_likelihood
+                best_params = params
+    return best_log_likelihood, best_params
 
 
 def _run_smckit(example: dict, implementation: str) -> dict:
