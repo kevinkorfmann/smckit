@@ -80,5 +80,6 @@ def read_psmcfa(path: str | Path) -> SmcData:
     data.uns["sum_L"] = sum_L
     data.uns["sum_n"] = sum_n
     data.uns["n_seqs"] = len(records)
+    data.uns["source_path"] = str(path)
 
     return data

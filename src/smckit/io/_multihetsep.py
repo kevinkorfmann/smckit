@@ -15,7 +15,7 @@ _MISSING = set("Nn?")
 
 
 def _parse_allele_observation(
-    allele_str: str, i: int, j: int
+    allele_str: str, i: int, j: int, skip_ambiguous: bool = False
 ) -> float:
     """Compute observation for haplotype pair (i, j) from an allele string.
 
@@ -28,26 +28,36 @@ def _parse_allele_observation(
     j : int
         Index of second haplotype.
 
+    skip_ambiguous : bool
+        If True, ambiguous phasing is treated as missing, matching MSMC2's
+        ``-s/--skipAmbiguous`` behavior.
+
     Returns
     -------
     float
         Observation value: 0 (missing), 1 (homozygous), 2 (heterozygous),
-        or a float average for ambiguous phasing.
+        a float average for ambiguous phasing, or -1 when
+        ``skip_ambiguous=True`` and the site is skipped as ambiguous.
     """
     configs = allele_str.split(",")
     obs_values = []
     for config in configs:
         if i >= len(config) or j >= len(config):
-            obs_values.append(0.0)
-            continue
+            return 0.0
         ai = config[i]
         aj = config[j]
         if ai in _MISSING or aj in _MISSING:
-            obs_values.append(0.0)
-        elif ai.upper() == aj.upper():
+            return 0.0
+        if ai.upper() == aj.upper():
             obs_values.append(1.0)
         else:
             obs_values.append(2.0)
+
+    uniq = sorted(set(obs_values))
+    if len(uniq) == 1:
+        return uniq[0]
+    if skip_ambiguous:
+        return -1.0
     return sum(obs_values) / len(obs_values)
 
 
@@ -78,6 +88,7 @@ def _all_pairs(n_haplotypes: int) -> list[tuple[int, int]]:
 def read_multihetsep(
     path: str | Path | list[str | Path],
     pair_indices: list[tuple[int, int]] | None = None,
+    skip_ambiguous: bool = False,
 ) -> SmcData:
     """Read MSMC2 multihetsep input file(s) into a SmcData object.
 
@@ -96,6 +107,9 @@ def read_multihetsep(
         Haplotype pairs to analyze. Each tuple ``(i, j)`` specifies the
         zero-based indices of two haplotypes. If ``None``, all unique pairs
         from the detected haplotypes are used.
+    skip_ambiguous : bool
+        If True, sites with ambiguous phasing are treated as missing on a
+        per-pair basis, matching MSMC2's ``-s/--skipAmbiguous`` mode.
 
     Returns
     -------
@@ -156,6 +170,7 @@ def read_multihetsep(
             seg = chr_segments[chrom]
             segments.append({
                 "chr": chrom,
+                "source_path": str(filepath),
                 "positions": np.array(seg["positions"], dtype=np.int64),
                 "n_called": np.array(seg["n_called"], dtype=np.int64),
                 "_allele_cols": seg["allele_cols"],
@@ -211,7 +226,9 @@ def read_multihetsep(
                         combined_configs.append("".join(parts))
                     combined = ",".join(combined_configs)
 
-                obs[site_idx] = _parse_allele_observation(combined, pair[0], pair[1])
+                obs[site_idx] = _parse_allele_observation(
+                    combined, pair[0], pair[1], skip_ambiguous=skip_ambiguous
+                )
 
             # Round to int8 for non-ambiguous cases, keep float for ambiguous
             if np.all(np.equal(np.mod(obs, 1), 0)):
@@ -225,6 +242,7 @@ def read_multihetsep(
     data.uns["segments"] = segments
     data.uns["pairs"] = pairs
     data.uns["n_haplotypes"] = n_haplotypes
+    data.uns["source_paths"] = [str(p) for p in paths]
 
     return data
 
@@ -348,4 +366,5 @@ def read_msmc_combined_output(
         "lambda_00": np.array(lambdas_00, dtype=np.float64),
         "lambda_01": np.array(lambdas_01, dtype=np.float64),
         "lambda_11": np.array(lambdas_11, dtype=np.float64),
+        "source_path": str(path),
     }

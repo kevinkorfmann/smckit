@@ -1,0 +1,61 @@
+# Algorithm Map for Agents
+
+## PSMC
+
+- Purpose: infer `N_e(t)` from one diploid genome.
+- Input: `.psmcfa`.
+- Upstream status: vendored C source plus public upstream runner.
+- Native status: working and validated against tracked reference output.
+- Main outputs: `time`, `lambda_k`, `ne`, `theta`, `rho`.
+
+## MSMC2
+
+- Purpose: infer piecewise coalescence rates from multiple haplotypes.
+- Input: `multihetsep`.
+- Upstream status: vendored D source plus public CLI-backed upstream runner.
+- Native status: strong fixture parity is tracked.
+- Main outputs: time boundaries, lambdas, mutation/recombination estimates.
+
+## MSMC-IM
+
+- Purpose: fit a continuous isolation-migration model on top of MSMC2 output.
+- Input: MSMC2 combined output.
+- Upstream status: vendored Python script plus public upstream runner.
+- Native status: oracle parity is tracked against a 3-case vendored matrix on
+  the Yoruba/French example, including non-default fit settings.
+- Main outputs: `N1`, `N2`, `m`, `M`.
+
+## SMC++
+
+- Purpose: infer demography from many unphased individuals.
+- Input: `.smc` / `.smc.gz`.
+- Upstream status: vendored upstream source tree plus public bridge; execution
+  still depends on a controlled side Python environment for the compiled runtime.
+- Native status: available; default native behavior now follows the upstream
+  one-pop preprocessing and hidden-state path, but upstream should still be
+  treated as the preferred fidelity path on larger fixtures.
+- Main outputs: `ne`, `time`, `theta`, `rho`, hidden-state metadata.
+
+## eSMC2
+
+- Purpose: extend pairwise SMC inference to dormancy and selfing.
+- Input: pairwise sequence / `.psmcfa`-style data.
+- Upstream status: vendored R package plus public bridge.
+- Native status: available; fitting parity is still being tightened.
+- Main outputs: `Tc`, `Xi`, `ne`, `beta`, `sigma`, `rho`.
+
+## ASMC
+
+- Purpose: decode pairwise TMRCA along the genome at scale.
+- Input: ASMC haplotypes, maps, decoding quantities.
+- Upstream status: vendored source/data plus public executable-backed upstream runner.
+- Native status: good tracked parity on the vendored regression fixture.
+- Main outputs: posterior means, MAP states, aggregated posteriors.
+
+## diCal2
+
+- Purpose: fit structured demographic histories with migration and multiple populations.
+- Input: `.param`, `.demo`, `.config`, phased sequence data.
+- Upstream status: vendored `diCal2.jar` plus public stdout-parsing upstream bridge.
+- Native status: available with tracked oracle comparisons.
+- Main outputs: best-fit parameters, refined demography, likelihood metadata.

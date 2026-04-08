@@ -7,11 +7,15 @@ See docs/psmc_internals.md for the full mathematical reference.
 from __future__ import annotations
 
 import logging
+import subprocess
+import tempfile
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 
 from smckit._core import SmcData
+from smckit.io._psmc_output import read_psmc_output
 from smckit.backends._numba import (
     forward_jit,
     backward_jit,
@@ -22,6 +26,16 @@ from smckit.backends._numba import (
     compute_time_intervals_jit,
     kmin_hj_jit,
 )
+from smckit.tl._implementation import (
+    annotate_result,
+    choose_implementation,
+    method_upstream_available,
+    normalize_implementation,
+    require_upstream_available,
+    standard_upstream_metadata,
+)
+from smckit.upstream import bootstrap as bootstrap_upstream
+from smckit.upstream import status as upstream_status
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +239,9 @@ def psmc(
     generation_time: float = 25.0,
     random_init: float = 0.01,
     seed: int | None = None,
+    implementation: str = "auto",
+    upstream_options: dict | None = None,
+    native_options: dict | None = None,
 ) -> SmcData:
     """Run PSMC demographic inference.
 
@@ -250,12 +267,38 @@ def psmc(
         Amplitude of random initialization noise for λ.
     seed : int, optional
         Random seed.
+    implementation : {"auto", "native", "upstream"}
+        Algorithm provenance selector. ``"native"`` runs the in-repo port.
+        ``"upstream"`` requests the original implementation and currently
+        raises because no public upstream bridge is exposed yet. ``"auto"``
+        resolves to the best available implementation.
 
     Returns
     -------
     SmcData
         Input data with results stored in ``data.results["psmc"]``.
     """
+    implementation = normalize_implementation(implementation)
+    implementation_used = choose_implementation(
+        implementation,
+        upstream_available=method_upstream_available("psmc"),
+    )
+    if implementation_used == "upstream":
+        return _psmc_upstream(
+            data,
+            pattern=pattern,
+            n_iterations=n_iterations,
+            max_t=max_t,
+            tr_ratio=tr_ratio,
+            mu=mu,
+            generation_time=generation_time,
+            implementation_requested=implementation,
+            upstream_options=upstream_options,
+        )
+    if native_options:
+        unsupported = ", ".join(sorted(native_options))
+        raise TypeError(f"Unsupported psmc native_options keys: {unsupported}")
+
     if seed is not None:
         rng = np.random.default_rng(seed)
     else:
@@ -358,7 +401,7 @@ def psmc(
         rounds=rounds,
     )
 
-    data.results["psmc"] = {
+    data.results["psmc"] = annotate_result({
         "time": result.time,
         "lambda": result.lambda_k,
         "ne": result.ne,
@@ -369,8 +412,144 @@ def psmc(
         "log_likelihood": result.log_likelihood,
         "pattern": result.pattern,
         "rounds": result.rounds,
-    }
+    }, implementation_requested=implementation, implementation_used=implementation_used)
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
 
+    return data
+
+
+def _psmc_binary_path() -> Path | None:
+    status = upstream_status("psmc")
+    cache_path = Path(status["cache_path"]) / "bin/psmc"
+    if cache_path.exists():
+        return cache_path
+    vendor_path = Path(status["vendor_path"]) / "psmc"
+    if vendor_path.exists():
+        return vendor_path
+    return None
+
+
+def _write_psmcfa(records: list[dict], path: Path) -> None:
+    decode = np.array(["T", "K", "N"], dtype=object)
+    with path.open("wt", encoding="utf-8") as fh:
+        for idx, record in enumerate(records):
+            name = record.get("name", f"sequence_{idx}")
+            codes = np.asarray(record["codes"], dtype=np.int8)
+            seq = "".join(decode[int(x)] if 0 <= int(x) < 3 else "N" for x in codes)
+            fh.write(f">{name}\n")
+            for start in range(0, len(seq), 60):
+                fh.write(seq[start:start + 60] + "\n")
+
+
+def _psmc_upstream(
+    data: SmcData,
+    *,
+    pattern: str,
+    n_iterations: int,
+    max_t: float,
+    tr_ratio: float,
+    mu: float,
+    generation_time: float,
+    implementation_requested: str,
+    upstream_options: dict | None,
+) -> SmcData:
+    status = upstream_status("psmc")
+    if not status["source_present"] or not status["runtime_ready"]:
+        require_upstream_available("psmc")
+    if not status["cache_ready"]:
+        bootstrap_upstream("psmc")
+
+    binary = _psmc_binary_path()
+    if binary is None:
+        raise RuntimeError("Upstream PSMC binary is unavailable after bootstrap.")
+
+    source_path = data.uns.get("source_path")
+    effective_args = {
+        "pattern": pattern,
+        "n_iterations": int(n_iterations),
+        "max_t": float(max_t),
+        "tr_ratio": float(tr_ratio),
+    }
+    if upstream_options:
+        effective_args.update(upstream_options)
+
+    with tempfile.TemporaryDirectory(prefix="smckit-psmc-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_path = tmpdir_path / "input.psmcfa"
+        if source_path:
+            input_path = Path(source_path)
+        else:
+            _write_psmcfa(data.uns["records"], input_path)
+
+        output_path = tmpdir_path / "result.psmc"
+        cmd = [
+            str(binary),
+            "-N",
+            str(int(n_iterations)),
+            "-t",
+            repr(float(max_t)),
+            "-r",
+            repr(float(tr_ratio)),
+            "-p",
+            pattern,
+            "-o",
+            str(output_path),
+            str(input_path),
+        ]
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream PSMC backend failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+
+        rounds = read_psmc_output(output_path)
+        if not rounds:
+            raise RuntimeError("Upstream PSMC produced no rounds.")
+        final = rounds[-1]
+        window_size = data.window_size
+        theta = float(final["theta"])
+        rho = float(final["rho"])
+        time = np.asarray(final["time"], dtype=np.float64)
+        lam = np.asarray(final["lambda"], dtype=np.float64)
+        n0 = theta / (4.0 * mu * window_size)
+        ne = lam * n0
+        time_years = time * 2.0 * n0 * generation_time
+
+        data.results["psmc"] = annotate_result(
+            {
+                "time": time,
+                "lambda": lam,
+                "ne": ne,
+                "time_years": time_years,
+                "theta": theta,
+                "rho": rho,
+                "n0": n0,
+                "log_likelihood": float(final.get("log_likelihood", 0.0)),
+                "pattern": pattern,
+                "rounds": rounds,
+                "backend": "upstream",
+                "upstream": standard_upstream_metadata(
+                    "psmc",
+                    effective_args=effective_args,
+                    extra={
+                        "binary": str(binary),
+                        "stdout": proc.stdout,
+                        "stderr": proc.stderr,
+                        "input_path": str(input_path),
+                    },
+                ),
+            },
+            implementation_requested=implementation_requested,
+            implementation_used="upstream",
+        )
+    data.params["mu"] = mu
+    data.params["generation_time"] = generation_time
     return data

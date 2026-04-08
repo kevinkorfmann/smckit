@@ -17,13 +17,27 @@ from __future__ import annotations
 
 import logging
 import math as pymath
+import subprocess
+import tempfile
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import math
 import numba
 import numpy as np
 
 from smckit._core import SmcData
+from smckit.io._multihetsep import read_msmc_output
+from smckit.tl._implementation import (
+    annotate_result,
+    choose_implementation,
+    method_upstream_available,
+    normalize_implementation,
+    require_upstream_available,
+    standard_upstream_metadata,
+)
+from smckit.upstream import bootstrap as bootstrap_upstream
+from smckit.upstream import status as upstream_status
 
 logger = logging.getLogger(__name__)
 
@@ -485,6 +499,11 @@ def emission_probs(boundaries, lambda_vec, mu):
                     * second_term
                 )
 
+        if hom_prob < 0.0:
+            hom_prob = 0.0
+        elif hom_prob > 1.0:
+            hom_prob = 1.0
+
         e[1, a] = hom_prob
         e[2, a] = 1.0 - hom_prob
 
@@ -630,7 +649,7 @@ def chop_segments(seg_pos, seg_obs, max_distance):
     ----------
     seg_pos : (L,) int64 array
         Segment positions.
-    seg_obs : (L,) int8 array
+    seg_obs : (L,) float64 array
         Segment observations (0=missing, 1=hom, 2=het).
     max_distance : int
         Maximum distance between consecutive segment positions.
@@ -638,7 +657,7 @@ def chop_segments(seg_pos, seg_obs, max_distance):
     Returns
     -------
     new_pos : (L',) int64 array
-    new_obs : (L',) int8 array
+    new_obs : (L',) float64 array
     """
     L = seg_pos.shape[0]
 
@@ -656,7 +675,7 @@ def chop_segments(seg_pos, seg_obs, max_distance):
         last_pos = pos
 
     new_pos = np.empty(count, dtype=np.int64)
-    new_obs = np.empty(count, dtype=np.int8)
+    new_obs = np.empty(count, dtype=np.float64)
 
     # Second pass: fill
     idx = 0
@@ -666,8 +685,7 @@ def chop_segments(seg_pos, seg_obs, max_distance):
         obs = seg_obs[i]
         gap = pos - last_pos
         while gap > max_distance:
-            # Insert intermediate segment with min(obs, 1) = hom if obs was het, else keep
-            fill_obs = obs if obs < 2 else 1
+            fill_obs = _gap_observation(obs)
             new_pos[idx] = last_pos + max_distance
             new_obs[idx] = fill_obs
             idx += 1
@@ -679,6 +697,45 @@ def chop_segments(seg_pos, seg_obs, max_distance):
         last_pos = pos
 
     return new_pos[:idx], new_obs[:idx]
+
+
+@numba.njit(cache=True)
+def _gap_observation(obs):
+    """Observation value used for filled-in positions inside a gap."""
+    return obs if obs <= 0.0 else 1.0
+
+
+@numba.njit(cache=True)
+def _emission_prob(obs, emission_matrix, state):
+    """Return the emission probability for a possibly fractional observation."""
+    if obs <= 0.0:
+        return emission_matrix[0, state]
+    if obs <= 1.0:
+        if obs == 1.0:
+            return emission_matrix[1, state]
+        return ((1.0 - obs) * emission_matrix[0, state]
+                + obs * emission_matrix[1, state])
+    if obs >= 2.0:
+        return emission_matrix[2, state]
+
+    frac = obs - 1.0
+    return ((1.0 - frac) * emission_matrix[1, state]
+            + frac * emission_matrix[2, state])
+
+
+@numba.njit(cache=True)
+def _obs_class_weights(obs):
+    """Map a possibly fractional observation to missing/hom/het weights."""
+    if obs <= 0.0:
+        return 1.0, 0.0, 0.0
+    if obs <= 1.0:
+        if obs == 1.0:
+            return 0.0, 1.0, 0.0
+        return 1.0 - obs, obs, 0.0
+    if obs >= 2.0:
+        return 0.0, 0.0, 1.0
+
+    return 0.0, 1.0, 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -694,8 +751,8 @@ def _compute_full_emission(obs, emission_matrix, n_states):
 
     Parameters
     ----------
-    obs : int8
-        Observation: 0=missing, 1=hom, 2=het.
+    obs : float
+        Observation: 0=missing, 1=hom, 2=het, fractional for ambiguity.
     emission_matrix : (3, n) array
     n_states : int
 
@@ -705,7 +762,7 @@ def _compute_full_emission(obs, emission_matrix, n_states):
     """
     e = np.empty(n_states, dtype=np.float64)
     for a in range(n_states):
-        e[a] = emission_matrix[obs, a]
+        e[a] = _emission_prob(obs, emission_matrix, a)
     return e
 
 
@@ -720,8 +777,9 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
     ----------
     seg_pos : (L,) int64 array
         Chopped segment positions.
-    seg_obs : (L,) int8 array
-        Chopped segment observations (0=missing, 1=hom, 2=het).
+    seg_obs : (L,) float64 array
+        Chopped segment observations (0=missing, 1=hom, 2=het, fractional
+        for ambiguous phasing).
     trans : (n, n) array
         Transition matrix.
     emission_matrix : (3, n) array
@@ -746,7 +804,7 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
     forward_states = np.empty((L, n_states), dtype=np.float64)
     scaling_factors = np.empty(L, dtype=np.float64)
 
-    # Initialize: f[0] = eq_prob
+    # Initialize: f[0] = equilibrium state probabilities.
     total = 0.0
     for a in range(n_states):
         forward_states[0, a] = eq_prob[a]
@@ -772,7 +830,9 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
                 dot = 0.0
                 for b in range(n_states):
                     dot += trans[a, b] * forward_states[idx - 1, b]
-                forward_states[idx, a] = dot * emission_matrix[obs_cur, a]
+                forward_states[idx, a] = dot * _emission_prob(
+                    obs_cur, emission_matrix, a
+                )
         else:
             # Multi-step propagation
             dist = pos_cur - pos_prev
@@ -783,14 +843,14 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
             # But we need to look at what obs_cur is for the gap.
             # In the D code, the dummy_site at pos_cur - 1 has obs = min(segsites[index].obs[0], 1)
             # So if the target obs is het (2), the gap is hom (1); if missing (0), gap is missing.
-            gap_obs = obs_cur if obs_cur < 2 else 1
+            gap_obs = _gap_observation(obs_cur)
 
             multi_dist = dist - 1  # number of steps in the multi propagator
             if multi_dist > 0:
                 # Use propagator for multi_dist steps
                 prop_idx = multi_dist - 1  # 0-indexed
 
-                if gap_obs == 0:
+                if gap_obs <= 0.0:
                     prop = fwd_props_miss[prop_idx]
                 else:
                     prop = fwd_props[prop_idx]
@@ -812,7 +872,9 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
                 dot = 0.0
                 for b in range(n_states):
                     dot += trans[a, b] * tmp[b]
-                forward_states[idx, a] = dot * emission_matrix[obs_cur, a]
+                forward_states[idx, a] = dot * _emission_prob(
+                    obs_cur, emission_matrix, a
+                )
 
         # Scale
         total = 0.0
@@ -889,7 +951,7 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
     obs_last = seg_obs[L - 1]
     for a in range(n_states):
         bwd[a] = inv_s
-        bwd_e[a] = inv_s * emission_matrix[obs_last, a]
+        bwd_e[a] = inv_s * _emission_prob(obs_last, emission_matrix, a)
 
     current_bwd_index = L - 1
 
@@ -938,7 +1000,7 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
 
         # Transition expectation: E[a,b] += f[pos-1, b] * trans[a, b] * bwd[pos, a] * e[obs, a]
         for a in range(n_states):
-            e_a = emission_matrix[site_obs, a]
+            e_a = _emission_prob(site_obs, emission_matrix, a)
             for b in range(n_states):
                 transitions[a, b] += fwd_at_prev[b] * trans[a, b] * bwd_at_pos[a] * e_a
 
@@ -948,14 +1010,16 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
                         fwd_props, fwd_props_miss, n_states, L,
                         fwd_at_pos_vec)
 
-        if site_obs > 0:
+        _, hom_w, het_w = _obs_class_weights(site_obs)
+        if hom_w > 0.0 or het_w > 0.0:
             norm = 0.0
             for a in range(n_states):
                 norm += fwd_at_pos_vec[a] * bwd_at_pos[a]
             if norm > 0.0:
                 for a in range(n_states):
                     val = fwd_at_pos_vec[a] * bwd_at_pos[a] / norm
-                    emissions[site_obs - 1, a] += val
+                    emissions[0, a] += hom_w * val
+                    emissions[1, a] += het_w * val
 
         pos -= hmm_stride_width
 
@@ -986,7 +1050,7 @@ def _get_obs_at_pos(seg_pos, seg_obs, pos, L):
     else:
         # Position falls within a segment; obs = min(seg_obs[idx], 1)
         o = seg_obs[idx]
-        return o if o < 2 else 1
+        return _gap_observation(o)
 
 
 @numba.njit(cache=True)
@@ -1006,10 +1070,10 @@ def _forward_at_pos(pos, seg_pos, seg_obs, forward_states,
         # Propagate from forward_states[idx - 1] to pos
         dist = pos - seg_pos[idx - 1]
         # Observation type for the gap
-        gap_obs = seg_obs[idx] if seg_obs[idx] < 2 else 1
+        gap_obs = _gap_observation(seg_obs[idx])
         if dist > 0:
             prop_idx = dist - 1
-            if gap_obs == 0:
+            if gap_obs <= 0.0:
                 prop = fwd_props_miss[prop_idx]
             else:
                 prop = fwd_props[prop_idx]
@@ -1055,10 +1119,10 @@ def _backward_to_pos(pos, right_idx, bwd, bwd_e,
 
         # Step 2: multi backward from pos_right - 1 to pos
         dist = (pos_right - 1) - pos
-        gap_obs = obs_right if obs_right < 2 else 1
+        gap_obs = _gap_observation(obs_right)
         if dist > 0:
             prop_idx = dist - 1
-            if gap_obs == 0:
+            if gap_obs <= 0.0:
                 prop = bwd_props_miss[prop_idx]
             else:
                 prop = bwd_props[prop_idx]
@@ -1089,7 +1153,7 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
         obs_last = seg_obs[L - 1]
         for a in range(n_states):
             bwd[a] = inv_s
-            bwd_e[a] = inv_s * emission_matrix[obs_last, a]
+            bwd_e[a] = inv_s * _emission_prob(obs_last, emission_matrix, a)
         return
 
     ci = current_idx
@@ -1108,12 +1172,14 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
                 bwd_next[b] = dot
             # bwd_next_e[b] = bwd_next[b] * emission[obs_prev, b]
             for b in range(n_states):
-                bwd_next_e[b] = bwd_next[b] * emission_matrix[obs_prev, b]
+                bwd_next_e[b] = bwd_next[b] * _emission_prob(
+                    obs_prev, emission_matrix, b
+                )
         else:
             # Multi backward step
             # Step 1: single backward from ci to ci.pos - 1
             # The "dummy" site at pos_cur - 1 has obs = min(seg_obs[ci], 1)
-            dummy_obs = seg_obs[ci] if seg_obs[ci] < 2 else 1
+            dummy_obs = _gap_observation(seg_obs[ci])
 
             # propagateSingleBackward: from current bwd state to dummy site
             for b in range(n_states):
@@ -1123,14 +1189,14 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
                 tmp[b] = dot
             # tmp_e[b] = tmp[b] * emission_matrix[dummy_obs, b]
             for b in range(n_states):
-                tmp_e[b] = tmp[b] * emission_matrix[dummy_obs, b]
+                tmp_e[b] = tmp[b] * _emission_prob(dummy_obs, emission_matrix, b)
 
             # Step 2: multi backward from pos_cur - 1 to pos_prev
             dist = (pos_cur - 1) - pos_prev
             if dist > 0:
                 prop_idx = dist - 1
                 # Gap obs is inherited from the dummy site
-                if dummy_obs == 0:
+                if dummy_obs <= 0.0:
                     prop = bwd_props_miss[prop_idx]
                 else:
                     prop = bwd_props[prop_idx]
@@ -1149,7 +1215,9 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
 
             # Apply emission at prev site
             for b in range(n_states):
-                bwd_next_e[b] = bwd_next[b] * emission_matrix[obs_prev, b]
+                bwd_next_e[b] = bwd_next[b] * _emission_prob(
+                    obs_prev, emission_matrix, b
+                )
 
         # Copy bwd_next -> bwd, scale
         for b in range(n_states):
@@ -1392,6 +1460,14 @@ def _brent_minimize(ax, bx, cx, p, xi, transitions, emissions, boundaries,
 
 
 @numba.njit(cache=True)
+def _sign(a, b):
+    """Return ``abs(a)`` with the sign of ``b``."""
+    if b >= 0.0:
+        return a if a >= 0.0 else -a
+    return -a if a >= 0.0 else a
+
+
+@numba.njit(cache=True)
 def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
              mu, n_params, n_intervals, par_map, fixed_rho, init_rho):
     """Bracket a minimum along direction xi."""
@@ -1426,10 +1502,9 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
     while fb > fc:
         r = (bx - ax) * (fb - fc)
         q = (bx - cx) * (fb - fa)
-        denom = q - r
-        if abs(denom) < TINY:
-            denom = TINY if denom >= 0 else -TINY
-        u = bx - ((bx - cx) * q - (bx - ax) * r) / (2.0 * denom)
+        u = bx - ((bx - cx) * q - (bx - ax) * r) / (
+            2.0 * _sign(max(abs(q - r), TINY), q - r)
+        )
         ulim = bx + GLIMIT * (cx - bx)
 
         if (bx - u) * (u - cx) > 0.0:
@@ -1458,11 +1533,14 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
             fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
                               n_intervals, par_map, fixed_rho, init_rho)
             if fu < fc:
-                bx = cx
-                cx = u
-                u = u + GOLD * (u - cx)
+                old_bx = bx
+                old_cx = cx
+                old_u = u
                 fb = fc
                 fc = fu
+                bx = old_cx
+                cx = old_u
+                u = old_u + GOLD * (old_u - old_cx)
                 for j in range(n_params):
                     xt[j] = p[j] + u * xi[j]
                 fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
@@ -1670,6 +1748,7 @@ def _msmc_em_step(
         Q-function value after maximization.
     """
     n_states = lambda_vec.shape[0]
+    n_intervals = n_states
 
     # Build HMM parameters
     trans = compute_transition_matrix(boundaries, rho, lambda_vec)
@@ -1729,9 +1808,6 @@ def _msmc_em_step(
         total_transitions, total_emissions, boundaries, rho, lambda_vec, mu
     )
 
-    # M-step: optimize lambda_vec (and optionally rho) using scipy Powell
-    from scipy.optimize import minimize as sp_minimize
-
     n_free = par_map.max() + 1
     n_opt_params = n_free + (0 if fixed_rho else 1)
 
@@ -1747,26 +1823,17 @@ def _msmc_em_step(
     if not fixed_rho:
         x0[n_free] = math.log(rho)
 
-    def neg_Q_scipy(x):
-        lam_test = np.empty(n_states, dtype=np.float64)
-        for i in range(n_states):
-            lam_test[i] = math.exp(x[par_map[i]])
-        rho_test = math.exp(x[n_free]) if not fixed_rho else rho
-        val = -_msmc_log_likelihood(
-            total_transitions, total_emissions, boundaries,
-            rho_test, lam_test, mu,
-        )
-        if not np.isfinite(val):
-            return 1e10
-        return val
-
-    bounds = [(-4.0, 10.0)] * n_opt_params  # lambda in [0.018, 22026]
-    result = sp_minimize(
-        neg_Q_scipy, x0, method="L-BFGS-B",
-        bounds=bounds,
-        options={"maxiter": 200, "ftol": 3e-8},
+    x_opt, fret = _powell_minimize(
+        x0,
+        total_transitions,
+        total_emissions,
+        boundaries,
+        mu,
+        n_intervals,
+        par_map,
+        fixed_rho,
+        rho,
     )
-    x_opt = result.x
 
     # Extract optimized parameters
     lambda_vec_new = np.empty(n_states, dtype=np.float64)
@@ -1778,7 +1845,7 @@ def _msmc_em_step(
     else:
         rho_new = math.exp(x_opt[n_free])
 
-    q_after = -result.fun
+    q_after = fret
 
     return lambda_vec_new, rho_new, total_ll, q_after
 
@@ -1801,20 +1868,20 @@ def _build_segments_for_pair(positions, n_called, pair_obs):
     Returns
     -------
     seg_pos : int64 array
-    seg_obs : int8 array
+    seg_obs : float64 array
     """
     L = positions.shape[0]
     # Worst case: each line can produce up to 3 segments
     max_segs = L * 3
     seg_pos_buf = np.empty(max_segs, dtype=np.int64)
-    seg_obs_buf = np.empty(max_segs, dtype=np.int8)
+    seg_obs_buf = np.empty(max_segs, dtype=np.float64)
     count = 0
     last_pos = -1
 
     for i in range(L):
         pos = int(positions[i])
         nc = int(n_called[i])
-        obs = int(pair_obs[i])
+        obs = float(pair_obs[i])
 
         if last_pos == -1:
             last_pos = pos - nc
@@ -1822,17 +1889,23 @@ def _build_segments_for_pair(positions, n_called, pair_obs):
         # Missing data gap before called sites
         if nc < pos - last_pos:
             seg_pos_buf[count] = pos - nc
-            seg_obs_buf[count] = 0  # missing
+            seg_obs_buf[count] = 0.0  # missing
             count += 1
 
-        if obs == 0:
+        if obs == 0.0:
             # Missing at this site
             if nc > 1:
                 seg_pos_buf[count] = pos - 1
-                seg_obs_buf[count] = 1  # hom for the called sites before
+                seg_obs_buf[count] = 1.0  # hom for the called sites before
                 count += 1
             seg_pos_buf[count] = pos
-            seg_obs_buf[count] = 0  # missing
+            seg_obs_buf[count] = 0.0  # missing
+            count += 1
+        elif obs < 0.0:
+            # Ambiguous sites skipped by upstream -s become missing at pos
+            # without adding an extra homozygous site at pos - 1.
+            seg_pos_buf[count] = pos
+            seg_obs_buf[count] = 0.0
             count += 1
         else:
             # hom or het
@@ -1858,7 +1931,7 @@ def _estimate_theta(segments_list, pairs):
     segments. This matters because missing-gap markers update ``lastPos``,
     changing inter-site distance calculations.
     """
-    total_hets = 0
+    total_hets = 0.0
     total_called = 0
 
     for seg_dict in segments_list:
@@ -1882,13 +1955,13 @@ def _estimate_theta(segments_list, pairs):
             last_pos = 0
             for i in range(len(seg_pos)):
                 pos = int(seg_pos[i])
-                obs = int(seg_obs[i])
+                obs = float(seg_obs[i])
 
                 if obs > 0:
                     if last_pos > 0:
                         total_called += pos - last_pos
-                    if obs > 1:
-                        total_hets += 1
+                    if obs > 1.0:
+                        total_hets += 1.0
 
                 # lastPos updates unconditionally (matches D code)
                 last_pos = pos
@@ -1930,6 +2003,9 @@ def msmc2(
     max_distance: int = 1000,
     quantile_bounds: bool = False,
     time_factor: float = 1.0,
+    implementation: str = "auto",
+    upstream_options: dict | None = None,
+    native_options: dict | None = None,
 ) -> SmcData:
     """Run MSMC2 demographic inference.
 
@@ -1957,12 +2033,37 @@ def msmc2(
         Use quantile boundaries instead of Li & Durbin (default False).
     time_factor : float
         Multiplicative factor for time boundary computation (default 1.0).
+    implementation : {"auto", "native", "upstream"}
+        Algorithm provenance selector. ``"native"`` runs the in-repo MSMC2
+        port. ``"upstream"`` currently raises because no public upstream bridge
+        is exposed yet. ``"auto"`` resolves to the best available implementation.
 
     Returns
     -------
     SmcData
         Input data with results stored in ``data.results["msmc2"]``.
     """
+    implementation = normalize_implementation(implementation)
+    implementation_used = choose_implementation(
+        implementation,
+        upstream_available=method_upstream_available("msmc2"),
+    )
+    if implementation_used == "upstream":
+        return _msmc2_upstream(
+            data,
+            n_iterations=n_iterations,
+            time_pattern=time_pattern,
+            rho_over_mu=rho_over_mu,
+            fixed_rho=fixed_rho,
+            mu=mu,
+            quantile_bounds=quantile_bounds,
+            implementation_requested=implementation,
+            upstream_options=upstream_options,
+        )
+    if native_options:
+        unsupported = ", ".join(sorted(native_options))
+        raise TypeError(f"Unsupported msmc2 native_options keys: {unsupported}")
+
     segments_list = data.uns["segments"]
     pairs = data.uns["pairs"]
     n_pairs = len(pairs)
@@ -2088,7 +2189,7 @@ def msmc2(
         rounds=rounds,
     )
 
-    data.results["msmc2"] = {
+    data.results["msmc2"] = annotate_result({
         "time_boundaries": result.time_boundaries,
         "left_boundary": boundaries[:n_intervals] * mu_internal,
         "right_boundary": boundaries[1:] * mu_internal,
@@ -2101,8 +2202,123 @@ def msmc2(
         "log_likelihood": result.log_likelihood,
         "time_pattern": result.time_pattern,
         "rounds": result.rounds,
-    }
+    }, implementation_requested=implementation, implementation_used=implementation_used)
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
 
+    return data
+
+
+def _msmc2_binary_path() -> Path | None:
+    status = upstream_status("msmc2")
+    cache_path = Path(status["cache_path"]) / "bin/msmc2"
+    if cache_path.exists():
+        return cache_path
+    for candidate in [
+        Path(status["vendor_path"]) / "build/release/msmc2",
+        Path(status["vendor_path"]) / "build/msmc2",
+    ]:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _pair_indices_arg(pairs: list[tuple[int, int]] | None) -> str | None:
+    if not pairs:
+        return None
+    return ",".join(f"{i}-{j}" for i, j in pairs)
+
+
+def _msmc2_upstream(
+    data: SmcData,
+    *,
+    n_iterations: int,
+    time_pattern: str,
+    rho_over_mu: float,
+    fixed_rho: bool,
+    mu: float,
+    quantile_bounds: bool,
+    implementation_requested: str,
+    upstream_options: dict | None,
+) -> SmcData:
+    status = upstream_status("msmc2")
+    if not status["cache_ready"]:
+        bootstrap_upstream("msmc2")
+    binary = _msmc2_binary_path()
+    if binary is None:
+        raise RuntimeError("Upstream MSMC2 executable is unavailable after bootstrap.")
+    input_paths = data.uns.get("source_paths")
+    if not input_paths:
+        raise ValueError("Upstream MSMC2 requires source multihetsep file path(s).")
+    effective_args = {
+        "maxIterations": int(n_iterations),
+        "timeSegmentPattern": time_pattern,
+        "rhoOverMu": float(rho_over_mu),
+        "pairIndices": _pair_indices_arg(data.uns.get("pairs")),
+        "fixedRecombination": bool(fixed_rho),
+        "quantileBoundaries": bool(quantile_bounds),
+    }
+    if upstream_options:
+        effective_args.update(upstream_options)
+    with tempfile.TemporaryDirectory(prefix="smckit-msmc2-") as tmpdir:
+        out_prefix = Path(tmpdir) / "msmc2"
+        cmd = [
+            str(binary),
+            "-i",
+            str(int(n_iterations)),
+            "-o",
+            str(out_prefix),
+            "-r",
+            repr(float(rho_over_mu)),
+            "-p",
+            time_pattern,
+        ]
+        pair_arg = _pair_indices_arg(data.uns.get("pairs"))
+        if pair_arg:
+            cmd.extend(["-I", pair_arg])
+        if fixed_rho:
+            cmd.append("-R")
+        if quantile_bounds:
+            cmd.append("--quantileBoundaries")
+        cmd.extend([str(Path(p)) for p in input_paths])
+        proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream MSMC2 backend failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        final_path = out_prefix.with_suffix(".final.txt")
+        parsed = read_msmc_output(final_path)
+        left = np.asarray(parsed["left_boundary"], dtype=np.float64)
+        right = np.asarray(parsed["right_boundary"], dtype=np.float64)
+        lam = np.asarray(parsed["lambda"], dtype=np.float64)
+        ne = 1.0 / np.maximum(lam, 1e-300) / max(2.0 * mu, 1e-300)
+        time_years = left / max(mu, 1e-300)
+        data.results["msmc2"] = annotate_result(
+            {
+                "time_index": np.asarray(parsed["time_index"], dtype=np.int64),
+                "left_boundary": left,
+                "right_boundary": right,
+                "lambda": lam,
+                "ne": ne,
+                "time": left,
+                "time_years": time_years,
+                "backend": "upstream",
+                "upstream": standard_upstream_metadata(
+                    "msmc2",
+                    effective_args=effective_args,
+                    extra={
+                        "binary": str(binary),
+                        "out_prefix": str(out_prefix),
+                        "final_path": str(final_path),
+                        "stdout": proc.stdout,
+                        "stderr": proc.stderr,
+                    },
+                ),
+            },
+            implementation_requested=implementation_requested,
+            implementation_used="upstream",
+        )
+    data.params["mu"] = mu
     return data

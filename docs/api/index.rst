@@ -1,21 +1,18 @@
 API Reference
 =============
 
-.. automodule:: smckit
-   :members:
+The smckit public API is organized into namespaces that mirror scanpy:
+``io`` for input/output, ``tl`` for inference tools, ``pl`` for plotting,
+``pp`` for preprocessing, and ``ext`` for extensions. The central data
+container is :class:`smckit.SmcData`.
 
-IO
---
+.. toctree::
+   :maxdepth: 2
 
-.. autofunction:: smckit.io.read_psmcfa
-.. autofunction:: smckit.io.read_psmc_output
-
-Tools
------
-
-.. autofunction:: smckit.tl.psmc
-
-Plotting
---------
-
-.. autofunction:: smckit.pl.demographic_history
+   core
+   io
+   tl
+   pl
+   pp
+   ssm
+   settings

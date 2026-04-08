@@ -1,0 +1,125 @@
+# Interpreting Results
+
+SMC methods produce demographic histories, coalescence rate curves, and
+parameter estimates that can be subtle to interpret correctly. This page
+covers what the numbers mean, how to assess convergence, and the most common
+pitfalls.
+
+## What does $N_e(t)$ mean?
+
+The output of PSMC, MSMC2, eSMC2, and SMC++ is the **effective population
+size as a function of time**, $N_e(t)$. This is *not* the census population
+size: it is the size of an idealized Wright-Fisher population that would
+produce the same coalescence rates as the observed data. $N_e$ is always
+smaller than the census size because of selection, population structure,
+variance in reproductive success, and other factors.
+
+The time axis runs **backwards from the present**, expressed in either
+generations or years (after multiplying by `generation_time`). A peak at
+$t = 100{,}000$ years ago is a *historical* event, not a future prediction.
+
+## The `data.results` dictionary
+
+Every smckit tool stores its output in `data.results[method_name]`. The
+keys vary slightly by method, but the common ones are:
+
+| Key | Meaning |
+|---|---|
+| `theta` | Population-scaled mutation rate ($4 N_0 \mu$) |
+| `rho` | Population-scaled recombination rate ($4 N_0 r$) |
+| `lambda` | Per-state relative population sizes ($N_e(t_k) / N_0$) |
+| `ne` | Per-state $N_e$ in absolute units (after physical-unit conversion) |
+| `time_years` | Per-state time boundary in years before present |
+| `n0` | The reference $N_0$ used for unit conversion |
+| `rounds` | Per-iteration EM diagnostics (log-likelihood, parameters) |
+| `log_likelihood` | Final marginal log-likelihood |
+
+For ASMC, the result dict contains posterior matrices and per-pair MAP
+TMRCA arrays. For MSMC-IM, it contains $N_1(t)$, $N_2(t)$, $m(t)$, $M(t)$,
+and split-time quantiles. See the per-method reference pages for the full
+list.
+
+## Assessing convergence
+
+### EM-based methods (PSMC, eSMC2, MSMC2)
+
+EM is guaranteed to monotonically increase the log-likelihood, but a few
+sanity checks are worth doing:
+
+```python
+res = data.results["psmc"]
+ll = [r["log_likelihood"] for r in res["rounds"]]
+
+# Check monotonicity
+assert all(ll[i+1] >= ll[i] - 1e-6 for i in range(len(ll) - 1))
+
+# Check that the curve has plateaued
+delta = ll[-1] - ll[-5]
+print(f"LL change in last 5 iterations: {delta:.4f}")
+```
+
+A plateau in the *log-likelihood* does not always mean convergence in the
+*parameters*. It is good practice to also check that `theta`, `rho`, and the
+`lambda` vector have stabilized over the last few iterations.
+
+### Gradient-based methods (PSMC-SSM, SMC++)
+
+For gradient methods, check the loss curve and gradient norms in
+`result.history`:
+
+```python
+import matplotlib.pyplot as plt
+
+plt.plot(result.history["loss"])
+plt.xlabel("Iteration")
+plt.ylabel("Negative log-likelihood")
+```
+
+A loss curve that is still decreasing at the last iteration means you should
+increase `n_iterations`. Sudden spikes usually indicate the learning rate
+is too high.
+
+## Common pitfalls
+
+### Don't overinterpret extremes
+
+PSMC and similar methods have **almost no resolution** at the very recent
+and very ancient ends of the time axis:
+
+- **Recent**: a single diploid only provides 2 lineages, so coalescences
+  in the last few thousand years are too rare to constrain $N_e(t)$.
+- **Ancient**: very few coalescences happen so far back, so the deepest
+  states are essentially driven by the prior.
+
+The artifacts at both ends often look like a "rise to infinity" or a
+"crash to zero" — these are usually not real.
+
+### The pattern parameter matters
+
+The PSMC `pattern` argument controls how time states are grouped into free
+$\lambda$ parameters. Patterns like `"4+5*3+4"` (the PSMC default) constrain
+adjacent states to share parameters, smoothing the inferred curve. Different
+patterns produce visibly different histories, especially in regions with
+weak signal. If two methods disagree, check whether they are using
+comparable time discretizations.
+
+### Methods are not interchangeable
+
+PSMC, MSMC2, and SMC++ produce $N_e(t)$ curves that *should* agree
+qualitatively, but they often differ in detail. This is expected: each
+method makes different statistical trade-offs. When in doubt, run multiple
+methods and overlay them — see [Plotting](plotting.md) for how to overlay
+multiple methods on one plot.
+
+### Bootstrap CIs
+
+Most methods support bootstrap resampling for confidence intervals. A
+single point estimate of $N_e(t)$ tells you very little about uncertainty;
+always look at bootstraps before drawing biological conclusions.
+
+## See also
+
+- **[Plotting](plotting.md)** — how to visualize results.
+- The **[Gallery](gallery.md)** — example outputs and validation plots.
+- Per-method **[Method Reference](../methods/psmc.md)** pages for the full
+  list of result keys per method.

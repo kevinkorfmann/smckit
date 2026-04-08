@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from smckit.io._multihetsep import read_multihetsep
 from smckit.io._psmcfa import _CONV_TABLE, read_psmcfa
 
 
@@ -50,3 +51,35 @@ class TestReadPsmcfa:
         rec = data.uns["records"][0]
         assert rec["L"] == 12
         assert rec["n_e"] == 4
+
+
+class TestReadMultihetsep:
+    def test_preserves_ambiguous_pair_observations(self, tmp_path):
+        path = tmp_path / "test.multihetsep"
+        path.write_text("chr1\t10\t10\tAA,AT\n")
+
+        data = read_multihetsep(path)
+
+        obs = data.uns["segments"][0]["obs"][(0, 1)]
+        assert obs.dtype == np.float64
+        assert obs.tolist() == [1.5]
+
+    def test_skip_ambiguous_treats_ambiguous_as_missing(self, tmp_path):
+        path = tmp_path / "test.multihetsep"
+        path.write_text("chr1\t10\t10\tAA,AT\n")
+
+        data = read_multihetsep(path, skip_ambiguous=True)
+
+        obs = data.uns["segments"][0]["obs"][(0, 1)]
+        assert obs.dtype == np.int8
+        assert obs.tolist() == [-1.0]
+
+    def test_missing_in_any_phase_config_is_missing(self, tmp_path):
+        path = tmp_path / "test.multihetsep"
+        path.write_text("chr1\t10\t10\tAA,?T\n")
+
+        data = read_multihetsep(path)
+
+        obs = data.uns["segments"][0]["obs"][(0, 1)]
+        assert obs.dtype == np.int8
+        assert obs.tolist() == [0]
