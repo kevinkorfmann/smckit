@@ -42,6 +42,46 @@ def clean_pairwise_data() -> SmcData:
     )
 
 
+def _max_rel_error(left: np.ndarray, right: np.ndarray) -> float:
+    left_arr = np.asarray(left, dtype=np.float64)
+    right_arr = np.asarray(right, dtype=np.float64)
+    return float(
+        np.max(np.abs(left_arr - right_arr) / np.maximum(np.abs(right_arr), 1e-12))
+    )
+
+
+def _assert_fit_parity(
+    native: dict,
+    upstream: dict,
+    *,
+    tc_rel_tol: float,
+    xi_rel_tol: float,
+    beta_abs_tol: float,
+    sigma_abs_tol: float,
+    final_ll_abs_tol: float,
+) -> None:
+    tc_rel = _max_rel_error(np.asarray(native["Tc"]), np.asarray(upstream["Tc"]))
+    xi_rel = _max_rel_error(np.asarray(native["Xi"]), np.asarray(upstream["Xi"]))
+    final_ll_delta = abs(
+        float(native["log_likelihood"])
+        - float(upstream["upstream"]["final_sufficient_statistics"]["log_likelihood"])
+    )
+
+    assert tc_rel < tc_rel_tol
+    assert xi_rel < xi_rel_tol
+    assert abs(float(native["beta"]) - float(upstream["beta"])) < beta_abs_tol
+    assert abs(float(native["sigma"]) - float(upstream["sigma"])) < sigma_abs_tol
+    assert final_ll_delta < final_ll_abs_tol
+    assert native["rho"] == pytest.approx(upstream["rho"], rel=1e-7, abs=1e-10)
+    assert native["rho_per_sequence"] == pytest.approx(
+        upstream["rho_per_sequence"],
+        rel=1e-7,
+        abs=1e-10,
+    )
+    assert native["mu"] == pytest.approx(upstream["mu"], rel=1e-7, abs=1e-10)
+    assert native["theta"] == pytest.approx(upstream["theta"], rel=1e-7, abs=1e-10)
+
+
 def test_esmc2_upstream_backend_runs_end_to_end(
     clean_pairwise_data: SmcData,
     upstream_env: None,
@@ -169,6 +209,7 @@ def test_esmc2_native_final_sufficient_statistics_match_upstream(
         rtol=1e-10,
         atol=1e-12,
     )
+    assert native_ll == pytest.approx(float(oracle["log_likelihood"]), rel=1e-12, abs=1e-12)
     assert native_ll == pytest.approx(float(result["log_likelihood"]), rel=1e-12, abs=1e-12)
 
 
@@ -313,3 +354,92 @@ def test_esmc2_native_matches_upstream_when_rho_redo_extends_iterations(
     assert native["rho_per_sequence"] == pytest.approx(upstream["rho_per_sequence"], rel=2e-5)
     assert native["mu"] == pytest.approx(upstream["mu"], rel=1e-12)
     assert native["theta"] == pytest.approx(upstream["theta"], rel=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("estimate_beta", "estimate_sigma", "beta", "sigma"),
+    [
+        (True, False, 0.3, 0.0),
+        (False, True, 0.5, 0.2),
+        (True, True, 0.3, 0.2),
+    ],
+)
+def test_esmc2_native_matches_upstream_on_beta_sigma_fit_branches(
+    clean_pairwise_data: SmcData,
+    upstream_env: None,
+    estimate_beta: bool,
+    estimate_sigma: bool,
+    beta: float,
+    sigma: float,
+) -> None:
+    kwargs = {
+        "n_states": 6,
+        "n_iterations": 1,
+        "estimate_beta": estimate_beta,
+        "estimate_sigma": estimate_sigma,
+        "estimate_rho": False,
+        "beta": beta,
+        "sigma": sigma,
+        "mu": 1e-8,
+        "generation_time": 1.0,
+    }
+    native = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="native",
+        **kwargs,
+    ).results["esmc2"]
+    upstream = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="upstream",
+        upstream_options={"capture_final_sufficient_statistics": True},
+        **kwargs,
+    ).results["esmc2"]
+
+    _assert_fit_parity(
+        native,
+        upstream,
+        tc_rel_tol=3e-3,
+        xi_rel_tol=4e-3,
+        beta_abs_tol=1e-3,
+        sigma_abs_tol=5e-4,
+        final_ll_abs_tol=1e-3,
+    )
+
+
+def test_esmc2_native_matches_upstream_on_grouped_beta_fit(
+    clean_pairwise_data: SmcData,
+    upstream_env: None,
+) -> None:
+    kwargs = {
+        "n_states": 6,
+        "n_iterations": 1,
+        "estimate_beta": True,
+        "estimate_sigma": False,
+        "estimate_rho": False,
+        "beta": 0.3,
+        "sigma": 0.0,
+        "pop_vect": [3, 3],
+        "mu": 1e-8,
+        "generation_time": 1.0,
+    }
+    native = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="native",
+        **kwargs,
+    ).results["esmc2"]
+    upstream = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="upstream",
+        upstream_options={"capture_final_sufficient_statistics": True},
+        **kwargs,
+    ).results["esmc2"]
+
+    _assert_fit_parity(
+        native,
+        upstream,
+        tc_rel_tol=1e-4,
+        xi_rel_tol=1e-4,
+        beta_abs_tol=1e-4,
+        sigma_abs_tol=1e-12,
+        final_ll_abs_tol=1e-5,
+    )

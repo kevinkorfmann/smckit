@@ -229,6 +229,40 @@ class TestBuildHMM:
         np.testing.assert_allclose(Q.sum(axis=0), 1.0, atol=1e-8)
         np.testing.assert_allclose(q.sum(), 1.0, atol=1e-10)
 
+    def test_hidden_state_beta_sigma_can_be_fixed_separately(self):
+        n = 6
+        Xi = np.ones(n, dtype=np.float64)
+        beta = 0.4
+        sigma = 0.1
+        beta_hidden = 0.7
+        sigma_hidden = 0.2
+
+        Q, q, t, Tc, e = esmc2_build_hmm(
+            n,
+            Xi,
+            beta,
+            sigma,
+            2.0,
+            0.001,
+            1.0,
+            10000,
+            beta_hidden=beta_hidden,
+            sigma_hidden=sigma_hidden,
+        )
+
+        np.testing.assert_allclose(
+            Tc,
+            esmc2_build_time_boundaries(n, beta_hidden, sigma_hidden),
+            rtol=1e-10,
+            atol=1e-12,
+        )
+        default_Tc = esmc2_build_time_boundaries(n, beta, sigma)
+        assert not np.allclose(Tc, default_Tc, rtol=1e-10, atol=1e-12)
+        np.testing.assert_allclose(Q.sum(axis=0), 1.0, atol=1e-8)
+        np.testing.assert_allclose(q.sum(), 1.0, atol=1e-10)
+        assert np.all(np.isfinite(t))
+        assert np.all(np.isfinite(e))
+
 
 # ---------------------------------------------------------------------------
 # Forward-backward algorithms

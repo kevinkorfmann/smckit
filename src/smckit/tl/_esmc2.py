@@ -20,8 +20,8 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import minimize
 
-from smckit._core import SmcData
 from smckit import upstream as upstream_registry
+from smckit._core import SmcData
 from smckit.backends._numba_esmc2 import (
     HMM_TINY,
     esmc2_build_hmm,
