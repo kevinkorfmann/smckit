@@ -68,6 +68,12 @@ Runtime requirements still matter: `diCal2` needs a working Java runtime, `ASMC`
 needs its C++/Boost build stack, and `SMC++` still depends on a controlled side
 Python environment.
 
+.. class:: smckit-method-note
+
+Check :doc:`guide/gallery` for the visual side-by-side evidence behind these
+status marks, especially where a method is marked unavailable, unstable, or
+not yet default-eligible.
+
 .. list-table::
    :header-rows: 1
 
