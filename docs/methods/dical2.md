@@ -162,18 +162,22 @@ The upstream and native paths now share the same normalized public result
 fields, including `best_params`, `ordered_params`, `time`, and demographic
 arrays.
 
-On the tracked README `exp` fixture, parity is materially tighter than before:
+On the tracked README fixtures, parity is materially tighter than before:
 
 - at the upstream best-fit parameter vector, the native fixed-point log-likelihood
   delta is now about `7.45e-4`
 - replaying each explicit `exp.rand` start point now lands on the same endpoint
   to displayed precision, with log-likelihood deltas at or below about `2.21e-4`
-- the docs gallery now shows both the current native and upstream `exp` panels
+- the full independent native searches now land on the same best-fit parameter
+  vectors as upstream on both README `exp` and README `IM`
+- at the upstream best-fit parameter vector on README `IM`, the native
+  fixed-point log-likelihood delta is now about `3.15e-2`
 
-The remaining gap is the full independent search path. On the current full
-README `exp` meta-start run, native still lands at about `-15.9743` while
-upstream lands at about `-15.8771`, so the gallery remains a useful visual of
-the current discrepancy rather than evidence of interchangeability.
+The remaining gap is the objective value, not the search winner. Native and
+upstream now agree on the README `exp` and `IM` best-fit parameter vectors, but
+the native reported log-likelihood is still slightly offset at those same
+points, so the method is closer to interchangeable than before without yet
+fully reaching it.
 
 ## Learn more
 

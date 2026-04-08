@@ -102,6 +102,26 @@ even from the final best-fit parameters alone. We needed to see:
 - the effective marginal SD
 - the concrete offspring proposals for the next generation
 
+### 8. Java `nextLong()` and coordinatewise shuffle semantics were still off
+
+The native `_JavaRandom` implementation initially combined the second 32-bit
+piece of `nextLong()` as an unsigned integer. Java sign-extends that lower
+`int`, so the third spawned offspring seed on the tracked README `exp` run was
+wrong by exactly `2^32`.
+
+That mattered because the wrong offspring seed changed the initial simplex sign
+pattern in the seeded M-step replay for the `exp` outlier path. After fixing
+`nextLong()`, the full native README `exp` meta-start run began reaching the
+same best-fit parameter vector as upstream.
+
+The README `IM` fixture still differed after that because it uses the default
+coordinatewise M-step. Upstream shuffles the coordinate order with
+`Collections.shuffle(..., Random)`, which consumes `nextInt(i)` draws. The
+native permutation code had been using `int(random() * i)`, which is not the
+same RNG path. After switching to Java-style bounded `nextInt()` for the
+coordinatewise shuffle, the full native README `IM` run also reached the same
+best-fit parameter vector as upstream.
+
 ## What improved
 
 On the README `exp` fixture:
@@ -111,37 +131,48 @@ On the README `exp` fixture:
 - replaying each explicit `exp.rand` start point now lands on the upstream
   endpoint to displayed precision, with log-likelihood deltas at or below about
   `2.21e-4`
+- the full independent meta-start search now reaches the same best-fit
+  parameters as upstream
+
+On the README `IM` fixture:
+
+- the native fixed-point likelihood at the upstream best-fit parameters is now
+  within about `3.15e-2`
+- the full independent meta-start search now reaches the same best-fit
+  parameters as upstream
+- the earlier large apparent `IM` gap turned out to be partly diagnostic noise:
+  the old oracle comparison script was reporting the last stdout row instead of
+  the best one, while the upstream bridge was already selecting the best fit
 
 Those two results are the reason the current docs now describe `exp`
-oracle-point and explicit-start parity as strong.
+oracle-point, explicit-start, and full-search parameter parity as strong.
 
 ## What still does not match
 
-The full independent searches are still not interchangeable:
+The full independent searches now agree on the best-fit parameters, but the
+native and upstream fixed-point likelihood values still differ slightly at those
+same points:
 
 - README `exp`
-  - upstream log-likelihood: about `-15.8771`
-  - native log-likelihood: about `-15.9743`
+  - upstream log-likelihood: about `-15.87706545`
+  - native log-likelihood at the same best-fit point: about `-15.87632006`
 - README `IM`
-  - upstream log-likelihood: about `-75.1458`
-  - native log-likelihood: about `-70.1214`
+  - upstream log-likelihood: about `-70.16830865`
+  - native log-likelihood at the same best-fit point: about `-70.19983301`
 
 Interpretation:
 
-- for `exp`, the trace now shows that the mismatch already appears in meta step
-  0 on start point 2. Upstream reaches about `-16.3759` at
-  `[320.1277, 0.0176506752, 0.0763549920, 0.3490567120, 1.2603001600]`, while
-  native reaches about `-16.1988` at
-  `[417.9587, 0.0179448631, 0.0908988032, 0.4322718170, 1.5015576202]`.
-  That means the remaining blocker is not only next-generation proposal logic;
-  it is already present in the seeded EM/M-step path for at least one tracked
-  start point.
-- for `IM`, the remaining grouped-locus/state-model mismatch is still large
+- the optimizer-path mismatch is no longer the blocker on the tracked README
+  fixtures
+- the remaining blocker is the native fixed-point likelihood calculation itself,
+  which is now close enough that it should be debugged as a numerical/core-CSD
+  issue rather than as a search-ceremony issue
 
 ## Next steps
 
-- close the remaining `exp` seeded-start EM/M-step gap before expecting the
-  final meta-start winner to align
-- bring `IM` fixed-parameter likelihood parity up to the same standard as `exp`
+- close the remaining fixed-point `exp` likelihood delta now that the search
+  winner is aligned
+- bring `IM` fixed-point likelihood parity down from `3.15e-2` to the same
+  tighter standard
 - only then tighten the integration gate back to true native/upstream
   interchangeability

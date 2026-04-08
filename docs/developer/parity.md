@@ -47,10 +47,10 @@ and the remaining work before declaring the oracle complete.
 
 ## diCal2
 
-**Progress:** The vendored README fixtures now share upstream/native result normalization, and the native search path runs independently again with Java-style RNG handling and upstream-style meta-start machinery. On the tracked README `exp` fixture, the native fixed-point likelihood gap at the upstream best-fit parameters is now about `7.45e-4`, and explicit `exp.rand` start-point replays now match the upstream endpoint to displayed precision with log-likelihood deltas at or below about `2.21e-4`. The current full independent `exp` meta-start run still misses the oracle fit, however, landing around `-15.9743` versus the upstream `-15.8771`.
-**Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and use the README `exp` sequence bundle as the first hard parity gate.
-**Context:** diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer and JADE bridging code.
-**Remaining tasks:** Close the remaining README `exp` meta-start selection gap, then bring the README `IM` grouped-locus likelihood/search path up to the same standard. Only after those fit-level gates are restored should the native trust warning be reconsidered.
+**Progress:** The vendored README fixtures now share upstream/native result normalization, and the native search path runs independently again with Java-style RNG handling, exact Java `nextLong` spawning, and Java-style coordinatewise shuffle semantics. The native optimizer now reaches the same best-fit parameter vector as upstream on both README `exp` and README `IM`. The remaining fixed-point likelihood gap at the upstream best-fit parameters is about `7.45e-4` on `exp` and about `3.15e-2` on `IM`.
+**Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and treat best-parameter parity and fixed-point likelihood parity as separate gates. Also keep the diagnostics script aligned with the upstream bridge by selecting the best oracle row, not merely the last printed row.
+**Context:** diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer, stochastic optimizer replay, and Java-bridge validation path.
+**Remaining tasks:** Close the remaining fixed-point likelihood delta on the README `exp` and `IM` fixtures now that optimizer parity is in place. Only after those fit-value gates are restored should the native trust warning be reconsidered.
 **References:** :doc:`methods/dical2`, :doc:`internals-dical2`, ``tests/integration/test_dical2_upstream_validation.py``
 
 ## SMC++

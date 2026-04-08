@@ -167,9 +167,9 @@ fixture matrix rather than across arbitrary runs.
           :alt: diCal2 native figure
 
        Current independent native run on the README `exp` bundle.
-       Oracle-point and explicit-start parity on this fixture are now close to
-       upstream, but the current full meta-start search still misses the
-       upstream best fit.
+       The native search now reaches the same best-fit parameters as upstream on
+       this fixture; the small remaining gap is in the reported log-likelihood
+       at that shared point.
 
      - **Upstream**
 
