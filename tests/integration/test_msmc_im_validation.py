@@ -11,8 +11,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from smckit._core import SmcData
 from smckit.io import read_msmc_combined_output, read_msmc_im_output
 from smckit.tl import msmc_im
+from smckit.tl._implementation import NativeTrustWarning
+from smckit.tl._msmc_im import _read_msmc_im_fittingdetails, _threshold_migration_rates
 
 pytestmark = [
     pytest.mark.filterwarnings(
@@ -31,7 +34,17 @@ ROOT = Path(__file__).resolve().parents[2]
 INPUT = ROOT / "vendor" / "MSMC-IM" / "example" / "Yoruba_French.8haps.combined.msmc2.final.txt"
 UPSTREAM = ROOT / "vendor" / "MSMC-IM" / "MSMC_IM.py"
 
-NATIVE_ORACLE_CASES = [
+ORACLE_CASES = [
+    pytest.param(
+        "default",
+        "1*2+25*1+1*2+1*3",
+        (1e-8, 1e-6),
+        1.25e-8,
+        15000.0,
+        15000.0,
+        1e-4,
+        id="default",
+    ),
     pytest.param(
         "lighter_penalty",
         "1*2+25*1+1*2+1*3",
@@ -52,20 +65,42 @@ NATIVE_ORACLE_CASES = [
         8e-5,
         id="alt_pattern",
     ),
+    pytest.param(
+        "asymmetric_stronger_penalty_low_m",
+        "1*2+25*1+1*2+1*3",
+        (2e-8, 2e-6),
+        1.25e-8,
+        22000.0,
+        9000.0,
+        2e-6,
+        id="asymmetric_stronger_penalty_low_m",
+    ),
 ]
+
+ARRAY_FIELDS = (
+    "left_boundary",
+    "right_boundary",
+    "N1",
+    "N2",
+    "N1_raw",
+    "N2_raw",
+    "m",
+    "m_thresholded",
+    "M",
+)
 
 
 def _run_vendored_cli(
     tmp_path: Path,
     *,
-    name: str = "yoruba_french",
-    pattern: str = "1*2+25*1+1*2+1*3",
-    beta: tuple[float, float] = (1e-8, 1e-6),
-    mu: float = 1.25e-8,
-    N1_init: float = 15000.0,
-    N2_init: float = 15000.0,
-    m_init: float = 1e-4,
-) -> dict[str, np.ndarray]:
+    name: str,
+    pattern: str,
+    beta: tuple[float, float],
+    mu: float,
+    N1_init: float,
+    N2_init: float,
+    m_init: float,
+) -> dict[str, object]:
     out_prefix = tmp_path / name
     mplconfigdir = tmp_path / "mplconfig"
     mplconfigdir.mkdir()
@@ -91,6 +126,7 @@ def _run_vendored_cli(
             f"{beta[0]},{beta[1]}",
             "-o",
             str(out_prefix),
+            "--printfittingdetails",
             "--xlog",
             str(INPUT),
         ],
@@ -101,9 +137,42 @@ def _run_vendored_cli(
         stderr=subprocess.DEVNULL,
     )
 
-    matches = sorted(tmp_path.glob(f"{name}.b1_*.b2_*.MSMC_IM.estimates.txt"))
-    assert len(matches) == 1
-    return read_msmc_im_output(matches[0])
+    estimates_matches = sorted(tmp_path.glob(f"{name}.b1_*.b2_*.MSMC_IM.estimates.txt"))
+    fittingdetails_matches = sorted(tmp_path.glob(f"{name}.b1_*.b2_*.MSMC_IM.fittingdetails.txt"))
+    assert len(estimates_matches) == 1
+    assert len(fittingdetails_matches) == 1
+
+    estimates = read_msmc_im_output(estimates_matches[0])
+    fittingdetails = _read_msmc_im_fittingdetails(fittingdetails_matches[0])
+
+    np.testing.assert_allclose(
+        fittingdetails["left_boundary"],
+        estimates["left_boundary"],
+        rtol=0.0,
+        atol=0.0,
+    )
+    np.testing.assert_allclose(fittingdetails["N1"], estimates["N1"], rtol=5e-10, atol=1e-12)
+    np.testing.assert_allclose(fittingdetails["N2"], estimates["N2"], rtol=5e-10, atol=1e-12)
+
+    return {
+        "left_boundary": estimates["left_boundary"],
+        "right_boundary": _expected_right_boundary(mu=mu),
+        "N1": estimates["N1"],
+        "N2": estimates["N2"],
+        "N1_raw": fittingdetails["N1_raw"],
+        "N2_raw": fittingdetails["N2_raw"],
+        "m": estimates["m"],
+        "m_thresholded": _threshold_migration_rates(estimates["m"], estimates["M"]),
+        "M": estimates["M"],
+        "init_chi_square": float(fittingdetails["init_chi_square"]),
+        "final_chi_square": float(fittingdetails["final_chi_square"]),
+        "split_time_quantiles": _expected_split_time_quantiles(
+            estimates["left_boundary"],
+            estimates["M"],
+        ),
+        "pattern": pattern,
+        "beta": beta,
+    }
 
 
 def _expected_right_boundary(mu: float = 1.25e-8) -> np.ndarray:
@@ -140,58 +209,61 @@ def _expected_split_time_quantiles(
     return quantiles
 
 
-def _assert_split_quantiles_match(result: dict[str, object]) -> None:
-    expected = _expected_split_time_quantiles(
-        np.asarray(result["left_boundary"], dtype=np.float64),
-        np.asarray(result["M"], dtype=np.float64),
-    )
+def _assert_split_quantiles_match(
+    result: dict[str, object],
+    expected: dict[float, float],
+) -> None:
     assert result["split_time_quantiles"].keys() == expected.keys()
     for q, t in expected.items():
         assert result["split_time_quantiles"][q] == pytest.approx(t)
 
 
-def _assert_matches_oracle(
-    result: dict[str, object],
-    ref: dict[str, np.ndarray],
-    *,
-    mu: float = 1.25e-8,
+def _assert_matches_oracle(result: dict[str, object], ref: dict[str, object]) -> None:
+    for field in ARRAY_FIELDS:
+        atol = 0.0 if field in {"left_boundary", "right_boundary"} else 1e-12
+        rtol = 0.0 if field in {"left_boundary", "right_boundary"} else 5e-10
+        np.testing.assert_allclose(result[field], ref[field], rtol=rtol, atol=atol)
+
+    assert result["init_chi_square"] == pytest.approx(ref["init_chi_square"])
+    assert result["final_chi_square"] == pytest.approx(ref["final_chi_square"])
+    assert result["pattern"] == ref["pattern"]
+    assert result["beta"] == ref["beta"]
+    _assert_split_quantiles_match(result, ref["split_time_quantiles"])
+
+
+def _assert_public_payloads_match(
+    native: dict[str, object],
+    upstream: dict[str, object],
 ) -> None:
-    np.testing.assert_allclose(
-        result["left_boundary"],
-        ref["left_boundary"],
-        rtol=0.0,
-        atol=0.0,
-    )
-    np.testing.assert_allclose(result["N1"], ref["N1"], rtol=5e-10, atol=1e-12)
-    np.testing.assert_allclose(result["N2"], ref["N2"], rtol=5e-10, atol=1e-12)
-    np.testing.assert_allclose(result["m"], ref["m"], rtol=5e-10, atol=1e-12)
-    np.testing.assert_allclose(result["M"], ref["M"], rtol=5e-10, atol=1e-12)
-    np.testing.assert_allclose(
-        result["right_boundary"],
-        _expected_right_boundary(mu=mu),
-        rtol=0.0,
-        atol=0.0,
-    )
-    _assert_split_quantiles_match(result)
+    assert set(native.keys()) == {
+        *ARRAY_FIELDS,
+        "init_chi_square",
+        "final_chi_square",
+        "split_time_quantiles",
+        "pattern",
+        "beta",
+        "implementation_requested",
+        "implementation",
+    }
+    assert set(upstream.keys()) == set(native.keys()) | {"backend", "upstream"}
 
+    for field in ARRAY_FIELDS:
+        atol = 0.0 if field in {"left_boundary", "right_boundary"} else 1e-12
+        rtol = 0.0 if field in {"left_boundary", "right_boundary"} else 5e-10
+        np.testing.assert_allclose(native[field], upstream[field], rtol=rtol, atol=atol)
 
-def test_msmc_im_matches_vendored_cli(tmp_path: Path) -> None:
-    ref = _run_vendored_cli(tmp_path)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        ours = msmc_im(INPUT, implementation="native").results["msmc_im"]
-
-    runtime_warnings = [w for w in caught if issubclass(w.category, RuntimeWarning)]
-    assert runtime_warnings == []
-
-    _assert_matches_oracle(ours, ref)
+    assert native["init_chi_square"] == pytest.approx(upstream["init_chi_square"])
+    assert native["final_chi_square"] == pytest.approx(upstream["final_chi_square"])
+    assert native["split_time_quantiles"] == pytest.approx(upstream["split_time_quantiles"])
+    assert native["pattern"] == upstream["pattern"]
+    assert native["beta"] == upstream["beta"]
 
 
 @pytest.mark.parametrize(
     ("name", "pattern", "beta", "mu", "N1_init", "N2_init", "m_init"),
-    NATIVE_ORACLE_CASES,
+    ORACLE_CASES,
 )
-def test_msmc_im_matches_vendored_cli_on_nondefault_cases(
+def test_msmc_im_native_and_upstream_match_vendored_cli_on_oracle_matrix(
     tmp_path: Path,
     name: str,
     pattern: str,
@@ -213,7 +285,7 @@ def test_msmc_im_matches_vendored_cli_on_nondefault_cases(
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        ours = msmc_im(
+        native = msmc_im(
             INPUT,
             implementation="native",
             pattern=pattern,
@@ -224,17 +296,64 @@ def test_msmc_im_matches_vendored_cli_on_nondefault_cases(
             m_init=m_init,
         ).results["msmc_im"]
 
+    assert not any(isinstance(item.message, NativeTrustWarning) for item in caught)
     runtime_warnings = [w for w in caught if issubclass(w.category, RuntimeWarning)]
     assert runtime_warnings == []
 
-    _assert_matches_oracle(ours, ref, mu=mu)
+    upstream = msmc_im(
+        INPUT,
+        implementation="upstream",
+        pattern=pattern,
+        beta=beta,
+        mu=mu,
+        N1_init=N1_init,
+        N2_init=N2_init,
+        m_init=m_init,
+    ).results["msmc_im"]
+
+    _assert_matches_oracle(native, ref)
+    _assert_matches_oracle(upstream, ref)
+    _assert_public_payloads_match(native, upstream)
+
+    assert native["implementation_requested"] == "native"
+    assert native["implementation"] == "native"
+    assert "backend" not in native
+    assert "upstream" not in native
+
+    assert upstream["implementation_requested"] == "upstream"
+    assert upstream["implementation"] == "upstream"
+    assert upstream["backend"] == "upstream"
+    assert upstream["upstream"]["effective_args"]["pattern"] == pattern
+    assert upstream["upstream"]["effective_args"]["beta"] == [float(beta[0]), float(beta[1])]
+    assert upstream["upstream"]["effective_args"]["mu"] == pytest.approx(mu)
+    assert upstream["upstream"]["effective_args"]["printfittingdetails"] is True
+    assert upstream["upstream"]["effective_args"]["xlog"] is True
+    assert Path(upstream["upstream"]["estimates_path"]).name.endswith(".MSMC_IM.estimates.txt")
+    assert Path(upstream["upstream"]["fittingdetails_path"]).name.endswith(
+        ".MSMC_IM.fittingdetails.txt"
+    )
 
 
-def test_msmc_im_public_upstream_runner_matches_vendored_cli(tmp_path: Path) -> None:
-    ref = _run_vendored_cli(tmp_path)
-    upstream = msmc_im(INPUT, implementation="upstream").results["msmc_im"]
+def test_msmc_im_public_upstream_runner_matches_vendored_cli_for_in_memory_input(
+    tmp_path: Path,
+) -> None:
+    ref = _run_vendored_cli(
+        tmp_path,
+        name="in_memory",
+        pattern="1*2+25*1+1*2+1*3",
+        beta=(1e-8, 1e-6),
+        mu=1.25e-8,
+        N1_init=15000.0,
+        N2_init=15000.0,
+        m_init=1e-4,
+    )
+    msmc_combined = dict(read_msmc_combined_output(INPUT, mu=1.25e-8))
+    msmc_combined.pop("source_path", None)
+    data = SmcData()
+    data.uns["msmc_combined"] = msmc_combined
+
+    upstream = msmc_im(data, implementation="upstream").results["msmc_im"]
 
     _assert_matches_oracle(upstream, ref)
     assert upstream["implementation"] == "upstream"
-    assert upstream["upstream"]["effective_args"]["pattern"] == "1*2+25*1+1*2+1*3"
-    assert upstream["upstream"]["effective_args"]["mu"] == pytest.approx(1.25e-8)
+    assert Path(upstream["upstream"]["input_path"]).name == "combined.final.txt"

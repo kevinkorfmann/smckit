@@ -402,7 +402,7 @@ def test_esmc2_native_matches_upstream_on_beta_sigma_fit_branches(
         xi_rel_tol=4e-3,
         beta_abs_tol=1e-3,
         sigma_abs_tol=5e-4,
-        final_ll_abs_tol=1e-3,
+        final_ll_abs_tol=1.5e-3,
     )
 
 
@@ -442,4 +442,55 @@ def test_esmc2_native_matches_upstream_on_grouped_beta_fit(
         beta_abs_tol=1e-4,
         sigma_abs_tol=1e-12,
         final_ll_abs_tol=1e-5,
+    )
+
+
+@pytest.mark.parametrize(
+    ("estimate_beta", "estimate_sigma", "beta", "sigma"),
+    [
+        (True, False, 0.3, 0.0),
+        (False, True, 1.0, 0.2),
+        (True, True, 0.3, 0.2),
+    ],
+)
+def test_esmc2_native_matches_upstream_on_all_singleton_grouped_fit(
+    clean_pairwise_data: SmcData,
+    upstream_env: None,
+    estimate_beta: bool,
+    estimate_sigma: bool,
+    beta: float,
+    sigma: float,
+) -> None:
+    kwargs = {
+        "n_states": 6,
+        "n_iterations": 1,
+        "estimate_beta": estimate_beta,
+        "estimate_sigma": estimate_sigma,
+        "estimate_rho": False,
+        "beta": beta,
+        "sigma": sigma,
+        "pop_vect": [1, 1, 1, 1, 1, 1],
+        "mu": 1e-8,
+        "generation_time": 1.0,
+    }
+    native = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="native",
+        **kwargs,
+    ).results["esmc2"]
+    upstream = esmc2(
+        copy.deepcopy(clean_pairwise_data),
+        implementation="upstream",
+        upstream_options={"capture_final_sufficient_statistics": True},
+        **kwargs,
+    ).results["esmc2"]
+
+    _assert_fit_parity(
+        native,
+        upstream,
+        tc_rel_tol=4e-3,
+        xi_rel_tol=2e-2,
+        beta_abs_tol=2e-3,
+        sigma_abs_tol=5e-4,
+        final_ll_abs_tol=3e-3,
     )

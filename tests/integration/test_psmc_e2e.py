@@ -76,3 +76,26 @@ def test_psmc_likelihood_improves(tmp_path):
     assert len(lls) >= 2
     # Final should be better than first
     assert lls[-1] >= lls[0] - abs(lls[0]) * 0.01
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("seed", [1, 5, 6])
+def test_psmc_real_fixture_avoids_zero_division(seed):
+    """The packaged quickstart fixture should not fail for unlucky seeds."""
+    data = read_psmcfa(smckit.io.example_path("psmc/NA12878_chr22.psmcfa"))
+    data = psmc(
+        data,
+        pattern="4+5*3+4",
+        n_iterations=2,
+        max_t=15.0,
+        tr_ratio=4.0,
+        mu=1.25e-8,
+        generation_time=25.0,
+        implementation="native",
+        seed=seed,
+    )
+
+    res = data.results["psmc"]
+    assert res["theta"] > 0
+    assert res["rho"] > 0
+    assert np.all(np.isfinite(res["ne"]))

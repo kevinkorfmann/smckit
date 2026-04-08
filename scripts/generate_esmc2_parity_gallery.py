@@ -9,6 +9,8 @@ parity decisions. This script replaces that with:
    Demographic overlays for the tracked native/upstream fit cases.
 2. ``docs/gallery/esmc2_parity_transition.png``:
    Transition-matrix agreement for representative challenging fit branches.
+3. ``docs/gallery/esmc2_parameter_estimation.png``:
+   Vendor-style parameter-estimation modes on the tracked oracle fixture.
 """
 
 from __future__ import annotations
@@ -449,6 +451,109 @@ def plot_transition_agreement(results_by_slug: dict[str, dict[str, object]]) -> 
     print(f"saved {path.relative_to(ROOT)}")
 
 
+def plot_parameter_estimation(results_by_slug: dict[str, dict[str, object]]) -> None:
+    parameter_cases = [
+        ("redo_rho", "Rho = T", "estimate rho + Xi"),
+        ("beta", "SB = T", "estimate beta + Xi"),
+        ("sigma", "SF = T", "estimate sigma + Xi"),
+        ("beta_sigma", "SB = T, SF = T", "joint fit"),
+    ]
+
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.0))
+
+    positive_x: list[np.ndarray] = []
+    positive_y: list[np.ndarray] = []
+    for slug, _, _ in parameter_cases:
+        for implementation in ("native", "upstream"):
+            result = results_by_slug[slug][implementation]
+            x = _history_x(result["time_years"])
+            y = np.asarray(result["ne"], dtype=np.float64)
+            positive_x.append(x[x > 0.0])
+            positive_y.append(y[y > 0.0])
+    x_all = np.concatenate(positive_x)
+    y_all = np.concatenate(positive_y)
+    xlim = (x_all.min() * 0.8, x_all.max() * 1.25)
+    ylim = (y_all.min() * 0.8, y_all.max() * 1.25)
+
+    for ax, (slug, vendor_flags, subtitle) in zip(axes.flat, parameter_cases, strict=True):
+        native = results_by_slug[slug]["native"]
+        upstream = results_by_slug[slug]["upstream"]
+
+        x_native = _history_x(native["time_years"])
+        x_upstream = _history_x(upstream["time_years"])
+        y_native = np.asarray(native["ne"], dtype=np.float64)
+        y_upstream = np.asarray(upstream["ne"], dtype=np.float64)
+
+        ax.step(
+            x_upstream,
+            y_upstream,
+            where="post",
+            color=COLORS["upstream"],
+            linewidth=2.2,
+            label="upstream",
+        )
+        ax.step(
+            x_native,
+            y_native,
+            where="post",
+            color=COLORS["native"],
+            linewidth=1.8,
+            linestyle="--",
+            label="native",
+        )
+        ax.scatter(x_upstream, y_upstream, s=16, color=COLORS["upstream"], zorder=3)
+        ax.scatter(x_native, y_native, s=12, color=COLORS["native"], zorder=3)
+
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
+        ax.set_title(f"{vendor_flags}\n{subtitle}")
+        ax.set_xlabel("Generations before present")
+        ax.set_ylabel("Effective population size")
+        ax.text(
+            0.03,
+            0.03,
+            (
+                f"upstream beta={float(upstream['beta']):.3f} "
+                f"sigma={float(upstream['sigma']):.3f} "
+                f"rho={float(upstream['rho']):.2e}\n"
+                f"native   beta={float(native['beta']):.3f} "
+                f"sigma={float(native['sigma']):.3f} "
+                f"rho={float(native['rho']):.2e}"
+            ),
+            transform=ax.transAxes,
+            fontsize=8,
+            color=COLORS["text"],
+            ha="left",
+            va="bottom",
+            bbox={"facecolor": "white", "edgecolor": COLORS["grid"], "alpha": 0.92},
+        )
+
+    axes[0, 0].legend(loc="upper left", fontsize=9)
+    fig.suptitle(
+        "eSMC2 Vendor-Style Parameter Estimation Modes on the Tracked Oracle Fixture",
+        fontsize=15,
+        y=0.98,
+    )
+    fig.text(
+        0.5,
+        0.02,
+        (
+            "Tutorial_3 flag mapping: Rho -> estimate_rho, SB -> estimate_beta, "
+            "SF -> estimate_sigma. Xi is fitted in every panel."
+        ),
+        ha="center",
+        fontsize=9,
+        color=COLORS["text"],
+    )
+    fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+    path = OUTDIR / "esmc2_parameter_estimation.png"
+    fig.savefig(path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    print(f"saved {path.relative_to(ROOT)}")
+
+
 def main() -> None:
     apply_style()
     if "SMCKIT_ESMC2_RSCRIPT" not in os.environ:
@@ -461,6 +566,7 @@ def main() -> None:
     results_by_slug = {result["case"]["slug"]: result for result in results}
     plot_demography(results)
     plot_transition_agreement(results_by_slug)
+    plot_parameter_estimation(results_by_slug)
 
 
 if __name__ == "__main__":

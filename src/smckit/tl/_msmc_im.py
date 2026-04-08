@@ -15,6 +15,7 @@ import importlib.util
 import logging
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -38,6 +39,7 @@ from smckit.tl._implementation import (
     normalize_implementation,
     require_upstream_available,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,6 +76,128 @@ def _vendor_warning_filters() -> None:
         message="invalid value encountered in scalar divide",
         category=RuntimeWarning,
     )
+
+
+def _threshold_migration_rates(
+    migration_rates: np.ndarray,
+    cumulative_migration: np.ndarray,
+) -> np.ndarray:
+    """Match the vendored post-fit migration thresholding rule."""
+    return np.where(
+        np.asarray(cumulative_migration, dtype=np.float64) <= 0.999,
+        np.asarray(migration_rates, dtype=np.float64),
+        1e-30,
+    )
+
+
+def _compute_split_time_quantiles(
+    left_boundary: np.ndarray,
+    cumulative_migration: np.ndarray,
+) -> dict[float, float]:
+    """Compute the standard MSMC-IM split-time quantiles from ``M(t)``."""
+    split_quantiles: dict[float, float] = {}
+    max_migration = float(np.max(cumulative_migration))
+    for q in [0.25, 0.5, 0.75]:
+        if max_migration >= q:
+            split_quantiles[q] = _get_cdf_intersect(left_boundary, cumulative_migration, q)
+    return split_quantiles
+
+
+def _build_msmc_im_payload(
+    *,
+    left_boundary: np.ndarray,
+    right_boundary: np.ndarray,
+    N1: np.ndarray,
+    N2: np.ndarray,
+    N1_raw: np.ndarray | None = None,
+    N2_raw: np.ndarray | None = None,
+    m: np.ndarray,
+    M: np.ndarray,
+    init_chi_square: float,
+    final_chi_square: float,
+    pattern: str,
+    beta: tuple[float, float],
+    extra: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Build the shared public MSMC-IM result payload."""
+    payload: dict[str, object] = {
+        "left_boundary": np.asarray(left_boundary, dtype=np.float64),
+        "right_boundary": np.asarray(right_boundary, dtype=np.float64),
+        "N1": np.asarray(N1, dtype=np.float64),
+        "N2": np.asarray(N2, dtype=np.float64),
+        "N1_raw": np.asarray(N1 if N1_raw is None else N1_raw, dtype=np.float64),
+        "N2_raw": np.asarray(N2 if N2_raw is None else N2_raw, dtype=np.float64),
+        "m": np.asarray(m, dtype=np.float64),
+        "m_thresholded": _threshold_migration_rates(m, M),
+        "M": np.asarray(M, dtype=np.float64),
+        "init_chi_square": float(init_chi_square),
+        "final_chi_square": float(final_chi_square),
+        "split_time_quantiles": _compute_split_time_quantiles(
+            np.asarray(left_boundary, dtype=np.float64),
+            np.asarray(M, dtype=np.float64),
+        ),
+        "pattern": pattern,
+        "beta": beta,
+    }
+    if extra:
+        payload.update(extra)
+    return payload
+
+
+def _read_msmc_im_fittingdetails(path: str | Path) -> dict[str, np.ndarray | float]:
+    """Parse the vendored MSMC-IM ``.fittingdetails.txt`` artifact."""
+    path = Path(path)
+    chi_square_pattern = re.compile(
+        r"Initial Chi-Square distance is ([^ ]+) and final Chi-Square distance is ([^ ]+)"
+    )
+
+    header: list[str] | None = None
+    left_boundary: list[float] = []
+    N1_raw: list[float] = []
+    N2_raw: list[float] = []
+    N1: list[float] = []
+    N2: list[float] = []
+    init_chi_square = float("nan")
+    final_chi_square = float("nan")
+
+    with path.open("rt", encoding="utf-8") as fh:
+        for raw_line in fh:
+            line = raw_line.strip()
+            if not line:
+                continue
+            match = chi_square_pattern.search(line)
+            if match is not None:
+                init_chi_square = float(match.group(1))
+                final_chi_square = float(match.group(2))
+                continue
+            if line.startswith("left_boundaries\t"):
+                header = line.split("\t")
+                continue
+            if header is None:
+                continue
+
+            parts = line.split("\t")
+            if len(parts) < len(header):
+                continue
+            row = dict(zip(header, parts))
+            left_boundary.append(float(row["left_boundaries"]))
+            N1_raw.append(float(row["naive_im_N1"]))
+            N2_raw.append(float(row["naive_im_N2"]))
+            N1.append(float(row["im_N1"]))
+            N2.append(float(row["im_N2"]))
+
+    if not left_boundary:
+        raise ValueError(f"No MSMC-IM fitting details found in {path}")
+
+    return {
+        "left_boundary": np.asarray(left_boundary, dtype=np.float64),
+        "N1_raw": np.asarray(N1_raw, dtype=np.float64),
+        "N2_raw": np.asarray(N2_raw, dtype=np.float64),
+        "N1": np.asarray(N1, dtype=np.float64),
+        "N2": np.asarray(N2, dtype=np.float64),
+        "init_chi_square": init_chi_square,
+        "final_chi_square": final_chi_square,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -986,6 +1110,7 @@ def msmc_im(
         implementation,
         upstream_available=method_upstream_available("msmc_im"),
     )
+    warn_if_native_not_trusted("msmc_im", implementation_used)
     if implementation_used == "upstream":
         return _msmc_im_upstream(
             data,
@@ -1091,19 +1216,9 @@ def msmc_im(
     # Cumulative migration
     cum_mig = _cumulative_migration(right_boundary, m_list)
 
-    # Correct migration rates beyond full mixing
-    m_list_prime = np.where(cum_mig <= 0.999, m_list, 1e-30)
-
     # Correct population sizes by cumulative migration
     N1_corrected = (1 - cum_mig) * N1_list + cum_mig * 2 / (1 / N1_list)
     N2_corrected = (1 - cum_mig) * N2_list + cum_mig * 2 / (1 / N2_list)
-
-    # Compute split time quantiles from M(t)
-    split_quantiles: dict[float, float] = {}
-    max_M = float(np.max(cum_mig))
-    for q in [0.25, 0.5, 0.75]:
-        if max_M >= q:
-            split_quantiles[q] = _get_cdf_intersect(left_boundary, cum_mig, q)
 
     result = MsmcImResult(
         left_boundary=left_boundary,
@@ -1116,28 +1231,30 @@ def msmc_im(
         N2_corrected=N2_corrected,
         init_chi_square=init_chi_sq,
         final_chi_square=final_chi_sq,
-        split_time_quantiles=split_quantiles,
+        split_time_quantiles=_compute_split_time_quantiles(left_boundary, cum_mig),
         pattern=pattern,
         beta=beta,
         mu=mu,
     )
 
-    data.results["msmc_im"] = annotate_result({
-        "left_boundary": result.left_boundary,
-        "right_boundary": result.right_boundary,
-        "N1": result.N1_corrected,
-        "N2": result.N2_corrected,
-        "N1_raw": result.N1,
-        "N2_raw": result.N2,
-        "m": result.m,
-        "m_thresholded": m_list_prime,
-        "M": result.M,
-        "init_chi_square": result.init_chi_square,
-        "final_chi_square": result.final_chi_square,
-        "split_time_quantiles": result.split_time_quantiles,
-        "pattern": result.pattern,
-        "beta": result.beta,
-    }, implementation_requested=implementation, implementation_used=implementation_used)
+    data.results["msmc_im"] = annotate_result(
+        _build_msmc_im_payload(
+            left_boundary=result.left_boundary,
+            right_boundary=result.right_boundary,
+            N1=result.N1_corrected,
+            N2=result.N2_corrected,
+            N1_raw=result.N1,
+            N2_raw=result.N2,
+            m=result.m,
+            M=result.M,
+            init_chi_square=result.init_chi_square,
+            final_chi_square=result.final_chi_square,
+            pattern=result.pattern,
+            beta=result.beta,
+        ),
+        implementation_requested=implementation,
+        implementation_used=implementation_used,
+    )
     data.params["mu"] = mu
 
     return data
@@ -1214,7 +1331,20 @@ def _msmc_im_upstream(
         "m_init": float(m_init),
     }
     cli_options = dict(upstream_options or {})
-    effective_args.update(cli_options)
+    printfittingdetails_requested = bool(cli_options.pop("printfittingdetails", False))
+    plotfittingdetails = bool(cli_options.pop("plotfittingdetails", False))
+    xlog = bool(cli_options.pop("xlog", True))
+    ylog = bool(cli_options.pop("ylog", False))
+    effective_args.update(
+        {
+            "printfittingdetails": True,
+            "plotfittingdetails": plotfittingdetails,
+            "xlog": xlog,
+            "ylog": ylog,
+        }
+    )
+    if printfittingdetails_requested:
+        effective_args["printfittingdetails_requested"] = True
 
     try:
         with tempfile.TemporaryDirectory(prefix="smckit-msmc-im-") as tmpdir:
@@ -1240,13 +1370,14 @@ def _msmc_im_upstream(
                 "-o",
                 str(out_prefix),
             ]
-            if cli_options.pop("printfittingdetails", False):
-                cmd.append("--printfittingdetails")
-            if cli_options.pop("plotfittingdetails", False):
+            # The temp-dir upstream bridge always requests fitting details so it
+            # can reconstruct the same public payload contract as native mode.
+            cmd.append("--printfittingdetails")
+            if plotfittingdetails:
                 cmd.append("--plotfittingdetails")
-            if cli_options.pop("xlog", True):
+            if xlog:
                 cmd.append("--xlog")
-            if cli_options.pop("ylog", False):
+            if ylog:
                 cmd.append("--ylog")
             unsupported = ", ".join(sorted(cli_options))
             if unsupported:
@@ -1273,50 +1404,68 @@ def _msmc_im_upstream(
                 raise RuntimeError("Upstream MSMC-IM did not produce an estimates file.")
             estimates_path = candidates[0]
             parsed = read_msmc_im_output(estimates_path)
+            fittingdetails_candidates = sorted(tmpdir_path.glob("*.MSMC_IM.fittingdetails.txt"))
+            if not fittingdetails_candidates:
+                raise RuntimeError(
+                    "Upstream MSMC-IM did not produce a fittingdetails file."
+                )
+            fittingdetails_path = fittingdetails_candidates[0]
+            fittingdetails = _read_msmc_im_fittingdetails(fittingdetails_path)
+            if len(fittingdetails["left_boundary"]) != len(parsed["left_boundary"]) or not np.allclose(
+                fittingdetails["left_boundary"],
+                parsed["left_boundary"],
+                rtol=0.0,
+                atol=0.0,
+            ):
+                raise RuntimeError(
+                    "Upstream MSMC-IM fittingdetails output did not align with "
+                    "the estimates time grid."
+                )
+            if not np.allclose(fittingdetails["N1"], parsed["N1"], rtol=5e-10, atol=1e-12):
+                raise RuntimeError(
+                    "Upstream MSMC-IM fittingdetails corrected N1 values did not "
+                    "match the estimates output."
+                )
+            if not np.allclose(fittingdetails["N2"], parsed["N2"], rtol=5e-10, atol=1e-12):
+                raise RuntimeError(
+                    "Upstream MSMC-IM fittingdetails corrected N2 values did not "
+                    "match the estimates output."
+                )
             msmc_data = smc_data.uns["msmc_combined"]
             right_boundary = np.asarray(msmc_data["right_boundary"], dtype=np.float64).copy()
             if len(right_boundary) == len(parsed["left_boundary"]):
                 right_boundary[-1] = parsed["left_boundary"][-1] * 4.0
 
-            split_quantiles: dict[float, float] = {}
-            max_M = float(np.max(parsed["M"]))
-            for q in [0.25, 0.5, 0.75]:
-                if max_M >= q:
-                    split_quantiles[q] = _get_cdf_intersect(
-                        parsed["left_boundary"],
-                        parsed["M"],
-                        q,
-                    )
-
             smc_data.results["msmc_im"] = annotate_result(
-                {
-                    "left_boundary": parsed["left_boundary"],
-                    "right_boundary": right_boundary,
-                    "N1": parsed["N1"],
-                    "N2": parsed["N2"],
-                    "N1_raw": parsed["N1"],
-                    "N2_raw": parsed["N2"],
-                    "m": parsed["m"],
-                    "m_thresholded": parsed["m"],
-                    "M": parsed["M"],
-                    "init_chi_square": np.nan,
-                    "final_chi_square": np.nan,
-                    "split_time_quantiles": split_quantiles,
-                    "pattern": pattern,
-                    "beta": beta,
-                    "backend": "upstream",
-                    "upstream": standard_upstream_metadata(
-                        "msmc_im",
-                        effective_args=effective_args,
-                        extra={
-                            "script": str(script),
-                            "input_path": str(input_path),
-                            "estimates_path": str(estimates_path),
-                            "stdout": proc.stdout,
-                            "stderr": proc.stderr,
-                        },
-                    ),
-                },
+                _build_msmc_im_payload(
+                    left_boundary=parsed["left_boundary"],
+                    right_boundary=right_boundary,
+                    N1=parsed["N1"],
+                    N2=parsed["N2"],
+                    N1_raw=fittingdetails["N1_raw"],
+                    N2_raw=fittingdetails["N2_raw"],
+                    m=parsed["m"],
+                    M=parsed["M"],
+                    init_chi_square=float(fittingdetails["init_chi_square"]),
+                    final_chi_square=float(fittingdetails["final_chi_square"]),
+                    pattern=pattern,
+                    beta=beta,
+                    extra={
+                        "backend": "upstream",
+                        "upstream": standard_upstream_metadata(
+                            "msmc_im",
+                            effective_args=effective_args,
+                            extra={
+                                "script": str(script),
+                                "input_path": str(input_path),
+                                "estimates_path": str(estimates_path),
+                                "fittingdetails_path": str(fittingdetails_path),
+                                "stdout": proc.stdout,
+                                "stderr": proc.stderr,
+                            },
+                        ),
+                    },
+                ),
                 implementation_requested=implementation_requested,
                 implementation_used="upstream",
             )

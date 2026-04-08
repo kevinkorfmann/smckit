@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from smckit.settings import settings
+from smckit.upstream._install import install_help
 
 
 def repo_root() -> Path:
@@ -205,6 +206,7 @@ class UpstreamToolSpec:
             "bootstrap_summary": self.bootstrap_summary,
             "bootstrap_commands": [list(cmd) for cmd in self.bootstrap_commands],
             "missing": missing,
+            "install_help": install_help(self.name, source_present=self.source_present()),
             "notes": self.notes,
         }
 
@@ -332,11 +334,15 @@ def bootstrap_tool(name: str) -> dict[str, Any]:
     status = spec.status()
     if not spec.source_present():
         raise RuntimeError(
-            f"Cannot bootstrap upstream {name}: vendored source is missing from {status['vendor_path']}."
+            "Cannot bootstrap upstream "
+            f"{name}: vendored source is missing from {status['vendor_path']}.\n"
+            f"{status['install_help']}"
         )
     if not spec.runtime_ready():
         raise RuntimeError(
-            f"Cannot bootstrap upstream {name}: {spec.runtime_name} runtime is unavailable."
+            "Cannot bootstrap upstream "
+            f"{name}: {spec.runtime_name} runtime is unavailable.\n"
+            f"{status['install_help']}"
         )
 
     cache_path = spec.cache_path

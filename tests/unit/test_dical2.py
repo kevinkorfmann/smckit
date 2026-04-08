@@ -22,6 +22,7 @@ from smckit.tl._dical2 import (
     EigenCore,
     ODECore,
     SimpleTrunk,
+    _JavaRandom,
     _build_native_core,
     _build_free_params,
     _old_interval_boundaries,
@@ -146,6 +147,23 @@ class TestResolvedOptions:
             method_options=None,
         )
         assert resolved.nm_fraction == pytest.approx(0.2)
+
+
+class TestJavaRandom:
+    def test_next_long_matches_java_random(self):
+        rng = _JavaRandom(1)
+        observed = [rng.next_long() for _ in range(3)]
+        expected = [
+            -4964420948893066024,
+            7564655870752979346,
+            3831662765844904176,
+        ]
+        assert observed == expected
+
+    def test_permutation_matches_java_collections_shuffle(self):
+        observed = _JavaRandom(1).permutation(5)
+        expected = np.array([2, 3, 1, 4, 0], dtype=np.int64)
+        np.testing.assert_array_equal(observed, expected)
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +301,16 @@ class TestReadDical2:
             reference_file="vendor/diCal2/examples/fromReadme/test.fa",
             filter_pass_string=".",
         )
-        assert data.sequences.shape == (4, 19)
+        assert data.sequences.shape == (4, 2)
+        np.testing.assert_array_equal(data.uns["seg_positions"], np.array([6, 7], dtype=np.int64))
+        assert data.uns["reference_length"] == 19
+        np.testing.assert_array_equal(
+            data.uns["reference_alleles"],
+            np.array(
+                [-1, 0, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, 0, 0, 0, -1, 0, 0, 0],
+                dtype=np.int8,
+            ),
+        )
 
 
 # ---------------------------------------------------------------------------

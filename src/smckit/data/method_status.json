@@ -40,12 +40,12 @@
     "display_name": "MSMC-IM",
     "upstream": "✓",
     "native": "✓",
-    "native_default_eligible": false,
-    "native_trusted_for_docs": false,
-    "tracked_agreement": "<= 3.36e-03 rel err on N1/N2",
-    "notes": "Public upstream bridge runs the vendored Python fitter; the native path is working and closely tracked against it, with upstream still acting as the fidelity baseline.",
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
+    "tracked_agreement": "strict payload match on 4-case upstream-backed oracle matrix",
+    "notes": "Public upstream bridge runs the vendored Python fitter; native and upstream now share the same public payload contract and are interchangeable on the enforced Yoruba/French oracle matrix.",
     "install_extra": "msmc_im",
-    "native_warning": "The native MSMC-IM path is runnable but not yet trusted enough to present as the default package path. Prefer the upstream fitter when oracle provenance matters."
+    "native_warning": null
   },
   {
     "method": "esmc2",

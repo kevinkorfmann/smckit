@@ -35,6 +35,7 @@ from smckit.tl._implementation import (
     normalize_implementation,
     require_upstream_available,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 from smckit.upstream import bootstrap as bootstrap_upstream
 from smckit.upstream import status as upstream_status
@@ -2048,6 +2049,7 @@ def msmc2(
         implementation,
         upstream_available=method_upstream_available("msmc2"),
     )
+    warn_if_native_not_trusted("msmc2", implementation_used)
     if implementation_used == "upstream":
         return _msmc2_upstream(
             data,

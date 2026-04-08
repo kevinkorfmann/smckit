@@ -33,6 +33,7 @@ from smckit.tl._implementation import (
     method_upstream_available,
     normalize_implementation,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 
 logger = logging.getLogger(__name__)
@@ -1172,44 +1173,16 @@ def _sequence_rho_from_public_rho(rho_public: float, L: int) -> float:
 def _stage_order(
     estimate_beta: bool, estimate_sigma: bool, estimate_rho: bool
 ) -> list[tuple[str, ...]]:
-    """Reproduce the R Baum-Welch stage order for the requested parameters."""
-    stages: list[tuple[str, ...]] = []
-
-    def _append(stage: tuple[str, ...]) -> None:
-        if stage not in stages:
-            stages.append(stage)
-
+    """Return the single upstream joint M-step parameter block."""
+    stage: list[str] = []
     if estimate_rho:
-        _append(("rho",))
+        stage.append("rho")
     if estimate_beta:
-        _append(("beta",))
+        stage.append("beta")
     if estimate_sigma:
-        _append(("sigma",))
-
-    if estimate_rho and estimate_beta:
-        _append(("rho", "beta"))
-    if estimate_rho and estimate_sigma:
-        _append(("rho", "sigma"))
-    if estimate_beta and estimate_sigma:
-        _append(("beta", "sigma"))
-
-    if estimate_rho:
-        _append(("rho", "Xi"))
-    if estimate_beta:
-        _append(("beta", "Xi"))
-    if estimate_sigma:
-        _append(("sigma", "Xi"))
-    if estimate_rho and estimate_beta:
-        _append(("rho", "beta", "Xi"))
-    if estimate_rho and estimate_sigma:
-        _append(("rho", "sigma", "Xi"))
-    if estimate_beta and estimate_sigma:
-        _append(("beta", "sigma", "Xi"))
-    if estimate_rho and estimate_beta and estimate_sigma:
-        _append(("rho", "beta", "sigma", "Xi"))
-
-    _append(("Xi",))
-    return stages
+        stage.append("sigma")
+    stage.append("Xi")
+    return [tuple(stage)]
 
 
 def _xi_penalty(xi_free: np.ndarray, rp: tuple[float, float]) -> float:
@@ -2232,7 +2205,7 @@ def _esmc2_native(
                     estimate_sigma=("sigma" in stage),
                     estimate_rho=("rho" in stage),
                     estimate_pop=("Xi" in stage),
-                    maxit=None if ("rho" in stage) else 30,
+                    maxit=None,
                     beta_hidden=beta_hidden,
                     sigma_hidden=sigma_hidden,
                 )
@@ -2508,6 +2481,7 @@ def esmc2(
         implementation,
         upstream_available=method_upstream_available("esmc2"),
     )
+    warn_if_native_not_trusted("esmc2", implementation_used)
 
     if implementation_used == "upstream":
         return _esmc2_upstream(

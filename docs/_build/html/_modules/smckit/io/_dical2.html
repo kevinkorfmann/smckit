@@ -1,0 +1,1429 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smckit.io._dical2 &mdash; smckit 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=e37cf168" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/pretext-layout.js?v=cc9de092"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            smckit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-is-the-coalescent">What is the coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-is-the-sequentially-markovian-coalescent">What is the Sequentially Markovian Coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#the-landscape-of-smc-tools">The landscape of SMC tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-smckit-provides">What smckit provides</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#hello-smckit">Hello, smckit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#where-to-go-next">Where to go next</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-source">Install from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#repo-environment-commands">Repo environment commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#upstream-tool-readiness">Upstream tool readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#runtime-and-bootstrap-matrix">Runtime and bootstrap matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#platform-install-recipes">Platform install recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#windows">Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#bootstrapping-examples">Bootstrapping examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-psmc.html">Quickstart: PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#run-psmc">Run PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-asmc.html">Quickstart: ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#run-asmc">Run ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html">Quickstart: MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#run-msmc2">Run MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html">Quickstart: MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#run-msmc-im">Run MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html">Quickstart: eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#run-esmc2">Run eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html">Quickstart: SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-dical2.html">Quickstart: diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/smcdata.html">The SmcData Container</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#anatomy-of-an-smcdata">Anatomy of an SmcData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#the-pipeline-pattern">The pipeline pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#which-fields-each-method-uses">Which fields each method uses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#comparison-with-anndata">Comparison with AnnData</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/io-formats.html">I/O Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#quick-index">Quick index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#psmcfa">PSMCFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#multihetsep">Multihetsep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#msmc-combined-output">MSMC combined output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#asmc-file-bundle">ASMC file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#smc-span-encoded-input">SMC++ span-encoded input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#dical2-model-file-bundle">diCal2 model-file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#output-readers">Output readers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/choosing-a-method.html">Choosing a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#read-this-table-first">Read this table first</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#a-simple-decision-path">A simple decision path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#one-diploid-genome">One diploid genome</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#multiple-phased-haplotypes">Multiple phased haplotypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#many-unphased-genomes">Many unphased genomes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#structured-demographic-model-files-already-exist">Structured demographic model files already exist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#how-implementation-choice-affects-method-choice">How implementation choice affects method choice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#if-you-are-unsure">If you are unsure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/interpreting-results.html">Interpreting Results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#what-does-n-e-t-mean">What does <span class="math notranslate nohighlight">\(N_e(t)\)</span> mean?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#the-data-results-dictionary">The <code class="docutils literal notranslate"><span class="pre">data.results</span></code> dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#assessing-convergence">Assessing convergence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#em-based-methods-psmc-esmc2-msmc2">EM-based methods (PSMC, eSMC2, MSMC2)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#gradient-based-methods-psmc-ssm-smc">Gradient-based methods (PSMC-SSM, SMC++)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#common-pitfalls">Common pitfalls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/plotting.html">Plotting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#selecting-a-method">Selecting a method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#overlaying-multiple-methods">Overlaying multiple methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#unit-conversion">Unit conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/gallery.html">Gallery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/psmc-ssm.html">PSMC-SSM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#why-we-built-it">Why We Built It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#what-it-is">What It Is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#what-it-buys-you">What It Buys You</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#explicit-hmm-access">1. Explicit HMM access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#a-unified-fitting-interface">2. A unified fitting interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#a-clean-extension-point">3. A clean extension point</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#when-to-use-it">When To Use It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-to-use-it">How To Use It</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#standard-setup">Standard setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#em-fitting">EM fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#gradient-fitting">Gradient fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#convert-back-to-demographic-history">Convert back to demographic history</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-it-is-implemented">How It Is Implemented</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-method-em-relates-to-smckit-tl-psmc">How <code class="docutils literal notranslate"><span class="pre">method=&quot;em&quot;</span></code> Relates To <code class="docutils literal notranslate"><span class="pre">smckit.tl.psmc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-method-gradient-works">How <code class="docutils literal notranslate"><span class="pre">method=&quot;gradient&quot;</span></code> Works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#benchmark-snapshot">Benchmark Snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-to-implement-a-new-smc-model-on-this-pattern">How To Implement A New SMC Model On This Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-1-define-the-hidden-states-and-observations">Step 1: define the hidden states and observations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-2-subclass-smcstatespace">Step 2: subclass <code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-3-add-a-parameter-initializer">Step 3: add a parameter initializer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-4-add-physical-unit-conversion">Step 4: add physical-unit conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-5-validate-against-an-oracle">Step 5: validate against an oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-6-only-then-add-a-gradient-path">Step 6: only then add a gradient path</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#recommended-reading-order">Recommended Reading Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Method Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/psmc.html">PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/asmc.html">ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/msmc2.html">MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/msmc-im.html">MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/esmc2.html">eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/smcpp.html">SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/dical2.html">diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#development-setup">Development setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#code-style">Code style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#running-tests">Running tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#pull-request-workflow">Pull request workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#reporting-bugs">Reporting bugs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#asking-questions">Asking questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#project-identity">Project identity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#api-design-scanpy-philosophy">API design (scanpy philosophy)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#implementation-provenance">Implementation provenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#upstream-registry-and-bootstrap-contract">Upstream registry and bootstrap contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#compute-backend-strategy">Compute backend strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#vectorization-requirements">Vectorization requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#ssm-state-space-model-integration">SSM (state-space model) integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#algorithms-roadmap">Algorithms roadmap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#file-organization">File organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#three-tier-validation">Three-tier validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/adding-a-method.html">Adding a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-1-write-the-internals-document">Step 1: Write the internals document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-2-implement-the-i-o-reader">Step 2: Implement the I/O reader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-3-implement-the-inference-tool">Step 3: Implement the inference tool</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/adding-a-method.html#result-key-conventions">Result key conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-4-numba-jit-optional-but-encouraged">Step 4: Numba JIT (optional but encouraged)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-5-validation-against-the-original-tool">Step 5: Validation against the original tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-6-unit-tests">Step 6: Unit tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-7-add-to-method-comparison">Step 7: Add to method comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-8-ssm-subclass-optional">Step 8: SSM subclass (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-psmc.html">PSMC Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#source-map">Source map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#core-model">Core model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#the-parts-that-matter-for-parity">The parts that matter for parity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-smcpp.html">SMC++ Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#core-ingredients">Core ingredients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#porting-hotspots">Porting hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#current-native-state">Current native state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#handoff-notes">Handoff notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#upstream-bridge-notes">Upstream bridge notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-esmc2.html">eSMC2 Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#core-model-additions-over-psmc">Core model additions over PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#practical-parity-notes">Practical parity notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#upstream-bridge">Upstream bridge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-msmc-im.html">MSMC-IM Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#internal-model-shape">Internal model shape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#review-hotspots">Review hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Agent Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents/using-smckit.html">Using smckit as an Agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#core-contract">Core contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#check-upstream-readiness">Check upstream readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#bootstrap-when-needed">Bootstrap when needed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#choose-implementation-intentionally">Choose implementation intentionally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#method-specific-controls">Method-specific controls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#validation-workflow">Validation workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents/algorithms.html">Algorithm Map for Agents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#dical2">diCal2</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/core.html">Core: SmcData</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/core.html#smckit.SmcData"><code class="docutils literal notranslate"><span class="pre">SmcData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.sequences"><code class="docutils literal notranslate"><span class="pre">SmcData.sequences</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.window_size"><code class="docutils literal notranslate"><span class="pre">SmcData.window_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.params"><code class="docutils literal notranslate"><span class="pre">SmcData.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/io.html">IO: Input / Output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_psmcfa"><code class="docutils literal notranslate"><span class="pre">read_psmcfa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_psmc_output"><code class="docutils literal notranslate"><span class="pre">read_psmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_psmc_output"><code class="docutils literal notranslate"><span class="pre">write_psmc_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#msmc-msmc2">MSMC / MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_multihetsep"><code class="docutils literal notranslate"><span class="pre">read_multihetsep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_combined_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_combined_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_im_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">write_msmc_im_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_asmc"><code class="docutils literal notranslate"><span class="pre">read_asmc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_decoding_quantities"><code class="docutils literal notranslate"><span class="pre">read_decoding_quantities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_hap"><code class="docutils literal notranslate"><span class="pre">read_hap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_samples"><code class="docutils literal notranslate"><span class="pre">read_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_map"><code class="docutils literal notranslate"><span class="pre">read_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2"><code class="docutils literal notranslate"><span class="pre">read_dical2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_param"><code class="docutils literal notranslate"><span class="pre">read_dical2_param()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_demo"><code class="docutils literal notranslate"><span class="pre">read_dical2_demo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/tl.html">Tools: Inference Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.psmc"><code class="docutils literal notranslate"><span class="pre">psmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#esmc2">eSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.esmc2"><code class="docutils literal notranslate"><span class="pre">esmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#msmc2">MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.msmc2"><code class="docutils literal notranslate"><span class="pre">msmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.msmc_im"><code class="docutils literal notranslate"><span class="pre">msmc_im()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.asmc"><code class="docutils literal notranslate"><span class="pre">asmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_obs"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.transition_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.emission_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.initial_distribution"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.log_likelihood()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.fit"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM"><code class="docutils literal notranslate"><span class="pre">PsmcSSM</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.transition_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.emission_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.initial_distribution"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.make_initial_params"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.make_initial_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.to_physical_units"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.to_physical_units()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult"><code class="docutils literal notranslate"><span class="pre">FitResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.params"><code class="docutils literal notranslate"><span class="pre">FitResult.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.log_likelihood"><code class="docutils literal notranslate"><span class="pre">FitResult.log_likelihood</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.n_iterations"><code class="docutils literal notranslate"><span class="pre">FitResult.n_iterations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.converged"><code class="docutils literal notranslate"><span class="pre">FitResult.converged</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.history"><code class="docutils literal notranslate"><span class="pre">FitResult.history</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/settings.html">Settings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.verbosity"><code class="docutils literal notranslate"><span class="pre">Settings.verbosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.backend"><code class="docutils literal notranslate"><span class="pre">Settings.backend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.n_jobs"><code class="docutils literal notranslate"><span class="pre">Settings.n_jobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.seed"><code class="docutils literal notranslate"><span class="pre">Settings.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.upstream_cache_dir"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_cache_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.upstream_runtime_overrides"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_runtime_overrides</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.use_gpu"><code class="docutils literal notranslate"><span class="pre">Settings.use_gpu()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">smckit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">smckit.io._dical2</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for smckit.io._dical2</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read diCal2 input formats (.param, .demo, .config) and VCF.</span>
+
+<span class="sd">diCal2 uses three configuration files plus sequence data:</span>
+
+<span class="sd">- ``.param`` — mutation rate theta, recombination rate rho, and the</span>
+<span class="sd">  allele mutation matrix.</span>
+<span class="sd">- ``.demo`` — demographic model with epoch boundaries, population sizes,</span>
+<span class="sd">  migration matrices, and pulse events.</span>
+<span class="sd">- ``.config`` — sample configuration: sequence length, number of alleles,</span>
+<span class="sd">  number of populations, and population assignments for each haplotype.</span>
+
+<span class="sd">Reference: Steinrücken, Kamm &amp; Song (2019), PNAS 116(34):17115–17120.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcData</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Data structures for diCal2 input</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiCal2Params</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mutation and recombination parameters.&quot;&quot;&quot;</span>
+
+    <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">mutation_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_alleles, n_alleles)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiCal2Epoch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single epoch in the demographic model.&quot;&quot;&quot;</span>
+
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">end</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">partition</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>  <span class="c1"># partition[ancient_deme] = [present_demes]</span>
+    <span class="n">pop_sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (n_ancient_demes,) — None for pulse epochs</span>
+    <span class="n">migration_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (n_ancient_demes, n_ancient_demes)</span>
+    <span class="n">pulse_migration</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (n_ancient_demes, n_ancient_demes)</span>
+    <span class="n">growth_rates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (n_ancient_demes,)</span>
+    <span class="n">pop_size_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">migration_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">growth_rate_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiCal2Demo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete demographic model.&quot;&quot;&quot;</span>
+
+    <span class="n">epoch_boundaries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># time boundaries</span>
+    <span class="n">epochs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DiCal2Epoch</span><span class="p">]</span>
+    <span class="n">n_present_demes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">boundary_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiCal2Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample configuration.&quot;&quot;&quot;</span>
+
+    <span class="n">seq_length</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_alleles</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_populations</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">haplotype_populations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>  <span class="c1"># population index for each haplotype</span>
+    <span class="n">haplotypes_to_include</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+    <span class="n">haplotype_multiplicities</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_haplotypes, n_populations)</span>
+    <span class="n">sample_sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_populations,) — samples per pop</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># .param file parser</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="read_dical2_param">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_param</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiCal2Params</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2 ``.param`` file.</span>
+
+<span class="sd">    Format::</span>
+
+<span class="sd">        theta</span>
+<span class="sd">        rho</span>
+<span class="sd">        m00  m01  ...</span>
+<span class="sd">        m10  m11  ...</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or Path</span>
+<span class="sd">        Path to the ``.param`` file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DiCal2Params</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected at least 3 non-comment lines in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">theta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">()])</span>
+    <span class="n">mutation_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DiCal2Params</span><span class="p">(</span><span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">mutation_matrix</span><span class="o">=</span><span class="n">mutation_matrix</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># .demo file parser</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_partition</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a partition string like ``{{0},{1,2}}`` into a list of lists.</span>
+
+<span class="sd">    Strips the outermost braces and splits on top-level commas separating</span>
+<span class="sd">    inner ``{...}`` groups.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">result</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;{&quot;</span><span class="p">:</span>
+            <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span><span class="p">:</span>
+            <span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">current</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">])</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">depth</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">+=</span> <span class="n">ch</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="n">_PLACEHOLDER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\?\d+&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_value</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a numeric token; ``?N`` is a parameter placeholder.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : float</span>
+<span class="sd">        Numeric value (default if placeholder).</span>
+<span class="sd">    is_placeholder : bool</span>
+<span class="sd">        True iff the token was a ``?N`` placeholder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">_PLACEHOLDER_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">default</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">token</span><span class="p">),</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="read_dical2_demo">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2_demo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_demo</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">n_present_demes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiCal2Demo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2 ``.demo`` file.</span>
+
+<span class="sd">    Supports ``?N`` parameter placeholders (replaced by default values of</span>
+<span class="sd">    1.0 — these mark parameters that would normally be optimized). Lines</span>
+<span class="sd">    starting with ``#`` are comments.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or Path</span>
+<span class="sd">        Path to the ``.demo`` file.</span>
+<span class="sd">    n_present_demes : int, optional</span>
+<span class="sd">        Number of present-day demes (inferred from first partition if omitted).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DiCal2Demo</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty .demo file: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># First line: epoch boundaries [t1, t2, ...]</span>
+    <span class="n">boundary_text</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">boundary_text</span> <span class="o">=</span> <span class="n">boundary_text</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;[] &quot;</span><span class="p">)</span>
+    <span class="n">boundaries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">boundary_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">boundary_text</span><span class="p">:</span>
+        <span class="n">placeholder_rank</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">boundary_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
+            <span class="n">tok</span> <span class="o">=</span> <span class="n">tok</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tok</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">val</span><span class="p">,</span> <span class="n">is_placeholder</span> <span class="o">=</span> <span class="n">_parse_value</span><span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">placeholder_rank</span><span class="p">))</span>
+            <span class="n">boundaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">boundary_param_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tok</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="n">is_placeholder</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_placeholder</span><span class="p">:</span>
+                <span class="n">placeholder_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Preserve file order; diCal2 demos specify epochs from present to past.</span>
+    <span class="n">epoch_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">+</span> <span class="n">boundaries</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+    <span class="n">n_epochs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epoch_bounds</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="n">epochs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DiCal2Epoch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Partition line</span>
+        <span class="n">partition</span> <span class="o">=</span> <span class="n">_parse_partition</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">n_ancient</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_present_demes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">all_demes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">:</span>
+                <span class="n">all_demes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="n">n_present_demes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_demes</span><span class="p">)</span>
+
+        <span class="n">is_pulse</span> <span class="o">=</span> <span class="n">epoch_bounds</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">==</span> <span class="n">epoch_bounds</span><span class="p">[</span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Population sizes (or null for pulse epochs)</span>
+        <span class="n">pop_sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">pop_size_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pop_values</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">pop_param_ids</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+                    <span class="n">value</span><span class="p">,</span> <span class="n">is_placeholder</span> <span class="o">=</span> <span class="n">_parse_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+                    <span class="n">pop_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="n">pop_param_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="n">is_placeholder</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="p">)</span>
+                <span class="n">pop_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="n">pop_values</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">pop_size_param_ids</span> <span class="o">=</span> <span class="n">pop_param_ids</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Pulse migration matrix (or null)</span>
+        <span class="n">pulse_migration</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pulse_rows</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># n_ancient rows for the pulse matrix</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_ancient</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+                        <span class="n">pulse_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">[</span><span class="n">_parse_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+                        <span class="p">)</span>
+                        <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">pulse_rows</span><span class="p">:</span>
+                    <span class="n">pulse_migration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pulse_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Continuous migration matrix</span>
+        <span class="n">migration_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">migration_param_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mig_rows</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">mig_param_rows</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_ancient</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+                        <span class="n">row_vals</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">row_ids</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+                            <span class="n">val</span><span class="p">,</span> <span class="n">is_placeholder</span> <span class="o">=</span> <span class="n">_parse_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+                            <span class="n">row_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                            <span class="n">row_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="n">is_placeholder</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="n">mig_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row_vals</span><span class="p">)</span>
+                        <span class="n">mig_param_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row_ids</span><span class="p">)</span>
+                        <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">mig_rows</span><span class="p">:</span>
+                    <span class="n">migration_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mig_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                    <span class="n">migration_param_ids</span> <span class="o">=</span> <span class="n">mig_param_rows</span>
+                    <span class="c1"># Ensure rows sum to 0 (proper rate matrix)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">migration_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                        <span class="n">off_diag</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">migration_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                            <span class="o">+</span> <span class="n">migration_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                        <span class="p">)</span>
+                        <span class="n">migration_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">off_diag</span>
+
+        <span class="n">epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">DiCal2Epoch</span><span class="p">(</span>
+                <span class="n">start</span><span class="o">=</span><span class="n">epoch_bounds</span><span class="p">[</span><span class="n">e</span><span class="p">],</span>
+                <span class="n">end</span><span class="o">=</span><span class="n">epoch_bounds</span><span class="p">[</span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">partition</span><span class="o">=</span><span class="n">partition</span><span class="p">,</span>
+                <span class="n">pop_sizes</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">is_pulse</span> <span class="k">else</span> <span class="n">pop_sizes</span><span class="p">,</span>
+                <span class="n">pop_size_param_ids</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">is_pulse</span> <span class="k">else</span> <span class="n">pop_size_param_ids</span><span class="p">,</span>
+                <span class="n">migration_matrix</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">is_pulse</span> <span class="k">else</span> <span class="n">migration_matrix</span><span class="p">,</span>
+                <span class="n">migration_param_ids</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">is_pulse</span> <span class="k">else</span> <span class="n">migration_param_ids</span><span class="p">,</span>
+                <span class="n">pulse_migration</span><span class="o">=</span><span class="n">pulse_migration</span> <span class="k">if</span> <span class="n">is_pulse</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">growth_rates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">growth_rate_param_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DiCal2Demo</span><span class="p">(</span>
+        <span class="n">epoch_boundaries</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">epoch_bounds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">boundary_param_ids</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">boundary_param_ids</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+        <span class="n">n_present_demes</span><span class="o">=</span><span class="n">n_present_demes</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># .rates file parser</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="read_dical2_rates">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2_rates">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_rates</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">demo</span><span class="p">:</span> <span class="n">DiCal2Demo</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiCal2Demo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2 ``.rates`` file and attach growth rates to a demo.&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">demo</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Rates file </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="si">}</span><span class="s2"> data rows, expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">demo</span><span class="o">.</span><span class="n">epochs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">new_epochs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DiCal2Epoch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">demo</span><span class="o">.</span><span class="n">epochs</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="n">new_epoch</span> <span class="o">=</span> <span class="n">DiCal2Epoch</span><span class="p">(</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">epoch</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="n">end</span><span class="o">=</span><span class="n">epoch</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+            <span class="n">partition</span><span class="o">=</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">epoch</span><span class="o">.</span><span class="n">partition</span><span class="p">],</span>
+            <span class="n">pop_sizes</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pop_sizes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pop_sizes</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="n">pop_size_param_ids</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span> <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pop_size_param_ids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">pop_size_param_ids</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">migration_matrix</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">migration_matrix</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="n">epoch</span><span class="o">.</span><span class="n">migration_matrix</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">),</span>
+            <span class="n">migration_param_ids</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">migration_param_ids</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">epoch</span><span class="o">.</span><span class="n">migration_param_ids</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="n">pulse_migration</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span> <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pulse_migration</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pulse_migration</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">),</span>
+            <span class="n">growth_rates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">growth_rate_param_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pop_sizes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_epoch</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">param_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">partition</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Rates row for epoch [</span><span class="si">{</span><span class="n">epoch</span><span class="o">.</span><span class="n">start</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">epoch</span><span class="o">.</span><span class="n">end</span><span class="si">}</span><span class="s2">) has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="si">}</span><span class="s2"> values, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+            <span class="n">value</span><span class="p">,</span> <span class="n">is_placeholder</span> <span class="o">=</span> <span class="n">_parse_value</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">param_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="n">is_placeholder</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">new_epoch</span><span class="o">.</span><span class="n">growth_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">new_epoch</span><span class="o">.</span><span class="n">growth_rate_param_ids</span> <span class="o">=</span> <span class="n">param_ids</span>
+        <span class="n">new_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_epoch</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DiCal2Demo</span><span class="p">(</span>
+        <span class="n">epoch_boundaries</span><span class="o">=</span><span class="n">demo</span><span class="o">.</span><span class="n">epoch_boundaries</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">boundary_param_ids</span><span class="o">=</span><span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">demo</span><span class="o">.</span><span class="n">boundary_param_ids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">demo</span><span class="o">.</span><span class="n">boundary_param_ids</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">new_epochs</span><span class="p">,</span>
+        <span class="n">n_present_demes</span><span class="o">=</span><span class="n">demo</span><span class="o">.</span><span class="n">n_present_demes</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># .config file parser</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="read_dical2_config">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_config</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiCal2Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2 ``.config`` file.</span>
+
+<span class="sd">    Format::</span>
+
+<span class="sd">        seq_length  n_alleles  n_populations</span>
+<span class="sd">        pop0_indicator  pop1_indicator ...   (per haplotype)</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or Path</span>
+<span class="sd">        Path to the ``.config`` file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DiCal2Config</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty .config file: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">header</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">seq_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">n_alleles</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">n_populations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">haplotype_populations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">haplotypes_to_include</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">multiplicities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="n">indicators</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indicators</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_populations</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Config row has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indicators</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns, expected </span><span class="si">{</span><span class="n">n_populations</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">include</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">indicators</span><span class="p">)</span>
+        <span class="n">haplotypes_to_include</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">include</span><span class="p">)</span>
+        <span class="n">multiplicities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indicators</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include</span><span class="p">:</span>
+            <span class="n">haplotype_populations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pop_idx</span> <span class="o">=</span> <span class="n">indicators</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">pop_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">haplotype_populations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pop_idx</span><span class="p">)</span>
+
+    <span class="n">sample_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_populations</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">mult_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">multiplicities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">sample_sizes</span> <span class="o">=</span> <span class="n">mult_arr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mult_arr</span><span class="p">)</span> <span class="k">else</span> <span class="n">sample_sizes</span>
+
+    <span class="k">return</span> <span class="n">DiCal2Config</span><span class="p">(</span>
+        <span class="n">seq_length</span><span class="o">=</span><span class="n">seq_length</span><span class="p">,</span>
+        <span class="n">n_alleles</span><span class="o">=</span><span class="n">n_alleles</span><span class="p">,</span>
+        <span class="n">n_populations</span><span class="o">=</span><span class="n">n_populations</span><span class="p">,</span>
+        <span class="n">haplotype_populations</span><span class="o">=</span><span class="n">haplotype_populations</span><span class="p">,</span>
+        <span class="n">haplotypes_to_include</span><span class="o">=</span><span class="n">haplotypes_to_include</span><span class="p">,</span>
+        <span class="n">haplotype_multiplicities</span><span class="o">=</span><span class="n">mult_arr</span><span class="p">,</span>
+        <span class="n">sample_sizes</span><span class="o">=</span><span class="n">sample_sizes</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Sequence reader (simple tab-separated allele matrix)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="read_dical2_sequences">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2_sequences">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_sequences</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">n_alleles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2 sequence file (one row per haplotype, space-separated alleles).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or Path</span>
+<span class="sd">        Path to the sequence file.</span>
+<span class="sd">    n_alleles : int</span>
+<span class="sd">        Number of distinct alleles (for validation).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sequences : (n_haplotypes, seq_length) int8 array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fh</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span> <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()])</span>
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sequences</span> <span class="o">&gt;=</span> <span class="n">n_alleles</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sequences</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Allele values must be in [0, </span><span class="si">{</span><span class="n">n_alleles</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sequences</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2_vcf</span><span class="p">(</span>
+    <span class="n">vcf_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">reference_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">DiCal2Config</span><span class="p">,</span>
+    <span class="n">filter_pass_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a diCal2-style VCF plus reference into a haplotype matrix.</span>
+
+<span class="sd">    Matches diCal2&#39;s upstream representation more closely: only segregating</span>
+<span class="sd">    sites for the selected haplotypes are retained in the returned matrix.</span>
+<span class="sd">    Missing alleles remain encoded as ``-1`` at segregating sites. The</span>
+<span class="sd">    ``reference_alleles`` return value records the upstream reference-state</span>
+<span class="sd">    allele carried at each physical locus after VCF preprocessing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vcf_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">vcf_file</span><span class="p">)</span>
+    <span class="n">reference_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">reference_file</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+        <span class="n">stripped</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped</span> <span class="ow">or</span> <span class="n">stripped</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">reference_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stripped</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reference_lines</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">reference</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reference file </span><span class="si">{</span><span class="n">reference_file</span><span class="si">}</span><span class="s2"> contains no sequence&quot;</span><span class="p">)</span>
+
+    <span class="n">include_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">haplotypes_to_include</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">missing_bases</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">n_alleles</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">reference_alleles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">missing_bases</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">reference</span><span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">base_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+        <span class="n">reference_alleles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">base_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">reference</span><span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">selected_variants</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seg_positions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">with</span> <span class="n">vcf_file</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">n_haps_total</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fh</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;##&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#CHROM&quot;</span><span class="p">):</span>
+                <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">n_haps_total</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">9</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n_haps_total</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">include_mask</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;VCF exposes </span><span class="si">{</span><span class="n">n_haps_total</span><span class="si">}</span><span class="s2"> haplotypes but config has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">include_mask</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">reference</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;VCF position </span><span class="si">{</span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> is outside reference length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">ref_allele</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">alt_field</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">filt</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">filt</span> <span class="o">!=</span> <span class="n">filter_pass_string</span><span class="p">:</span>
+                <span class="n">reference_alleles</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">continue</span>
+            <span class="n">alt_alleles</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">alt_field</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span> <span class="k">else</span> <span class="n">alt_field</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alt_alleles</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">config</span><span class="o">.</span><span class="n">n_alleles</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">reference_alleles</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">reference</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ref_allele</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Reference allele mismatch at position </span><span class="si">{</span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">: VCF has </span><span class="si">{</span><span class="n">ref_allele</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;reference has </span><span class="si">{</span><span class="n">reference</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">allele_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;0&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">ref_allele</span> <span class="ow">in</span> <span class="n">missing_bases</span> <span class="k">else</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">_alt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">alt_alleles</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">allele_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">_alt</span> <span class="ow">in</span> <span class="n">missing_bases</span> <span class="k">else</span> <span class="n">idx</span>
+
+            <span class="n">full_column</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="mi">9</span><span class="p">:]:</span>
+                <span class="n">gt</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">gt</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;./.&quot;</span><span class="p">,</span> <span class="s2">&quot;.|.&quot;</span><span class="p">}:</span>
+                    <span class="n">full_column</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="s2">&quot;|&quot;</span> <span class="ow">in</span> <span class="n">gt</span><span class="p">:</span>
+                    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">gt</span><span class="p">:</span>
+                    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span><span class="p">:</span>
+                        <span class="n">full_column</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">b</span> <span class="o">=</span> <span class="n">gt</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+                    <span class="n">full_column</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">continue</span>
+                <span class="n">full_column</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">allele_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">allele_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+
+            <span class="n">column</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">full_column</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)[</span><span class="n">include_mask</span><span class="p">]</span>
+            <span class="n">uniq</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">column</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniq</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">reference_alleles</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">uniq</span><span class="p">)))</span>
+                <span class="k">continue</span>
+            <span class="n">selected_variants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+            <span class="n">seg_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+            <span class="n">reference_alleles</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">selected_variants</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;No segregating sites left in the input vcf after pre-processing and filtering.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">seqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">selected_variants</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">seqs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seg_positions</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">reference</span><span class="p">),</span> <span class="n">reference_alleles</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Combined reader → SmcData</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="read_dical2">
+<a class="viewcode-back" href="../../../api/io.html#smckit.io.read_dical2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_dical2</span><span class="p">(</span>
+    <span class="n">sequences</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">param_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">demo_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rates_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">reference_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filter_pass_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+    <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0005</span><span class="p">,</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0005</span><span class="p">,</span>
+    <span class="n">n_alleles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read diCal2 inputs into SmcData.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sequences : path or ndarray</span>
+<span class="sd">        Haplotype matrix (n_haplotypes, seq_length) of allele indices, or</span>
+<span class="sd">        path to a sequence file.</span>
+<span class="sd">    param_file : path, optional</span>
+<span class="sd">        Path to a ``.param`` file. If None, *theta* and *rho* are used</span>
+<span class="sd">        with a default symmetric mutation matrix.</span>
+<span class="sd">    demo_file : path, optional</span>
+<span class="sd">        Path to a ``.demo`` file. If None, a single-population panmictic</span>
+<span class="sd">        model is assumed.</span>
+<span class="sd">    rates_file : path, optional</span>
+<span class="sd">        Path to a ``.rates`` file with exponential growth rates matching</span>
+<span class="sd">        the demo epochs.</span>
+<span class="sd">    config_file : path, optional</span>
+<span class="sd">        Path to a ``.config`` file. If None, all haplotypes are placed</span>
+<span class="sd">        in a single population.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        Mutation rate (used only when *param_file* is None).</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Recombination rate (used only when *param_file* is None).</span>
+<span class="sd">    n_alleles : int</span>
+<span class="sd">        Number of allele types (default 2 = biallelic).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    SmcData</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load parameters</span>
+    <span class="k">if</span> <span class="n">param_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">read_dical2_param</span><span class="p">(</span><span class="n">param_file</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Default symmetric mutation matrix</span>
+        <span class="n">mut_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_alleles</span><span class="p">,</span> <span class="n">n_alleles</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">mut_mat</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">DiCal2Params</span><span class="p">(</span><span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">mutation_matrix</span><span class="o">=</span><span class="n">mut_mat</span><span class="p">)</span>
+
+    <span class="c1"># Load demography</span>
+    <span class="k">if</span> <span class="n">demo_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">demo</span> <span class="o">=</span> <span class="n">read_dical2_demo</span><span class="p">(</span><span class="n">demo_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rates_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">demo</span> <span class="o">=</span> <span class="n">read_dical2_rates</span><span class="p">(</span><span class="n">rates_file</span><span class="p">,</span> <span class="n">demo</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">demo</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Load config</span>
+    <span class="k">if</span> <span class="n">config_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">read_dical2_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Load sequences</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="n">seq_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seq_path</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;.vcf&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">reference_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reference_file is required when reading a VCF&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;config_file is required when reading a VCF&quot;</span><span class="p">)</span>
+            <span class="n">seqs</span><span class="p">,</span> <span class="n">seg_positions</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">,</span> <span class="n">reference_alleles</span> <span class="o">=</span> <span class="n">read_dical2_vcf</span><span class="p">(</span>
+                <span class="n">seq_path</span><span class="p">,</span>
+                <span class="n">reference_file</span><span class="p">,</span>
+                <span class="n">config</span><span class="p">,</span>
+                <span class="n">filter_pass_string</span><span class="o">=</span><span class="n">filter_pass_string</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">seqs</span> <span class="o">=</span> <span class="n">read_dical2_sequences</span><span class="p">(</span><span class="n">seq_path</span><span class="p">,</span> <span class="n">n_alleles</span><span class="o">=</span><span class="n">n_alleles</span><span class="p">)</span>
+            <span class="n">seg_positions</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">reference_length</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">reference_alleles</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">seqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+        <span class="n">seg_positions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">reference_length</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">reference_alleles</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">n_hap</span><span class="p">,</span> <span class="n">seq_len</span> <span class="o">=</span> <span class="n">seqs</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">DiCal2Config</span><span class="p">(</span>
+            <span class="n">seq_length</span><span class="o">=</span><span class="n">seq_len</span><span class="p">,</span>
+            <span class="n">n_alleles</span><span class="o">=</span><span class="n">n_alleles</span><span class="p">,</span>
+            <span class="n">n_populations</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">haplotype_populations</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_hap</span><span class="p">,</span>
+            <span class="n">haplotypes_to_include</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_hap</span><span class="p">,</span>
+            <span class="n">haplotype_multiplicities</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_hap</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+            <span class="n">sample_sizes</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">n_hap</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">SmcData</span><span class="p">(</span>
+        <span class="n">sequences</span><span class="o">=</span><span class="n">seqs</span><span class="p">,</span>
+        <span class="n">window_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+            <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">uns</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;mutation_matrix&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">mutation_matrix</span><span class="p">,</span>
+            <span class="s2">&quot;demo&quot;</span><span class="p">:</span> <span class="n">demo</span><span class="p">,</span>
+            <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">,</span>
+            <span class="s2">&quot;n_haplotypes&quot;</span><span class="p">:</span> <span class="n">n_hap</span><span class="p">,</span>
+            <span class="s2">&quot;seq_length&quot;</span><span class="p">:</span> <span class="n">seq_len</span><span class="p">,</span>
+            <span class="s2">&quot;seg_positions&quot;</span><span class="p">:</span> <span class="n">seg_positions</span><span class="p">,</span>
+            <span class="s2">&quot;reference_length&quot;</span><span class="p">:</span> <span class="n">reference_length</span><span class="p">,</span>
+            <span class="s2">&quot;reference_alleles&quot;</span><span class="p">:</span> <span class="n">reference_alleles</span><span class="p">,</span>
+            <span class="s2">&quot;n_alleles&quot;</span><span class="p">:</span> <span class="n">n_alleles</span><span class="p">,</span>
+            <span class="s2">&quot;source_paths&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sequences&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">))</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">sequences</span><span class="p">)),</span>
+                <span class="s2">&quot;param_file&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">param_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">param_file</span><span class="p">)),</span>
+                <span class="s2">&quot;demo_file&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">demo_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">demo_file</span><span class="p">)),</span>
+                <span class="s2">&quot;rates_file&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">rates_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">rates_file</span><span class="p">)),</span>
+                <span class="s2">&quot;config_file&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">config_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">config_file</span><span class="p">)),</span>
+                <span class="s2">&quot;reference_file&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">reference_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">reference_file</span><span class="p">)),</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

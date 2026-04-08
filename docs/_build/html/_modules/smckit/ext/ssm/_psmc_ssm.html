@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smckit.ext.ssm._psmc_ssm &mdash; smckit 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            smckit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/quickstart-psmc.html">Quickstart: PSMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/quickstart-asmc.html">Quickstart: ASMC</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/smcdata.html">The SmcData Container</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/io-formats.html">I/O Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/choosing-a-method.html">Choosing a Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/interpreting-results.html">Interpreting Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/gallery.html">Gallery</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Method Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/psmc.html">PSMC — Pairwise Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/asmc.html">ASMC — Ascertained Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/esmc2.html">eSMC2 — Ecological Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/msmc-im.html">MSMC-IM — Isolation-Migration Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/smcpp.html">SMC++ — Sequentially Markovian Coalescent for Many Individuals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/ssm.html">SSM — State-Space Model Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/msmc2.html">MSMC2 — Multiple Sequentially Markovian Coalescent v2</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/adding-a-method.html">Adding a Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/testing.html">Testing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">smckit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">smckit.ext.ssm._psmc_ssm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for smckit.ext.ssm._psmc_ssm</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PSMC as a State-Space Model.</span>
+
+<span class="sd">Hidden states  = coalescent time intervals (discretized)</span>
+<span class="sd">Observations   = per-window heterozygosity (0=homo, 1=het, 2=missing)</span>
+<span class="sd">Transition     = coalescent process with recombination</span>
+<span class="sd">Emission       = mutation process</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.backends._numba</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_hmm_params_jit</span><span class="p">,</span>
+    <span class="n">compute_time_intervals_jit</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.ext.ssm._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcStateSpace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.tl._psmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">PSMC_N_PARAMS</span><span class="p">,</span> <span class="n">parse_pattern</span>
+
+
+<div class="viewcode-block" id="PsmcSSM">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PsmcSSM</span><span class="p">(</span><span class="n">SmcStateSpace</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PSMC formulated as a state-space model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pattern : str</span>
+<span class="sd">        PSMC pattern string (e.g. ``&quot;4+5*3+4&quot;``).</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Time-interval spacing parameter.</span>
+<span class="sd">    divergence : bool</span>
+<span class="sd">        Whether to include a divergence-time parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;4+5*3+4&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">divergence</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_free</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">parse_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_obs</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># homo, het, missing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">divergence</span> <span class="o">=</span> <span class="n">divergence</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hmm_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute HMM matrices from population parameters via Numba backend.</span>
+
+<span class="sd">        Returns (a, e, sigma, C_pi, C_sigma).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">compute_time_intervals_jit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">compute_hmm_params_jit</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">divergence</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PsmcSSM.transition_matrix">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.transition_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transition_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hmm_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a</span></div>
+
+
+<div class="viewcode-block" id="PsmcSSM.emission_matrix">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.emission_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">emission_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hmm_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="PsmcSSM.initial_distribution">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.initial_distribution">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initial_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hmm_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sigma</span></div>
+
+
+<div class="viewcode-block" id="PsmcSSM.make_initial_params">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.make_initial_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_initial_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">sum_L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">sum_n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">max_t</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">15.0</span><span class="p">,</span>
+        <span class="n">tr_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">random_init</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an initial parameter vector from data statistics.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sum_L : int</span>
+<span class="sd">            Total number of sites (excluding missing).</span>
+<span class="sd">        sum_n : int</span>
+<span class="sd">            Total number of heterozygous sites.</span>
+<span class="sd">        max_t : float</span>
+<span class="sd">            Maximum coalescent time (units of 2N0).</span>
+<span class="sd">        tr_ratio : float</span>
+<span class="sd">            Initial theta/rho ratio.</span>
+<span class="sd">        random_init : float</span>
+<span class="sd">            Amplitude of random perturbation for lambda values.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Random seed for reproducibility.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Parameter vector [theta, rho, max_t, lam_0, ..., lam_{n_free-1}].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_free</span> <span class="o">+</span> <span class="n">PSMC_N_PARAMS</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="n">theta</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sum_n</span> <span class="o">/</span> <span class="n">sum_L</span><span class="p">)</span> <span class="k">if</span> <span class="n">sum_L</span> <span class="o">&gt;</span> <span class="n">sum_n</span> <span class="k">else</span> <span class="n">sum_n</span> <span class="o">/</span> <span class="n">sum_L</span>
+        <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta</span>
+        <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="n">tr_ratio</span>
+        <span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_t</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">PSMC_N_PARAMS</span><span class="p">,</span> <span class="n">n_params</span><span class="p">):</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">random_init</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+        <span class="k">return</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="PsmcSSM.to_physical_units">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.to_physical_units">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_physical_units</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.25e-8</span><span class="p">,</span>
+        <span class="n">generation_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">25.0</span><span class="p">,</span>
+        <span class="n">window_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert fitted parameters to physical units.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : np.ndarray</span>
+<span class="sd">            Fitted parameter vector.</span>
+<span class="sd">        mu : float</span>
+<span class="sd">            Per-base per-generation mutation rate.</span>
+<span class="sd">        generation_time : float</span>
+<span class="sd">            Generation time in years.</span>
+<span class="sd">        window_size : int</span>
+<span class="sd">            Window size used in input data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Keys: ``time_years``, ``ne``, ``lambda_k``, ``n0``, ``theta``, ``rho``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">n0</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">window_size</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">compute_time_intervals_jit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">time_coal</span> <span class="o">=</span> <span class="n">t</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_states</span><span class="p">]</span>
+
+        <span class="n">lam</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">par_map</span> <span class="o">+</span> <span class="n">PSMC_N_PARAMS</span><span class="p">]</span>
+        <span class="n">ne</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">n0</span>
+        <span class="n">time_years</span> <span class="o">=</span> <span class="n">time_coal</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">n0</span> <span class="o">*</span> <span class="n">generation_time</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;time_years&quot;</span><span class="p">:</span> <span class="n">time_years</span><span class="p">,</span>
+            <span class="s2">&quot;ne&quot;</span><span class="p">:</span> <span class="n">ne</span><span class="p">,</span>
+            <span class="s2">&quot;lambda_k&quot;</span><span class="p">:</span> <span class="n">lam</span><span class="p">,</span>
+            <span class="s2">&quot;n0&quot;</span><span class="p">:</span> <span class="n">n0</span><span class="p">,</span>
+            <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">,</span>
+            <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">rho</span><span class="p">,</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">time_coal</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

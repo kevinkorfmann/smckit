@@ -12,6 +12,7 @@ def test_upstream_status_reports_known_tools() -> None:
         assert tool in status
         assert "ready" in status[tool]
         assert "missing" in status[tool]
+        assert "install_help" in status[tool]
 
 
 def test_smcpp_status_reports_vendored_source_tree() -> None:
@@ -31,3 +32,10 @@ def test_standard_upstream_metadata_includes_registry_fields() -> None:
 def test_public_registry_entries_report_boolean_readiness() -> None:
     assert isinstance(method_upstream_available("psmc"), bool)
     assert smckit.upstream.status("dical2")["public_upstream"] is True
+
+
+def test_install_help_is_available_for_known_tools() -> None:
+    help_text = smckit.upstream.install_help("psmc")
+    assert isinstance(help_text, str)
+    assert help_text
+    assert 'smckit[psmc]' in help_text

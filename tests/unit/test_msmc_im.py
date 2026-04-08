@@ -19,6 +19,8 @@ from smckit.tl._msmc_im import (
     _make_Qexp,
     _parse_im_pattern,
     _propagate_state_vectors,
+    _read_msmc_im_fittingdetails,
+    _threshold_migration_rates,
     _tmrca_from_msmc,
 )
 
@@ -37,6 +39,10 @@ pytestmark = [
 
 ROOT = Path(__file__).resolve().parents[2]
 INPUT = ROOT / "vendor" / "MSMC-IM" / "example" / "Yoruba_French.8haps.combined.msmc2.final.txt"
+FITTINGDETAILS = (
+    ROOT / "vendor" / "MSMC-IM" / "example" / "MSMC_IM_output" /
+    "Yoruba_French.8haps.MSMC_IM.fittingdetails.txt"
+)
 
 
 def _load_vendor_funcs():
@@ -81,6 +87,36 @@ def test_msmc_im_does_not_emit_matrix_deprecation_warning() -> None:
         and "matrix subclass" in str(w.message)
     ]
     assert pending == []
+
+
+def test_msmc_im_fittingdetails_parser_exposes_raw_fields_and_chi_square(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "synthetic.fittingdetails.txt"
+    target.write_text(
+        "The split time is estimated to be around [1.0, 2.0, 3.0] gens\n"
+        "Initial Chi-Square distance is 12.5 and final Chi-Square distance is 1.25\n"
+        + FITTINGDETAILS.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    parsed = _read_msmc_im_fittingdetails(target)
+
+    assert parsed["init_chi_square"] == pytest.approx(12.5)
+    assert parsed["final_chi_square"] == pytest.approx(1.25)
+    assert parsed["left_boundary"][0] == pytest.approx(0.0)
+    assert np.any(parsed["N1_raw"] != parsed["N1"])
+    assert np.any(parsed["N2_raw"] != parsed["N2"])
+
+
+def test_msmc_im_thresholds_migration_after_near_complete_mixing() -> None:
+    m = np.array([1.0e-5, 2.0e-5, 3.0e-5], dtype=np.float64)
+    M = np.array([0.1, 0.999, 0.9991], dtype=np.float64)
+
+    np.testing.assert_allclose(
+        _threshold_migration_rates(m, M),
+        np.array([1.0e-5, 2.0e-5, 1.0e-30], dtype=np.float64),
+    )
 
 
 def test_msmc_im_pattern_and_ancient_lambda_helpers_match_expected_semantics() -> None:

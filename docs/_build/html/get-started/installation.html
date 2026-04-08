@@ -1,0 +1,834 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; smckit 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=e37cf168" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/pretext-layout.js?v=cc9de092"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quickstart: PSMC" href="quickstart-psmc.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            smckit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#what-is-the-coalescent">What is the coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#what-is-the-sequentially-markovian-coalescent">What is the Sequentially Markovian Coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#the-landscape-of-smc-tools">The landscape of SMC tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#what-smckit-provides">What smckit provides</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#hello-smckit">Hello, smckit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#where-to-go-next">Where to go next</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-from-source">Install from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#repo-environment-commands">Repo environment commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#upstream-tool-readiness">Upstream tool readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#runtime-and-bootstrap-matrix">Runtime and bootstrap matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#platform-install-recipes">Platform install recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windows">Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bootstrapping-examples">Bootstrapping examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-psmc.html">Quickstart: PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-psmc.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-psmc.html#run-psmc">Run PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-psmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-psmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-asmc.html">Quickstart: ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-asmc.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-asmc.html#run-asmc">Run ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-asmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-asmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-msmc2.html">Quickstart: MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc2.html#run-msmc2">Run MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-msmc-im.html">Quickstart: MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc-im.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc-im.html#run-msmc-im">Run MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc-im.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-msmc-im.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-esmc2.html">Quickstart: eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-esmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-esmc2.html#run-esmc2">Run eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-esmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-esmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-smcpp.html">Quickstart: SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-smcpp.html#run-smc">Run SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-smcpp.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart-dical2.html">Quickstart: diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-dical2.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-dical2.html#run-dical2">Run diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guide/smcdata.html">The SmcData Container</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/smcdata.html#anatomy-of-an-smcdata">Anatomy of an SmcData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/smcdata.html#the-pipeline-pattern">The pipeline pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/smcdata.html#which-fields-each-method-uses">Which fields each method uses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/smcdata.html#comparison-with-anndata">Comparison with AnnData</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/io-formats.html">I/O Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#quick-index">Quick index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#psmcfa">PSMCFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#multihetsep">Multihetsep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#msmc-combined-output">MSMC combined output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#asmc-file-bundle">ASMC file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#smc-span-encoded-input">SMC++ span-encoded input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#dical2-model-file-bundle">diCal2 model-file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/io-formats.html#output-readers">Output readers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/choosing-a-method.html">Choosing a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/choosing-a-method.html#read-this-table-first">Read this table first</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/choosing-a-method.html#a-simple-decision-path">A simple decision path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/choosing-a-method.html#one-diploid-genome">One diploid genome</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/choosing-a-method.html#multiple-phased-haplotypes">Multiple phased haplotypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/choosing-a-method.html#many-unphased-genomes">Many unphased genomes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/choosing-a-method.html#structured-demographic-model-files-already-exist">Structured demographic model files already exist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/choosing-a-method.html#how-implementation-choice-affects-method-choice">How implementation choice affects method choice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/choosing-a-method.html#if-you-are-unsure">If you are unsure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/choosing-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/interpreting-results.html">Interpreting Results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/interpreting-results.html#what-does-n-e-t-mean">What does <span class="math notranslate nohighlight">\(N_e(t)\)</span> mean?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/interpreting-results.html#the-data-results-dictionary">The <code class="docutils literal notranslate"><span class="pre">data.results</span></code> dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/interpreting-results.html#assessing-convergence">Assessing convergence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#em-based-methods-psmc-esmc2-msmc2">EM-based methods (PSMC, eSMC2, MSMC2)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#gradient-based-methods-psmc-ssm-smc">Gradient-based methods (PSMC-SSM, SMC++)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/interpreting-results.html#common-pitfalls">Common pitfalls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/interpreting-results.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/plotting.html">Plotting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#selecting-a-method">Selecting a method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#overlaying-multiple-methods">Overlaying multiple methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#unit-conversion">Unit conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#axis-scaling">Axis scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/gallery.html">Gallery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/gallery.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/psmc-ssm.html">PSMC-SSM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#why-we-built-it">Why We Built It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#what-it-is">What It Is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#what-it-buys-you">What It Buys You</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#explicit-hmm-access">1. Explicit HMM access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#a-unified-fitting-interface">2. A unified fitting interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#a-clean-extension-point">3. A clean extension point</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#when-to-use-it">When To Use It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#how-to-use-it">How To Use It</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#standard-setup">Standard setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#em-fitting">EM fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#gradient-fitting">Gradient fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#convert-back-to-demographic-history">Convert back to demographic history</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#how-it-is-implemented">How It Is Implemented</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#how-method-em-relates-to-smckit-tl-psmc">How <code class="docutils literal notranslate"><span class="pre">method=&quot;em&quot;</span></code> Relates To <code class="docutils literal notranslate"><span class="pre">smckit.tl.psmc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#how-method-gradient-works">How <code class="docutils literal notranslate"><span class="pre">method=&quot;gradient&quot;</span></code> Works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#benchmark-snapshot">Benchmark Snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#how-to-implement-a-new-smc-model-on-this-pattern">How To Implement A New SMC Model On This Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-1-define-the-hidden-states-and-observations">Step 1: define the hidden states and observations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-2-subclass-smcstatespace">Step 2: subclass <code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-3-add-a-parameter-initializer">Step 3: add a parameter initializer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-4-add-physical-unit-conversion">Step 4: add physical-unit conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-5-validate-against-an-oracle">Step 5: validate against an oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/psmc-ssm.html#step-6-only-then-add-a-gradient-path">Step 6: only then add a gradient path</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#recommended-reading-order">Recommended Reading Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/psmc-ssm.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Method Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methods/psmc.html">PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/asmc.html">ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/msmc2.html">MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/msmc-im.html">MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/esmc2.html">eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/smcpp.html">SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/dical2.html">diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/ssm.html">SSM Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer/contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#development-setup">Development setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#code-style">Code style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#running-tests">Running tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#pull-request-workflow">Pull request workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#reporting-bugs">Reporting bugs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/contributing.html#asking-questions">Asking questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/architecture.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#project-identity">Project identity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#api-design-scanpy-philosophy">API design (scanpy philosophy)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#implementation-provenance">Implementation provenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#upstream-registry-and-bootstrap-contract">Upstream registry and bootstrap contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#compute-backend-strategy">Compute backend strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#vectorization-requirements">Vectorization requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#ssm-state-space-model-integration">SSM (state-space model) integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#algorithms-roadmap">Algorithms roadmap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#file-organization">File organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#three-tier-validation">Three-tier validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/architecture.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/adding-a-method.html">Adding a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-1-write-the-internals-document">Step 1: Write the internals document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-2-implement-the-i-o-reader">Step 2: Implement the I/O reader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-3-implement-the-inference-tool">Step 3: Implement the inference tool</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer/adding-a-method.html#result-key-conventions">Result key conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-4-numba-jit-optional-but-encouraged">Step 4: Numba JIT (optional but encouraged)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-5-validation-against-the-original-tool">Step 5: Validation against the original tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-6-unit-tests">Step 6: Unit tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-7-add-to-method-comparison">Step 7: Add to method comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#step-8-ssm-subclass-optional">Step 8: SSM subclass (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/adding-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#test-organization">Test organization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#running-everything">Running everything</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/testing.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/parity.html">Parity and Oracle Status</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/parity.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/internals.html">Internals and Porting Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals.html#available-internals-pages">Available internals pages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/internals-psmc.html">PSMC Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-psmc.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-psmc.html#source-map">Source map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-psmc.html#core-model">Core model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-psmc.html#the-parts-that-matter-for-parity">The parts that matter for parity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-psmc.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/internals-smcpp.html">SMC++ Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#core-ingredients">Core ingredients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#porting-hotspots">Porting hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#current-native-state">Current native state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#handoff-notes">Handoff notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#upstream-bridge-notes">Upstream bridge notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-smcpp.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/internals-esmc2.html">eSMC2 Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#core-model-additions-over-psmc">Core model additions over PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#practical-parity-notes">Practical parity notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#upstream-bridge">Upstream bridge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-esmc2.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/internals-msmc-im.html">MSMC-IM Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-msmc-im.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-msmc-im.html#internal-model-shape">Internal model shape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-msmc-im.html#review-hotspots">Review hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-msmc-im.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-msmc-im.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Agent Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../agents/using-smckit.html">Using smckit as an Agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#core-contract">Core contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#check-upstream-readiness">Check upstream readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#bootstrap-when-needed">Bootstrap when needed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#choose-implementation-intentionally">Choose implementation intentionally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#method-specific-controls">Method-specific controls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/using-smckit.html#validation-workflow">Validation workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../agents/algorithms.html">Algorithm Map for Agents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agents/algorithms.html#dical2">diCal2</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core: SmcData</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core.html#smckit.SmcData"><code class="docutils literal notranslate"><span class="pre">SmcData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.sequences"><code class="docutils literal notranslate"><span class="pre">SmcData.sequences</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.window_size"><code class="docutils literal notranslate"><span class="pre">SmcData.window_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.params"><code class="docutils literal notranslate"><span class="pre">SmcData.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/io.html">IO: Input / Output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_psmcfa"><code class="docutils literal notranslate"><span class="pre">read_psmcfa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_psmc_output"><code class="docutils literal notranslate"><span class="pre">read_psmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.write_psmc_output"><code class="docutils literal notranslate"><span class="pre">write_psmc_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#msmc-msmc2">MSMC / MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_multihetsep"><code class="docutils literal notranslate"><span class="pre">read_multihetsep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_msmc_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_msmc_combined_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_combined_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_im_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.write_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">write_msmc_im_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_asmc"><code class="docutils literal notranslate"><span class="pre">read_asmc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_decoding_quantities"><code class="docutils literal notranslate"><span class="pre">read_decoding_quantities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_hap"><code class="docutils literal notranslate"><span class="pre">read_hap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_samples"><code class="docutils literal notranslate"><span class="pre">read_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_map"><code class="docutils literal notranslate"><span class="pre">read_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/io.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2"><code class="docutils literal notranslate"><span class="pre">read_dical2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_param"><code class="docutils literal notranslate"><span class="pre">read_dical2_param()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_demo"><code class="docutils literal notranslate"><span class="pre">read_dical2_demo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/tl.html">Tools: Inference Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.psmc"><code class="docutils literal notranslate"><span class="pre">psmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#esmc2">eSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.esmc2"><code class="docutils literal notranslate"><span class="pre">esmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#msmc2">MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.msmc2"><code class="docutils literal notranslate"><span class="pre">msmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.msmc_im"><code class="docutils literal notranslate"><span class="pre">msmc_im()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.asmc"><code class="docutils literal notranslate"><span class="pre">asmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/pl.html">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/ssm.html">Extensions: State-Space Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_obs"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.transition_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.emission_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.initial_distribution"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.log_likelihood()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.fit"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM"><code class="docutils literal notranslate"><span class="pre">PsmcSSM</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM.transition_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM.emission_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM.initial_distribution"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM.make_initial_params"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.make_initial_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.PsmcSSM.to_physical_units"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.to_physical_units()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult"><code class="docutils literal notranslate"><span class="pre">FitResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult.params"><code class="docutils literal notranslate"><span class="pre">FitResult.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult.log_likelihood"><code class="docutils literal notranslate"><span class="pre">FitResult.log_likelihood</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult.n_iterations"><code class="docutils literal notranslate"><span class="pre">FitResult.n_iterations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult.converged"><code class="docutils literal notranslate"><span class="pre">FitResult.converged</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.FitResult.history"><code class="docutils literal notranslate"><span class="pre">FitResult.history</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/settings.html">Settings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.verbosity"><code class="docutils literal notranslate"><span class="pre">Settings.verbosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.backend"><code class="docutils literal notranslate"><span class="pre">Settings.backend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.n_jobs"><code class="docutils literal notranslate"><span class="pre">Settings.n_jobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.seed"><code class="docutils literal notranslate"><span class="pre">Settings.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.upstream_cache_dir"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_cache_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.upstream_runtime_overrides"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_runtime_overrides</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/settings.html#smckit.settings.Settings.use_gpu"><code class="docutils literal notranslate"><span class="pre">Settings.use_gpu()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">smckit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/get-started/installation.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>smckit has two installation layers:</p>
+<ol class="arabic simple">
+<li><p>install the Python package itself</p></li>
+<li><p>enable the upstream tools you want to preserve and run</p></li>
+</ol>
+<p>The install contract is explicit:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">smckit</span></code> is expected to make the documented native quickstarts
+runnable from the installed package alone, using packaged example data.</p></li>
+<li><p>Full <code class="docutils literal notranslate"><span class="pre">implementation=&quot;upstream&quot;</span></code> workflows are only guaranteed from a source
+checkout, because several upstream methods still depend on vendored oracle
+source trees or non-Python runtimes that are not wheel-friendly.</p></li>
+</ul>
+<p>For work inside the repository, the supported environment split is:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">uv</span></code> manages the Python package environment and lockfile</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pixi</span></code> manages repo-level tasks and cross-language runtimes used by upstream validation</p></li>
+</ul>
+<section id="install-from-pypi">
+<h2>Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Link to this heading"></a></h2>
+<p>For normal use, install the published package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>smckit
+</pre></div>
+</div>
+<p>Optional extras:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[all-models]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[asmc]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[psmc,msmc2,msmc_im,smcpp,esmc2,dical2]&quot;</span>
+</pre></div>
+</div>
+<p>Current meaning of extras:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">asmc</span></code> installs the published <code class="docutils literal notranslate"><span class="pre">asmc-asmc</span></code> Python runtime on macOS/Linux.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psmc</span></code>, <code class="docutils literal notranslate"><span class="pre">msmc2</span></code>, <code class="docutils literal notranslate"><span class="pre">msmc_im</span></code>, <code class="docutils literal notranslate"><span class="pre">smcpp</span></code>, <code class="docutils literal notranslate"><span class="pre">esmc2</span></code>, and <code class="docutils literal notranslate"><span class="pre">dical2</span></code> are semantic
+extras for reproducible install commands and documentation, but they still
+rely on non-Python toolchains or vendored upstream source.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">all-models</span></code> installs the currently available Python-side extras in one step.</p></li>
+</ul>
+<p>Development extras:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[jax]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[dev]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[docs]&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="install-from-source">
+<h2>Install from source<a class="headerlink" href="#install-from-source" title="Link to this heading"></a></h2>
+<p>Use a source checkout if you are contributing to smckit or need guaranteed
+access to vendored upstream tool sources for <code class="docutils literal notranslate"><span class="pre">implementation=&quot;upstream&quot;</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kevinkorfmann/smckit.git
+<span class="nb">cd</span><span class="w"> </span>smckit
+uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>--extra<span class="w"> </span>docs
+pixi<span class="w"> </span>run<span class="w"> </span>test-fast
+</pre></div>
+</div>
+<p>Core Python dependencies:</p>
+<ul class="simple">
+<li><p>Python &gt;= 3.10</p></li>
+<li><p>NumPy &gt;= 1.24</p></li>
+<li><p>SciPy &gt;= 1.10</p></li>
+<li><p>Matplotlib &gt;= 3.7</p></li>
+<li><p>Numba &gt;= 0.59</p></li>
+</ul>
+<p>If you only want the runtime package, prefer the PyPI install above.</p>
+</section>
+<section id="repo-environment-commands">
+<h2>Repo environment commands<a class="headerlink" href="#repo-environment-commands" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w"> </span>--extra<span class="w"> </span>docs
+pixi<span class="w"> </span>run<span class="w"> </span><span class="nb">test</span>
+pixi<span class="w"> </span>run<span class="w"> </span>docs
+pixi<span class="w"> </span>run<span class="w"> </span>build
+</pre></div>
+</div>
+<p>If you need the upstream-validation runtimes in one repo environment, use the
+<code class="docutils literal notranslate"><span class="pre">upstream</span></code> pixi environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pixi<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span>upstream<span class="w"> </span>test-fast
+</pre></div>
+</div>
+</section>
+<section id="upstream-tool-readiness">
+<h2>Upstream tool readiness<a class="headerlink" href="#upstream-tool-readiness" title="Link to this heading"></a></h2>
+<p>Check what is currently source-ready, runtime-ready, and bootstrapped:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">smckit</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">smckit</span><span class="o">.</span><span class="n">upstream</span><span class="o">.</span><span class="n">status</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>When upstream mode is not ready, the runtime error now includes an install
+recipe for the current platform. You can also inspect it directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">smckit</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">smckit</span><span class="o">.</span><span class="n">upstream</span><span class="o">.</span><span class="n">install_help</span><span class="p">(</span><span class="s2">&quot;esmc2&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="runtime-and-bootstrap-matrix">
+<h2>Runtime and bootstrap matrix<a class="headerlink" href="#runtime-and-bootstrap-matrix" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool</p></th>
+<th class="head"><p>Vendored source in repo</p></th>
+<th class="head"><p>Runtime</p></th>
+<th class="head"><p>Bootstrap contract</p></th>
+<th class="head"><p>Current public bridge</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PSMC</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">make</span></code> + C compiler</p></td>
+<td><p>build vendored source and cache <code class="docutils literal notranslate"><span class="pre">psmc</span></code> binary</p></td>
+<td><p>Public</p></td>
+</tr>
+<tr class="row-odd"><td><p>MSMC2</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">make</span></code> + D toolchain</p></td>
+<td><p>build vendored source and cache <code class="docutils literal notranslate"><span class="pre">msmc2</span></code> binary</p></td>
+<td><p>Public</p></td>
+</tr>
+<tr class="row-even"><td><p>MSMC-IM</p></td>
+<td><p>Yes</p></td>
+<td><p>Python</p></td>
+<td><p>vendored script is the oracle entrypoint</p></td>
+<td><p>Public</p></td>
+</tr>
+<tr class="row-odd"><td><p>SMC++</p></td>
+<td><p>No</p></td>
+<td><p>controlled Python env</p></td>
+<td><p>still depends on side environment</p></td>
+<td><p>Public, but not fully vendored</p></td>
+</tr>
+<tr class="row-even"><td><p>eSMC2</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Rscript</span></code> / <code class="docutils literal notranslate"><span class="pre">R</span> <span class="pre">CMD</span> <span class="pre">INSTALL</span></code></p></td>
+<td><p>install vendored R package into <code class="docutils literal notranslate"><span class="pre">.r-lib/</span></code></p></td>
+<td><p>Public</p></td>
+</tr>
+<tr class="row-odd"><td><p>ASMC</p></td>
+<td><p>Yes</p></td>
+<td><p>CMake/C++ toolchain</p></td>
+<td><p>build vendored <code class="docutils literal notranslate"><span class="pre">ASMC_exe</span></code> and cache it</p></td>
+<td><p>Public</p></td>
+</tr>
+<tr class="row-even"><td><p>diCal2</p></td>
+<td><p>Yes</p></td>
+<td><p>Java</p></td>
+<td><p>vendored <code class="docutils literal notranslate"><span class="pre">diCal2.jar</span></code> is the oracle artifact</p></td>
+<td><p>Public</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="platform-install-recipes">
+<h2>Platform install recipes<a class="headerlink" href="#platform-install-recipes" title="Link to this heading"></a></h2>
+<p>These are the commands smckit points users toward when an upstream runtime is
+missing.</p>
+<section id="macos">
+<h3>macOS<a class="headerlink" href="#macos" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[all-models]&quot;</span>
+brew<span class="w"> </span>install<span class="w"> </span>make<span class="w"> </span>gcc
+brew<span class="w"> </span>install<span class="w"> </span>make<span class="w"> </span>llvm<span class="w"> </span>ldc
+brew<span class="w"> </span>install<span class="w"> </span>--cask<span class="w"> </span>r
+brew<span class="w"> </span>install<span class="w"> </span>--cask<span class="w"> </span>temurin
+</pre></div>
+</div>
+</section>
+<section id="linux">
+<h3>Linux<a class="headerlink" href="#linux" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;smckit[all-models]&quot;</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential<span class="w"> </span>make
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>build-essential<span class="w"> </span>make<span class="w"> </span>ldc
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>r-base
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>openjdk-21-jre
+</pre></div>
+</div>
+</section>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading"></a></h3>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">smckit</span>
+<span class="n">winget</span> <span class="n">install</span> <span class="n">RProject</span><span class="p">.</span><span class="nb">R</span>
+<span class="n">winget</span> <span class="n">install</span> <span class="n">EclipseAdoptium</span><span class="p">.</span><span class="n">Temurin</span><span class="p">.</span><span class="n">21</span><span class="p">.</span><span class="n">JRE</span>
+<span class="n">wsl</span> <span class="p">-</span><span class="n">-install</span>
+</pre></div>
+</div>
+<p>On Windows, upstream <code class="docutils literal notranslate"><span class="pre">psmc</span></code> and <code class="docutils literal notranslate"><span class="pre">msmc2</span></code> are best run under WSL2. Native smckit
+implementations remain available directly in Python.</p>
+</section>
+</section>
+<section id="bootstrapping-examples">
+<h2>Bootstrapping examples<a class="headerlink" href="#bootstrapping-examples" title="Link to this heading"></a></h2>
+<p>When a bootstrap path exists, use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">smckit</span>
+
+<span class="n">smckit</span><span class="o">.</span><span class="n">upstream</span><span class="o">.</span><span class="n">bootstrap</span><span class="p">(</span><span class="s2">&quot;esmc2&quot;</span><span class="p">)</span>
+<span class="n">status</span> <span class="o">=</span> <span class="n">smckit</span><span class="o">.</span><span class="n">upstream</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="s2">&quot;esmc2&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">[</span><span class="s2">&quot;ready&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>For tools without a public bridge yet, <code class="docutils literal notranslate"><span class="pre">status()</span></code> should still tell you what is
+missing so docs and code do not overclaim readiness.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart-psmc.html" class="btn btn-neutral float-right" title="Quickstart: PSMC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

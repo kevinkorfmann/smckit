@@ -15,6 +15,7 @@ from smckit.io._dical2 import (
     read_dical2_rates,
     read_dical2_sequences,
 )
+from smckit.io._examples import example_path, example_prefix
 from smckit.io._msmc_im import read_msmc_im_output, write_msmc_im_output
 from smckit.io._multihetsep import (
     read_msmc_combined_output,
@@ -34,6 +35,8 @@ __all__ = [
     "read_dical2_param",
     "read_dical2_rates",
     "read_dical2_sequences",
+    "example_path",
+    "example_prefix",
     "read_hap",
     "read_map",
     "read_msmc_combined_output",

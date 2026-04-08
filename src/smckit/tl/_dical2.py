@@ -29,10 +29,12 @@ multiple populations.* PNAS 116(34):17115–17120.
 from __future__ import annotations
 
 import logging
+import math
 import subprocess
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 from scipy.linalg import eig
@@ -49,6 +51,7 @@ from smckit.tl._implementation import (
     normalize_implementation,
     require_upstream_available,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,6 +59,12 @@ logger = logging.getLogger(__name__)
 DICAL2_T_INF = 1000.0
 LOG_ZERO = -1e300
 EPS = 1e-12
+_ODE_INTEGRATION_LENGTH = 5.0
+_ODE_MAX_TIME = 2000.0
+_ODE_FACTOR_START_MAX = 10.0
+_ODE_ABS_TOL = 1e-14
+_ODE_REL_TOL = 1e-13
+_META_MAX_NEW_POINT_TRIES = 50
 
 
 def _dical2_java_help() -> str:
@@ -93,6 +102,10 @@ class DiCal2ResolvedOptions:
     use_param_rel_err_m: bool
     interval_type: str | None
     interval_params: str | None
+    ancient_deme_states: bool
+    add_trunk_intervals: int
+    trunk_style: str
+    cake_style: str
     legacy_n_intervals: int
     legacy_max_t: float
     legacy_alpha: float
@@ -218,6 +231,14 @@ def _resolve_dical2_options(
         coordinatewise = not _coerce_bool(disable_coordinatewise, default=False)
     else:
         coordinatewise = _coerce_bool(coordinatewise, default=True)
+    ancient_deme_states = _coerce_bool(
+        _lookup_option(
+            method_options,
+            "ancient_deme_states",
+            "ancientDemeStates",
+        ),
+        default=False,
+    )
     return DiCal2ResolvedOptions(
         composite_mode=str(
             _lookup_option(
@@ -356,6 +377,31 @@ def _resolve_dical2_options(
         ),
         interval_type=interval_type,
         interval_params=interval_params,
+        ancient_deme_states=ancient_deme_states,
+        add_trunk_intervals=int(
+            _lookup_option(
+                method_options,
+                "add_trunk_intervals",
+                "addTrunkIntervals",
+                default=0,
+            )
+        ),
+        trunk_style=str(
+            _lookup_option(
+                method_options,
+                "trunk_style",
+                "trunkStyle",
+                default="migratingEthan",
+            )
+        ).lower(),
+        cake_style=str(
+            _lookup_option(
+                method_options,
+                "cake_style",
+                "cakeStyle",
+                default="average",
+            )
+        ).lower(),
         legacy_n_intervals=int(n_intervals),
         legacy_max_t=float(max_t),
         legacy_alpha=float(alpha),
@@ -412,6 +458,10 @@ def _resolved_options_metadata(resolved: DiCal2ResolvedOptions) -> dict[str, obj
         "use_param_rel_err_m": resolved.use_param_rel_err_m,
         "interval_type": resolved.interval_type,
         "interval_params": resolved.interval_params,
+        "ancient_deme_states": resolved.ancient_deme_states,
+        "add_trunk_intervals": resolved.add_trunk_intervals,
+        "trunk_style": resolved.trunk_style,
+        "cake_style": resolved.cake_style,
         "legacy_n_intervals": resolved.legacy_n_intervals,
         "legacy_max_t": resolved.legacy_max_t,
         "legacy_alpha": resolved.legacy_alpha,
@@ -617,24 +667,99 @@ def refine_demography(
     boundaries.add(DICAL2_T_INF)
     sorted_b = sorted(boundaries)
 
+    hidden_boundaries = np.asarray(interval_boundaries, dtype=np.float64)
     refined = np.array(sorted_b, dtype=np.float64)
     n_refined = len(refined) - 1
 
     # For each refined interval, find which original epoch it belongs to.
     epoch_map = np.zeros(n_refined, dtype=np.int64)
+    refined_to_hidden = np.zeros(n_refined, dtype=np.int64)
     for i in range(n_refined):
-        mid = 0.5 * (refined[i] + refined[i + 1])
+        if np.isfinite(refined[i + 1]):
+            mid = 0.5 * (refined[i] + refined[i + 1])
+        else:
+            mid = refined[i]
         for e in range(len(demo.epochs)):
             if demo.epochs[e].start <= mid < demo.epochs[e].end:
                 epoch_map[i] = e
                 break
         else:
             epoch_map[i] = len(demo.epochs) - 1
+        hidden_idx = np.searchsorted(hidden_boundaries, mid, side="right") - 1
+        hidden_idx = max(0, min(hidden_idx, len(hidden_boundaries) - 2))
+        refined_to_hidden[i] = hidden_idx
 
     return RefinedDemography(
         demo=demo,
+        hidden_boundaries=hidden_boundaries,
         refined_boundaries=refined,
         epoch_map=epoch_map,
+        refined_to_hidden=refined_to_hidden,
+    )
+
+
+def _refined_interval_epoch(refined: "RefinedDemography", interval: int) -> DiCal2Epoch:
+    base_epoch = refined.demo.epochs[int(refined.epoch_map[interval])]
+    interval_start = float(refined.refined_boundaries[interval])
+    interval_end = float(refined.refined_boundaries[interval + 1])
+    if refined.is_pulse(interval):
+        return DiCal2Epoch(
+            start=interval_start,
+            end=interval_end,
+            partition=[list(group) for group in base_epoch.partition],
+            pop_sizes=None,
+            pop_size_param_ids=(
+                None if base_epoch.pop_size_param_ids is None else list(base_epoch.pop_size_param_ids)
+            ),
+            migration_matrix=None,
+            migration_param_ids=(
+                None
+                if base_epoch.migration_param_ids is None
+                else [list(row) for row in base_epoch.migration_param_ids]
+            ),
+            pulse_migration=(
+                None
+                if base_epoch.pulse_migration is None
+                else np.asarray(base_epoch.pulse_migration, dtype=np.float64).copy()
+            ),
+            growth_rates=None,
+            growth_rate_param_ids=(
+                None
+                if base_epoch.growth_rate_param_ids is None
+                else list(base_epoch.growth_rate_param_ids)
+            ),
+        )
+    pop_sizes = None
+    if base_epoch.pop_sizes is not None:
+        pop_sizes = np.asarray(base_epoch.pop_sizes, dtype=np.float64).copy()
+        growth_rates = _epoch_growth_rates(base_epoch)
+        if np.any(np.abs(growth_rates) > EPS) and np.isfinite(base_epoch.end) and interval_end < base_epoch.end - EPS:
+            pop_sizes *= np.exp(growth_rates * (base_epoch.end - interval_end))
+    return DiCal2Epoch(
+        start=interval_start,
+        end=interval_end,
+        partition=[list(group) for group in base_epoch.partition],
+        pop_sizes=pop_sizes,
+        pop_size_param_ids=(
+            None if base_epoch.pop_size_param_ids is None else list(base_epoch.pop_size_param_ids)
+        ),
+        migration_matrix=(
+            None
+            if base_epoch.migration_matrix is None
+            else np.asarray(base_epoch.migration_matrix, dtype=np.float64).copy()
+        ),
+        migration_param_ids=(
+            None
+            if base_epoch.migration_param_ids is None
+            else [list(row) for row in base_epoch.migration_param_ids]
+        ),
+        pulse_migration=None,
+        growth_rates=_epoch_growth_rates(base_epoch).copy(),
+        growth_rate_param_ids=(
+            None
+            if base_epoch.growth_rate_param_ids is None
+            else list(base_epoch.growth_rate_param_ids)
+        ),
     )
 
 
@@ -643,18 +768,80 @@ class RefinedDemography:
     """Demographic model refined to the HMM time grid."""
 
     demo: DiCal2Demo
+    hidden_boundaries: np.ndarray  # (n_hidden+1,)
     refined_boundaries: np.ndarray  # (n_refined+1,)
     epoch_map: np.ndarray  # (n_refined,) — index into demo.epochs
+    refined_to_hidden: np.ndarray  # (n_refined,) → hidden interval index
 
     @property
     def n_refined(self) -> int:
         return len(self.refined_boundaries) - 1
+
+    @property
+    def n_hidden(self) -> int:
+        return len(self.hidden_boundaries) - 1
 
     def interval_duration(self, i: int) -> float:
         return float(self.refined_boundaries[i + 1] - self.refined_boundaries[i])
 
     def is_pulse(self, i: int) -> bool:
         return abs(self.interval_duration(i)) < EPS
+
+
+_HALF_MIGRATION_TRUNK_STYLES = {
+    "migratingmulticake",
+    "migmulticakeupdating",
+    "recursive",
+    "migratingethan",
+}
+
+
+def _trunk_style_halves_migration_rates(trunk_style: str) -> bool:
+    return trunk_style.lower() in _HALF_MIGRATION_TRUNK_STYLES
+
+
+def _halve_demo_migration_rates(demo: DiCal2Demo) -> DiCal2Demo:
+    new_epochs: list[DiCal2Epoch] = []
+    for epoch in demo.epochs:
+        new_mig = None
+        if epoch.migration_matrix is not None:
+            new_mig = np.asarray(epoch.migration_matrix, dtype=np.float64).copy() / 2.0
+        new_epochs.append(
+            DiCal2Epoch(
+                start=float(epoch.start),
+                end=float(epoch.end),
+                partition=[list(group) for group in epoch.partition],
+                pop_sizes=None if epoch.pop_sizes is None else np.asarray(epoch.pop_sizes, dtype=np.float64).copy(),
+                pop_size_param_ids=None if epoch.pop_size_param_ids is None else list(epoch.pop_size_param_ids),
+                migration_matrix=new_mig,
+                migration_param_ids=(
+                    None
+                    if epoch.migration_param_ids is None
+                    else [list(row) for row in epoch.migration_param_ids]
+                ),
+                pulse_migration=(
+                    None
+                    if epoch.pulse_migration is None
+                    else np.asarray(epoch.pulse_migration, dtype=np.float64).copy()
+                ),
+                growth_rates=(
+                    None
+                    if epoch.growth_rates is None
+                    else np.asarray(epoch.growth_rates, dtype=np.float64).copy()
+                ),
+                growth_rate_param_ids=(
+                    None
+                    if epoch.growth_rate_param_ids is None
+                    else list(epoch.growth_rate_param_ids)
+                ),
+            )
+        )
+    return DiCal2Demo(
+        epoch_boundaries=np.asarray(demo.epoch_boundaries, dtype=np.float64).copy(),
+        epochs=new_epochs,
+        n_present_demes=int(demo.n_present_demes),
+        boundary_param_ids=None if demo.boundary_param_ids is None else list(demo.boundary_param_ids),
+    )
 
 
 # ===========================================================================
@@ -664,18 +851,30 @@ class RefinedDemography:
 
 @dataclass
 class SimpleTrunk:
-    """Simple trunk process: absorption rate proportional to trunk size.
-
-    For each epoch and ancient deme, the absorption rate is
-
-        alpha[d] = (number of trunk haplotypes assigned to d) / N[d]
-
-    where ``N[d]`` is the population size of ancient deme ``d``.
-    """
+    """Native approximation of the upstream diCal2 trunk process."""
 
     config: DiCal2Config
     additional_hap_idx: int  # the haplotype currently being conditioned on
     trunk_hap_indices: list[int] | None = None
+    refined: RefinedDemography | None = None
+    trunk_style: str = "migratingethan"
+    cake_style: str = "average"
+
+    def __post_init__(self) -> None:
+        self.trunk_style = self.trunk_style.lower()
+        self.cake_style = self.cake_style.lower()
+        self.sample_sizes = np.zeros(self.config.n_populations, dtype=np.float64)
+        for hap_idx in self._iter_trunk_haps():
+            present = int(self.config.haplotype_populations[hap_idx])
+            if present < 0:
+                continue
+            self.sample_sizes[present] += float(
+                self.config.haplotype_multiplicities[hap_idx, present]
+            )
+        self._fraction_by_interval: list[np.ndarray] | None = None
+        self._absorb_rates_by_interval: list[np.ndarray] | None = None
+        if self.refined is not None:
+            self._build_interval_data()
 
     def _iter_trunk_haps(self):
         if self.trunk_hap_indices is None:
@@ -687,59 +886,245 @@ class SimpleTrunk:
                 if h != self.additional_hap_idx:
                     yield h
 
-    def trunk_sizes(self, partition: list[list[int]]) -> np.ndarray:
-        """Number of trunk haplotypes per ancient deme."""
-        n_anc = len(partition)
-        sizes = np.zeros(n_anc, dtype=np.float64)
-        for a, group in enumerate(partition):
-            for present_d in group:
-                # Count trunk haplotypes in this present deme
-                count = sum(
-                    self.config.haplotype_multiplicities[h, present_d]
-                    for h in self._iter_trunk_haps()
-                    if self.config.haplotype_populations[h] == present_d
+    def _member_demes(
+        self,
+        prev_partition: list[list[int]],
+        next_partition: list[list[int]],
+        next_ancient: int,
+    ) -> list[int]:
+        next_members = set(next_partition[next_ancient])
+        members: list[int] = []
+        for prev_ancient, prev_group in enumerate(prev_partition):
+            if set(prev_group).issubset(next_members):
+                members.append(prev_ancient)
+        return members
+
+    def _transition_update(
+        self,
+        migration_matrix: np.ndarray | None,
+        dt: float,
+        size: int,
+    ) -> np.ndarray:
+        if migration_matrix is None:
+            return np.eye(size, dtype=np.float64)
+        matrix = np.asarray(migration_matrix, dtype=np.float64)
+        if not np.isfinite(dt):
+            if np.allclose(matrix, 0.0):
+                return np.eye(size, dtype=np.float64)
+            dt = 2000.0
+        return np.real(matrix_exp_eig(matrix, dt))
+
+    def _build_simple_interval_data(self) -> None:
+        assert self.refined is not None
+        self._fraction_by_interval = []
+        self._absorb_rates_by_interval = []
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            partition = epoch.partition
+            pop_sizes = (
+                np.ones(len(partition), dtype=np.float64)
+                if epoch.pop_sizes is None
+                else np.asarray(epoch.pop_sizes, dtype=np.float64)
+            )
+            fractions = np.zeros((self.config.n_populations, len(partition)), dtype=np.float64)
+            absorb_rates = np.zeros(len(partition), dtype=np.float64)
+            for ancient, group in enumerate(partition):
+                ancient_size = float(sum(self.sample_sizes[present] for present in group))
+                if ancient_size > 0.0:
+                    for present in group:
+                        fractions[present, ancient] = self.sample_sizes[present] / ancient_size
+                if epoch.pop_sizes is not None and pop_sizes[ancient] > 0.0:
+                    absorb_rates[ancient] = ancient_size / pop_sizes[ancient]
+            self._fraction_by_interval.append(fractions)
+            self._absorb_rates_by_interval.append(absorb_rates)
+
+    def _build_migrating_transition_probs(self) -> list[np.ndarray | None]:
+        assert self.refined is not None
+        transitions: list[np.ndarray | None] = []
+        prev_end: np.ndarray | None = None
+        n_present = self.config.n_populations
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            partition = epoch.partition
+            n_anc = len(partition)
+            if interval == 0:
+                start = np.eye(n_present, n_anc, dtype=np.float64)
+            else:
+                assert prev_end is not None
+                prev_partition = _refined_interval_epoch(self.refined, interval - 1).partition
+                start = np.zeros((n_present, n_anc), dtype=np.float64)
+                for present in range(n_present):
+                    for ancient in range(n_anc):
+                        for member in self._member_demes(prev_partition, partition, ancient):
+                            start[present, ancient] += prev_end[present, member]
+            if self.refined.is_pulse(interval):
+                assert epoch.pulse_migration is not None
+                end = start @ np.asarray(epoch.pulse_migration, dtype=np.float64)
+                prev_end = end
+                transitions.append(None)
+                continue
+            dt = float(self.refined.interval_duration(interval))
+            update = self._transition_update(epoch.migration_matrix, dt, n_anc)
+            end = start @ update
+            prev_end = end
+            if self.cake_style == "beginning":
+                transitions.append(start)
+            elif self.cake_style == "end":
+                transitions.append(end)
+            else:
+                transitions.append(0.5 * (start + end))
+        return transitions
+
+    def _solve_ethan_epoch(
+        self,
+        migration_matrix: np.ndarray | None,
+        pop_sizes: np.ndarray,
+        growth_rates: np.ndarray | None,
+        start_sizes: np.ndarray,
+        start_time: float,
+        end_time: float,
+    ) -> np.ndarray:
+        migration = (
+            np.zeros((len(start_sizes), len(start_sizes)), dtype=np.float64)
+            if migration_matrix is None
+            else np.asarray(migration_matrix, dtype=np.float64)
+        )
+
+        def rhs(t: float, y: np.ndarray) -> np.ndarray:
+            y_dot = migration.T @ y
+            for idx in range(len(y)):
+                if y[idx] <= 1.0:
+                    continue
+                curr_pop = float(pop_sizes[idx])
+                if (
+                    growth_rates is not None
+                    and np.isfinite(end_time)
+                    and abs(float(growth_rates[idx])) > EPS
+                ):
+                    curr_pop *= math.exp(float(growth_rates[idx]) * (end_time - t))
+                y_dot[idx] += -y[idx] * (y[idx] - 1.0) / max(2.0 * curr_pop, EPS)
+            return y_dot
+
+        solution = solve_ivp(
+            rhs,
+            (start_time, end_time),
+            np.asarray(start_sizes, dtype=np.float64),
+            method="RK45",
+            rtol=1e-8,
+            atol=1e-10,
+        )
+        if not solution.success:
+            raise RuntimeError(f"Ethan trunk ODE failed: {solution.message}")
+        return np.clip(np.asarray(solution.y[:, -1], dtype=np.float64), 0.0, np.inf)
+
+    def _build_migrating_ethan_data(self) -> None:
+        assert self.refined is not None
+        migration_transition_probs = self._build_migrating_transition_probs()
+        self._fraction_by_interval = []
+        self._absorb_rates_by_interval = []
+        last_ending_sizes: np.ndarray | None = None
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            partition = epoch.partition
+            n_anc = len(partition)
+            starting_sizes = np.zeros(n_anc, dtype=np.float64)
+            if interval == 0:
+                starting_sizes[:] = self.sample_sizes[:n_anc]
+            else:
+                assert last_ending_sizes is not None
+                prev_partition = _refined_interval_epoch(self.refined, interval - 1).partition
+                for ancient in range(n_anc):
+                    for member in self._member_demes(prev_partition, partition, ancient):
+                        starting_sizes[ancient] += last_ending_sizes[member]
+
+            if self.refined.is_pulse(interval):
+                assert epoch.pulse_migration is not None
+                last_ending_sizes = starting_sizes @ np.asarray(epoch.pulse_migration, dtype=np.float64)
+                self._absorb_rates_by_interval.append(np.zeros(n_anc, dtype=np.float64))
+                self._fraction_by_interval.append(
+                    np.zeros((self.config.n_populations, n_anc), dtype=np.float64)
                 )
-                sizes[a] += count
-        return sizes
+                continue
+
+            pop_sizes = np.asarray(epoch.pop_sizes, dtype=np.float64)
+            growth_rates = (
+                None
+                if epoch.growth_rates is None
+                else np.asarray(epoch.growth_rates, dtype=np.float64)
+            )
+            start_time = float(self.refined.refined_boundaries[interval])
+            end_time = float(self.refined.refined_boundaries[interval + 1])
+            ending_sizes = self._solve_ethan_epoch(
+                None
+                if epoch.migration_matrix is None
+                else np.asarray(epoch.migration_matrix, dtype=np.float64),
+                pop_sizes,
+                growth_rates,
+                starting_sizes,
+                start_time,
+                end_time,
+            )
+            last_ending_sizes = ending_sizes
+            if self.cake_style == "beginning":
+                trunk_size = starting_sizes
+            elif self.cake_style == "end":
+                trunk_size = ending_sizes
+            else:
+                trunk_size = 0.5 * (starting_sizes + ending_sizes)
+            self._absorb_rates_by_interval.append(
+                np.divide(
+                    trunk_size,
+                    pop_sizes,
+                    out=np.zeros_like(trunk_size),
+                    where=pop_sizes > 0,
+                )
+            )
+
+            transition = migration_transition_probs[interval]
+            fractions = np.zeros((self.config.n_populations, n_anc), dtype=np.float64)
+            if transition is not None:
+                for ancient in range(n_anc):
+                    column = self.sample_sizes * transition[:, ancient]
+                    total = float(np.sum(column))
+                    if total > 0.0:
+                        fractions[:, ancient] = column / total
+            self._fraction_by_interval.append(fractions)
+
+    def _build_interval_data(self) -> None:
+        if self.trunk_style == "simple":
+            self._build_simple_interval_data()
+            return
+        if self.trunk_style == "migratingethan":
+            self._build_migrating_ethan_data()
+            return
+        raise NotImplementedError(f"Unsupported native diCal2 trunk_style: {self.trunk_style}")
 
     def absorption_rates(
         self,
-        partition: list[list[int]],
+        refined_interval: int,
         pop_sizes: np.ndarray,
     ) -> np.ndarray:
         """Absorption rate per ancient deme."""
-        sizes = self.trunk_sizes(partition)
-        rates = np.zeros_like(sizes)
-        for a in range(len(sizes)):
-            if pop_sizes[a] > 0 and sizes[a] > 0:
-                rates[a] = sizes[a] / pop_sizes[a]
-        return rates
+        if self._absorb_rates_by_interval is not None:
+            return self._absorb_rates_by_interval[refined_interval].copy()
+        return np.zeros(len(pop_sizes), dtype=np.float64)
 
     def fraction_ancient_to_present(
         self,
-        partition: list[list[int]],
+        refined_interval: int,
         present_deme: int,
         ancient_deme: int,
     ) -> float:
         """Fraction of trunk in ancient deme that comes from present deme."""
-        if present_deme not in partition[ancient_deme]:
+        if self._fraction_by_interval is not None:
+            fractions = self._fraction_by_interval[refined_interval]
+            if (
+                0 <= present_deme < fractions.shape[0]
+                and 0 <= ancient_deme < fractions.shape[1]
+            ):
+                return float(fractions[present_deme, ancient_deme])
             return 0.0
-        ancient_size = sum(
-            sum(
-                self.config.haplotype_multiplicities[h, d]
-                for h in self._iter_trunk_haps()
-                if self.config.haplotype_populations[h] == d
-            )
-            for d in partition[ancient_deme]
-        )
-        my_size = sum(
-            self.config.haplotype_multiplicities[h, present_deme]
-            for h in self._iter_trunk_haps()
-            if self.config.haplotype_populations[h] == present_deme
-        )
-        if ancient_size == 0:
-            return 0.0
-        return my_size / ancient_size
+        return 0.0
 
 
 # ===========================================================================
@@ -875,6 +1260,400 @@ def _integrate_transition_matrix(
     return transition, solution.sol if dense_output else None
 
 
+def _member_demes_for_interval_transition(
+    prev_partition: list[list[int]],
+    next_partition: list[list[int]],
+    next_ancient: int,
+) -> list[int]:
+    next_members = set(next_partition[next_ancient])
+    return [
+        prev_ancient
+        for prev_ancient, prev_group in enumerate(prev_partition)
+        if set(prev_group).issubset(next_members)
+    ]
+
+
+@dataclass(frozen=True)
+class _RecoStateSpace:
+    n_demes: int
+
+    def __post_init__(self) -> None:
+        pair_to_index: dict[tuple[int, int], int] = {}
+        index_to_pair: list[tuple[int, int]] = []
+        for first_deme in range(2 * self.n_demes):
+            for second_deme in range(-1, 2 * self.n_demes):
+                pair = (first_deme, second_deme)
+                pair_to_index[pair] = len(index_to_pair)
+                index_to_pair.append(pair)
+        object.__setattr__(self, "pair_to_index", pair_to_index)
+        object.__setattr__(self, "index_to_pair", index_to_pair)
+
+    def idx_together(self, deme: int) -> int:
+        return self.pair_to_index[(deme, -1)]
+
+    def idx_apart(self, first_deme: int, second_deme: int) -> int:
+        return self.pair_to_index[(first_deme, second_deme)]
+
+    @property
+    def size(self) -> int:
+        return len(self.index_to_pair)
+
+
+@dataclass(frozen=True)
+class _MutationStateSpace:
+    n_demes: int
+
+    def __post_init__(self) -> None:
+        pair_to_index: dict[tuple[int, int], int] = {}
+        index_to_pair: list[tuple[int, int]] = []
+        for n_mut in range(2):
+            for deme in range(2 * self.n_demes):
+                pair = (n_mut, deme)
+                pair_to_index[pair] = len(index_to_pair)
+                index_to_pair.append(pair)
+        object.__setattr__(self, "pair_to_index", pair_to_index)
+        object.__setattr__(self, "index_to_pair", index_to_pair)
+
+    def idx(self, n_mut: int, deme: int) -> int:
+        return self.pair_to_index[(n_mut, deme)]
+
+    @property
+    def size(self) -> int:
+        return len(self.index_to_pair)
+
+
+def _solve_time_dependent_ode_system(
+    initial: np.ndarray,
+    deriv,
+    start_time: float,
+    end_time: float,
+) -> np.ndarray:
+    state0 = np.asarray(initial, dtype=np.float64)
+    if state0.size == 0:
+        return state0.copy()
+    if abs(end_time - start_time) < EPS:
+        return state0.copy()
+
+    def integrate_segment(
+        segment_start: float,
+        segment_end: float,
+        state: np.ndarray,
+    ) -> np.ndarray:
+        solution = solve_ivp(
+            deriv,
+            (float(segment_start), float(segment_end)),
+            state,
+            method="DOP853",
+            rtol=_ODE_REL_TOL,
+            atol=_ODE_ABS_TOL,
+        )
+        if not solution.success:
+            raise RuntimeError(f"ODE integration failed: {solution.message}")
+        return np.clip(np.real(solution.y[:, -1]), 0.0, np.inf)
+
+    if end_time < DICAL2_T_INF - EPS:
+        return integrate_segment(float(start_time), float(end_time), state0)
+
+    state = state0.copy()
+    curr_start = float(start_time)
+    curr_end = curr_start + _ODE_INTEGRATION_LENGTH
+    state = integrate_segment(curr_start, curr_end, state)
+    max_time = max(_ODE_FACTOR_START_MAX * curr_start, _ODE_MAX_TIME)
+    while True:
+        curr_deriv = np.asarray(deriv(curr_end, state), dtype=np.float64)
+        if float(np.max(np.abs(curr_deriv))) <= 0.1 * EPS:
+            return np.clip(state, 0.0, np.inf)
+        if curr_end > max_time:
+            raise RuntimeError(
+                "The ODE solver computing the HMM probabilities ran too long. "
+                f"max_deriv={float(np.max(np.abs(curr_deriv)))}"
+            )
+        next_end = curr_end + _ODE_INTEGRATION_LENGTH
+        state = integrate_segment(curr_end, next_end, state)
+        curr_end = next_end
+
+
+def _solve_time_dependent_probability_ode(
+    initial: np.ndarray,
+    rate_matrix_at_time,
+    start_time: float,
+    end_time: float,
+) -> np.ndarray:
+    return _solve_time_dependent_ode_system(
+        initial,
+        lambda time_point, state: state @ rate_matrix_at_time(time_point),
+        start_time,
+        end_time,
+    )
+
+
+def _ode_reco_rate_matrix_at_time(
+    *,
+    epoch: DiCal2Epoch,
+    base_absorption_rates: np.ndarray,
+    recombination_rate: float,
+    state_space: _RecoStateSpace,
+    init_pop_sizes: np.ndarray,
+    smc_prime: bool = False,
+    time_point: float,
+) -> np.ndarray:
+    n_demes = state_space.n_demes
+    migration = (
+        np.zeros((n_demes, n_demes), dtype=np.float64)
+        if epoch.migration_matrix is None
+        else np.asarray(epoch.migration_matrix, dtype=np.float64)
+    )
+    absorption_rates = _absorption_rates_at_time(
+        base_absorption_rates,
+        epoch,
+        time_point,
+    )
+    rate_matrix = np.zeros((state_space.size, state_space.size), dtype=np.float64)
+
+    for first_deme in range(n_demes):
+        src_idx = state_space.idx_together(first_deme)
+        rate_matrix[src_idx, src_idx] = (
+            migration[first_deme, first_deme]
+            - recombination_rate
+            - absorption_rates[first_deme]
+        )
+        rate_matrix[src_idx, state_space.idx_together(n_demes + first_deme)] = absorption_rates[
+            first_deme
+        ]
+        rate_matrix[src_idx, state_space.idx_apart(first_deme, first_deme)] = recombination_rate
+        for dst_deme in range(n_demes):
+            if dst_deme == first_deme:
+                continue
+            rate_matrix[src_idx, state_space.idx_together(dst_deme)] = migration[
+                first_deme,
+                dst_deme,
+            ]
+
+    for first_deme in range(n_demes):
+        for second_deme in range(n_demes):
+            src_idx = state_space.idx_apart(first_deme, second_deme)
+            diag_value = (
+                migration[first_deme, first_deme]
+                + migration[second_deme, second_deme]
+                - absorption_rates[first_deme]
+                - absorption_rates[second_deme]
+            )
+            if smc_prime and first_deme == second_deme:
+                diag_value -= 1.0 / max(float(init_pop_sizes[first_deme]), EPS)
+                rate_matrix[src_idx, state_space.idx_together(first_deme)] = 1.0 / max(
+                    float(init_pop_sizes[first_deme]),
+                    EPS,
+                )
+            rate_matrix[src_idx, src_idx] = diag_value
+            for target_deme in range(n_demes):
+                if target_deme == first_deme:
+                    rate_matrix[src_idx, state_space.idx_apart(n_demes + target_deme, second_deme)] = (
+                        absorption_rates[first_deme]
+                    )
+                else:
+                    rate_matrix[src_idx, state_space.idx_apart(target_deme, second_deme)] = migration[
+                        first_deme,
+                        target_deme,
+                    ]
+                if target_deme == second_deme:
+                    rate_matrix[src_idx, state_space.idx_apart(first_deme, n_demes + target_deme)] = (
+                        absorption_rates[second_deme]
+                    )
+                else:
+                    rate_matrix[src_idx, state_space.idx_apart(first_deme, target_deme)] = migration[
+                        second_deme,
+                        target_deme,
+                    ]
+
+    for fixed_deme in range(n_demes):
+        for free_deme in range(n_demes):
+            src_first_fixed = state_space.idx_apart(n_demes + fixed_deme, free_deme)
+            rate_matrix[src_first_fixed, src_first_fixed] = (
+                migration[free_deme, free_deme] - absorption_rates[free_deme]
+            )
+            rate_matrix[src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, n_demes + free_deme)] = (
+                absorption_rates[free_deme]
+            )
+            src_second_fixed = state_space.idx_apart(free_deme, n_demes + fixed_deme)
+            rate_matrix[src_second_fixed, src_second_fixed] = (
+                migration[free_deme, free_deme] - absorption_rates[free_deme]
+            )
+            rate_matrix[src_second_fixed, state_space.idx_apart(n_demes + free_deme, n_demes + fixed_deme)] = (
+                absorption_rates[free_deme]
+            )
+            for dst_deme in range(n_demes):
+                if dst_deme == free_deme:
+                    continue
+                rate_matrix[src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, dst_deme)] = migration[
+                    free_deme,
+                    dst_deme,
+                ]
+                rate_matrix[src_second_fixed, state_space.idx_apart(dst_deme, n_demes + fixed_deme)] = migration[
+                    free_deme,
+                    dst_deme,
+                ]
+
+    return rate_matrix
+
+
+def _ode_compute_r_epoch(
+    *,
+    epoch: DiCal2Epoch,
+    base_absorption_rates: np.ndarray,
+    recombination_rate: float,
+    start_no_reco: np.ndarray,
+    start_reco: np.ndarray,
+    interval_start: float,
+    interval_end: float,
+    init_pop_sizes: np.ndarray,
+    smc_prime: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
+    n_demes = len(base_absorption_rates)
+    state_space = _RecoStateSpace(n_demes)
+    y_start = np.zeros(state_space.size, dtype=np.float64)
+    for deme in range(n_demes):
+        y_start[state_space.idx_together(deme)] = float(start_no_reco[deme])
+    for first_deme in range(n_demes):
+        for second_deme in range(n_demes):
+            y_start[state_space.idx_apart(first_deme, second_deme)] = float(
+                start_reco[first_deme, second_deme]
+            )
+    y_end = _solve_time_dependent_probability_ode(
+        y_start,
+        lambda t: _ode_reco_rate_matrix_at_time(
+            epoch=epoch,
+            base_absorption_rates=base_absorption_rates,
+            recombination_rate=recombination_rate,
+            state_space=state_space,
+            init_pop_sizes=init_pop_sizes,
+            smc_prime=smc_prime,
+            time_point=t,
+        ),
+        interval_start,
+        interval_end,
+    )
+    no_reco = np.zeros(2 * n_demes, dtype=np.float64)
+    reco = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
+    for end_deme in range(2 * n_demes):
+        no_reco[end_deme] = y_end[state_space.idx_together(end_deme)]
+    for first_end in range(2 * n_demes):
+        for second_end in range(2 * n_demes):
+            reco[first_end, second_end] = y_end[state_space.idx_apart(first_end, second_end)]
+    return no_reco, reco
+
+
+def _ode_mutation_rate_matrix_at_time(
+    *,
+    epoch: DiCal2Epoch,
+    base_absorption_rates: np.ndarray,
+    mutation_rate: float,
+    state_space: _MutationStateSpace,
+    time_point: float,
+) -> np.ndarray:
+    n_demes = state_space.n_demes
+    migration = (
+        np.zeros((n_demes, n_demes), dtype=np.float64)
+        if epoch.migration_matrix is None
+        else np.asarray(epoch.migration_matrix, dtype=np.float64)
+    )
+    absorption_rates = _absorption_rates_at_time(
+        base_absorption_rates,
+        epoch,
+        time_point,
+    )
+    rate_matrix = np.zeros((state_space.size, state_space.size), dtype=np.float64)
+
+    for n_mut in range(2):
+        for src_deme in range(n_demes):
+            src_idx = state_space.idx(n_mut, src_deme)
+            diag_value = migration[src_deme, src_deme] - absorption_rates[src_deme]
+            if n_mut == 0:
+                diag_value -= mutation_rate
+                rate_matrix[src_idx, state_space.idx(1, src_deme)] = mutation_rate
+            rate_matrix[src_idx, src_idx] = diag_value
+            rate_matrix[src_idx, state_space.idx(n_mut, n_demes + src_deme)] = absorption_rates[
+                src_deme
+            ]
+            for dst_deme in range(n_demes):
+                if dst_deme == src_deme:
+                    continue
+                rate_matrix[src_idx, state_space.idx(n_mut, dst_deme)] = migration[
+                    src_deme,
+                    dst_deme,
+                ]
+    return rate_matrix
+
+
+def _ode_compute_mutation_events(
+    *,
+    epoch: DiCal2Epoch,
+    base_absorption_rates: np.ndarray,
+    mutation_rate: float,
+    interval_start: float,
+    interval_end: float,
+) -> np.ndarray:
+    n_demes = len(base_absorption_rates)
+    state_space = _MutationStateSpace(n_demes)
+    initial = np.eye(state_space.size, dtype=np.float64).reshape(-1)
+
+    def deriv(time_point: float, flat_state: np.ndarray) -> np.ndarray:
+        state = flat_state.reshape((state_space.size, state_space.size))
+        rate_matrix = _ode_mutation_rate_matrix_at_time(
+            epoch=epoch,
+            base_absorption_rates=base_absorption_rates,
+            mutation_rate=mutation_rate,
+            state_space=state_space,
+            time_point=time_point,
+        )
+        return (state @ rate_matrix).reshape(-1)
+
+    flat_transition = _solve_time_dependent_ode_system(
+        initial,
+        deriv,
+        interval_start,
+        interval_end,
+    )
+    transition = flat_transition.reshape((state_space.size, state_space.size))
+    result = np.zeros((n_demes, 2, 2 * n_demes), dtype=np.float64)
+    for start_deme in range(n_demes):
+        start_idx = state_space.idx(0, start_deme)
+        for n_mut in range(2):
+            for end_deme in range(2 * n_demes):
+                result[start_deme, n_mut, end_deme] = transition[
+                    start_idx,
+                    state_space.idx(n_mut, end_deme),
+                ]
+    return result
+
+
+def _ode_compute_marginal_transition_matrix(
+    *,
+    epoch: DiCal2Epoch,
+    base_absorption_rates: np.ndarray,
+    interval_start: float,
+    interval_end: float,
+) -> np.ndarray:
+    n_demes = len(base_absorption_rates)
+    transition = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
+    for start_deme in range(n_demes):
+        y_start = np.zeros(2 * n_demes, dtype=np.float64)
+        y_start[start_deme] = 1.0
+        y_end = _solve_time_dependent_probability_ode(
+            y_start,
+            lambda t: _extended_rate_matrix_at_time(
+                epoch,
+                base_absorption_rates,
+                t,
+            ),
+            interval_start,
+            interval_end,
+        )
+        transition[start_deme] = y_end
+    for absorbed in range(n_demes, 2 * n_demes):
+        transition[absorbed, absorbed] = 1.0
+    return transition
+
+
 def matrix_exp_eig(
     Z: np.ndarray,
     t: float,
@@ -972,6 +1751,30 @@ def h_integral(
     return (np.exp(u + lam * b) - np.exp(u + lam * a)) / lam
 
 
+def _renormalize_log_stochastic_vector(log_probs: np.ndarray) -> np.ndarray:
+    if log_probs.size == 0:
+        return log_probs
+    if np.all(log_probs <= LOG_ZERO / 2):
+        return log_probs
+    return log_probs - logsumexp(log_probs)
+
+
+def _renormalize_log_transitions(
+    log_no_reco: np.ndarray,
+    log_reco: np.ndarray,
+    log_marginal: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    no_reco = np.asarray(log_no_reco, dtype=np.float64).copy()
+    reco = np.asarray(log_reco, dtype=np.float64).copy()
+    for row in range(reco.shape[0]):
+        if log_marginal[row] <= LOG_ZERO / 2:
+            continue
+        total = logsumexp(np.concatenate([reco[row], np.array([no_reco[row]], dtype=np.float64)]))
+        reco[row] -= total
+        no_reco[row] -= total
+    return no_reco, reco
+
+
 # ===========================================================================
 # Core HMM matrix computation
 # ===========================================================================
@@ -981,13 +1784,16 @@ def h_integral(
 class CoreMatrices:
     """Precomputed HMM matrices for one CSD configuration."""
 
-    n_states: int  # number of demoStates (refined_interval, ancient_deme)
-    state_interval: np.ndarray  # (n_states,) → refined interval index
-    state_ancient: np.ndarray  # (n_states,) → ancient deme index
+    n_states: int  # number of demoStates
+    state_interval: np.ndarray  # (n_states,) → hidden interval index
+    state_ancient: np.ndarray  # (n_states,) → present deme index (legacy field)
     log_initial: np.ndarray  # (n_states,) initial log probabilities
     log_no_reco: np.ndarray  # (n_states,) log P(no recombination)
     log_reco: np.ndarray  # (n_states, n_states) log P(reco src→dst)
     log_emission: np.ndarray  # (n_states, n_alleles, n_alleles) [trunk][obs]
+    state_present: np.ndarray | None = None  # (n_states,) → present deme index
+    transition_provider: "EigenCore | ODECore | None" = None
+    transition_cache: dict[int, tuple[np.ndarray, np.ndarray]] | None = None
 
 
 class EigenCore:
@@ -1020,6 +1826,9 @@ class EigenCore:
         self._mutation_generator = self.theta * (
             self.mutation_matrix - np.eye(self.n_alleles, dtype=np.float64)
         )
+        if self.trunk.refined is not refined:
+            self.trunk.refined = refined
+            self.trunk._build_interval_data()
 
         self._build_per_interval_data()
         self._build_states()
@@ -1052,8 +1861,7 @@ class EigenCore:
         self.n_anc_per_interval: list[int] = []
 
         for i in range(n_ref):
-            e_idx = self.refined.epoch_map[i]
-            epoch = self.refined.demo.epochs[e_idx]
+            epoch = _refined_interval_epoch(self.refined, i)
             partition = epoch.partition
             n_anc = len(partition)
             dt = self.refined.interval_duration(i)
@@ -1061,7 +1869,7 @@ class EigenCore:
             t1 = self.refined.refined_boundaries[i + 1]
             t_mid = t0 + 0.5 * dt if np.isfinite(t1) else t0
             pop_sizes = self._epoch_pop_sizes_at_time(epoch, t_mid)
-            alpha = self.trunk.absorption_rates(partition, pop_sizes)
+            alpha = self.trunk.absorption_rates(i, pop_sizes)
             Z = build_extended_matrix(epoch.migration_matrix, alpha)
 
             f = matrix_exp_eig(Z, dt)
@@ -1095,6 +1903,103 @@ class EigenCore:
             self.state_index_map[
                 (int(self.state_interval[s]), int(self.state_ancient[s]))
             ] = s
+        n_present = len(self.trunk.sample_sizes)
+        demo_state_interval = []
+        demo_state_present = []
+        self.demo_state_index_map: dict[tuple[int, int], int] = {}
+        for hidden in range(self.refined.n_hidden):
+            for present in range(n_present):
+                idx = len(demo_state_interval)
+                demo_state_interval.append(hidden)
+                demo_state_present.append(present)
+                self.demo_state_index_map[(hidden, present)] = idx
+        self.demo_state_interval = np.asarray(demo_state_interval, dtype=np.int64)
+        self.demo_state_present = np.asarray(demo_state_present, dtype=np.int64)
+        self.n_demo_states = len(demo_state_interval)
+
+    def _aggregate_demo_state_vector(self, ancient_log_values: np.ndarray) -> np.ndarray:
+        demo_log = np.full(self.n_demo_states, LOG_ZERO, dtype=np.float64)
+        for state in range(self.n_states):
+            base_value = float(ancient_log_values[state])
+            if base_value <= LOG_ZERO / 2:
+                continue
+            interval = int(self.state_interval[state])
+            hidden = int(self.refined.refined_to_hidden[interval])
+            ancient = int(self.state_ancient[state])
+            for present in range(len(self.trunk.sample_sizes)):
+                frac = self.trunk.fraction_ancient_to_present(interval, present, ancient)
+                if frac <= 0.0:
+                    continue
+                demo_state = self.demo_state_index_map[(hidden, present)]
+                demo_log[demo_state] = np.logaddexp(demo_log[demo_state], base_value + np.log(frac))
+        return demo_log
+
+    def _aggregate_demo_state_reco(self, ancient_log_reco_joint: np.ndarray) -> np.ndarray:
+        demo_log = np.full(
+            (self.n_demo_states, self.n_demo_states),
+            LOG_ZERO,
+            dtype=np.float64,
+        )
+        for src in range(self.n_states):
+            src_interval = int(self.state_interval[src])
+            src_hidden = int(self.refined.refined_to_hidden[src_interval])
+            src_ancient = int(self.state_ancient[src])
+            src_fracs = [
+                self.trunk.fraction_ancient_to_present(src_interval, present, src_ancient)
+                for present in range(len(self.trunk.sample_sizes))
+            ]
+            for dst in range(self.n_states):
+                base_value = float(ancient_log_reco_joint[src, dst])
+                if base_value <= LOG_ZERO / 2:
+                    continue
+                dst_interval = int(self.state_interval[dst])
+                dst_hidden = int(self.refined.refined_to_hidden[dst_interval])
+                dst_ancient = int(self.state_ancient[dst])
+                for src_present, src_frac in enumerate(src_fracs):
+                    if src_frac <= 0.0:
+                        continue
+                    src_demo = self.demo_state_index_map[(src_hidden, src_present)]
+                    for dst_present in range(len(self.trunk.sample_sizes)):
+                        dst_frac = self.trunk.fraction_ancient_to_present(
+                            dst_interval,
+                            dst_present,
+                            dst_ancient,
+                        )
+                        if dst_frac <= 0.0:
+                            continue
+                        dst_demo = self.demo_state_index_map[(dst_hidden, dst_present)]
+                        demo_log[src_demo, dst_demo] = np.logaddexp(
+                            demo_log[src_demo, dst_demo],
+                            base_value + np.log(src_frac) + np.log(dst_frac),
+                        )
+        return demo_log
+
+    def _aggregate_demo_state_emission(self, ancient_log_joint: np.ndarray) -> np.ndarray:
+        demo_log = np.full(
+            (self.n_demo_states, self.n_alleles, self.n_alleles),
+            LOG_ZERO,
+            dtype=np.float64,
+        )
+        for state in range(self.n_states):
+            interval = int(self.state_interval[state])
+            hidden = int(self.refined.refined_to_hidden[interval])
+            ancient = int(self.state_ancient[state])
+            for present in range(len(self.trunk.sample_sizes)):
+                frac = self.trunk.fraction_ancient_to_present(interval, present, ancient)
+                if frac <= 0.0:
+                    continue
+                demo_state = self.demo_state_index_map[(hidden, present)]
+                frac_log = np.log(frac)
+                for trunk_type in range(self.n_alleles):
+                    for emission_type in range(self.n_alleles):
+                        value = float(ancient_log_joint[state, trunk_type, emission_type])
+                        if value <= LOG_ZERO / 2:
+                            continue
+                        demo_log[demo_state, trunk_type, emission_type] = np.logaddexp(
+                            demo_log[demo_state, trunk_type, emission_type],
+                            value + frac_log,
+                        )
+        return demo_log
 
     # ----- multi-interval non-absorption probabilities P -----
     def _compute_p_matrices(self) -> None:
@@ -1656,14 +2561,55 @@ class EigenCore:
 
     # ----- assemble core matrices -----
     def core_matrices(self) -> CoreMatrices:
+        demo_log_initial = self._aggregate_demo_state_vector(self.log_initial)
+        demo_log_initial = _renormalize_log_stochastic_vector(demo_log_initial)
+        ancient_log_no_reco_joint = self.log_initial + self.log_no_reco
+        demo_log_no_reco_joint = self._aggregate_demo_state_vector(ancient_log_no_reco_joint)
+        demo_log_no_reco = np.full(self.n_demo_states, LOG_ZERO, dtype=np.float64)
+        for state in range(self.n_demo_states):
+            if (
+                demo_log_initial[state] <= LOG_ZERO / 2
+                or demo_log_no_reco_joint[state] <= LOG_ZERO / 2
+            ):
+                continue
+            demo_log_no_reco[state] = demo_log_no_reco_joint[state] - demo_log_initial[state]
+
+        ancient_log_reco_joint = self.log_reco + self.log_initial[:, None]
+        demo_log_reco_joint = self._aggregate_demo_state_reco(ancient_log_reco_joint)
+        demo_log_reco = np.full_like(demo_log_reco_joint, LOG_ZERO)
+        for src in range(self.n_demo_states):
+            if demo_log_initial[src] <= LOG_ZERO / 2:
+                continue
+            demo_log_reco[src] = demo_log_reco_joint[src] - demo_log_initial[src]
+        demo_log_no_reco, demo_log_reco = _renormalize_log_transitions(
+            demo_log_no_reco,
+            demo_log_reco,
+            demo_log_initial,
+        )
+
+        ancient_log_emission_joint = self.log_initial[:, None, None] + self.log_emission
+        demo_log_emission_joint = self._aggregate_demo_state_emission(ancient_log_emission_joint)
+        demo_log_emission = np.full_like(demo_log_emission_joint, LOG_ZERO)
+        for state in range(self.n_demo_states):
+            if demo_log_initial[state] <= LOG_ZERO / 2:
+                continue
+            demo_log_emission[state] = demo_log_emission_joint[state] - demo_log_initial[state]
+            for trunk_type in range(self.n_alleles):
+                row = demo_log_emission[state, trunk_type]
+                if np.all(row <= LOG_ZERO / 2):
+                    continue
+                demo_log_emission[state, trunk_type] = row - logsumexp(row)
         return CoreMatrices(
-            n_states=self.n_states,
-            state_interval=self.state_interval,
-            state_ancient=self.state_ancient,
-            log_initial=self.log_initial,
-            log_no_reco=self.log_no_reco,
-            log_reco=self.log_reco,
-            log_emission=self.log_emission,
+            n_states=self.n_demo_states,
+            state_interval=self.demo_state_interval,
+            state_ancient=self.demo_state_present,
+            log_initial=demo_log_initial,
+            log_no_reco=demo_log_no_reco,
+            log_reco=demo_log_reco,
+            log_emission=demo_log_emission,
+            state_present=self.demo_state_present,
+            transition_provider=self,
+            transition_cache={1: (demo_log_no_reco.copy(), demo_log_reco.copy())},
         )
 
 
@@ -1684,8 +2630,7 @@ class ODECore(EigenCore):
         self.n_anc_per_interval: list[int] = []
 
         for interval in range(n_ref):
-            epoch_idx = self.refined.epoch_map[interval]
-            epoch = self.refined.demo.epochs[epoch_idx]
+            epoch = _refined_interval_epoch(self.refined, interval)
             partition = epoch.partition
             n_anc = len(partition)
             interval_start = self.refined.refined_boundaries[interval]
@@ -1695,18 +2640,21 @@ class ODECore(EigenCore):
                 if epoch.pop_sizes is None
                 else np.asarray(epoch.pop_sizes, dtype=np.float64)
             )
-            alpha = self.trunk.absorption_rates(partition, pop_sizes)
-            f_matrix, dense_solution = _integrate_transition_matrix(
-                epoch,
-                alpha,
-                interval_start,
-                interval_end,
-                dense_output=not self.refined.is_pulse(interval),
+            alpha = self.trunk.absorption_rates(interval, pop_sizes)
+            f_matrix = _ode_compute_marginal_transition_matrix(
+                epoch=epoch,
+                base_absorption_rates=alpha,
+                interval_start=float(interval_start),
+                interval_end=float(interval_end),
             )
+            if np.isfinite(interval_end):
+                z_time = 0.5 * (interval_start + interval_end)
+            else:
+                z_time = interval_start
             z_mid = _extended_rate_matrix_at_time(
                 epoch,
                 alpha,
-                interval_start if self.refined.is_pulse(interval) else 0.5 * (interval_start + interval_end),
+                interval_start if self.refined.is_pulse(interval) else z_time,
             )
 
             self.alpha_per_interval.append(alpha)
@@ -1716,64 +2664,170 @@ class ODECore(EigenCore):
             self.Z_per_interval.append(z_mid)
             self.eig_per_interval.append(EigDecomp.from_matrix(z_mid))
             self.f_per_interval.append(f_matrix)
-            self._dense_transition_solutions.append(dense_solution)
+            self._dense_transition_solutions.append(None)
             self._f_no_reco_per_interval.append(None)
             self.n_anc_per_interval.append(n_anc)
 
     def _compute_log_no_reco(self) -> None:
-        log_no_reco = np.full(self.n_states, LOG_ZERO, dtype=np.float64)
-        n_ref = self.refined.n_refined
-        p_no: list[list[np.ndarray]] = [[None] * n_ref for _ in range(n_ref)]
-        q_no: list[list[np.ndarray]] = [[None] * n_ref for _ in range(n_ref)]
+        no_reco_cache: list[np.ndarray] = []
+        reco_cache: list[np.ndarray] = []
+        prev_no_reco: np.ndarray | None = None
+        prev_reco: np.ndarray | None = None
 
-        for interval in range(n_ref):
-            p_no[interval][interval] = np.eye(
-                self.n_anc_per_interval[interval],
-                dtype=np.float64,
-            )
-            for next_interval in range(interval + 1, n_ref):
-                n_curr = self.n_anc_per_interval[next_interval - 1]
-                n_next = self.n_anc_per_interval[next_interval]
-                f_non = self._f_no_reco(next_interval - 1)[:n_curr, :n_curr]
-                merge_map = np.zeros((n_curr, n_next), dtype=np.float64)
-                e1 = self.refined.epoch_map[next_interval - 1]
-                e2 = self.refined.epoch_map[next_interval]
-                if e1 == e2:
-                    merge_map[: min(n_curr, n_next), : min(n_curr, n_next)] = np.eye(
-                        min(n_curr, n_next)
+        for interval in range(self.refined.n_refined):
+            n_demes = self.n_anc_per_interval[interval]
+            if interval == 0:
+                start_no_reco = np.zeros(n_demes, dtype=np.float64)
+                start_no_reco[self.start_anc] = 1.0
+                start_reco = np.zeros((n_demes, n_demes), dtype=np.float64)
+            else:
+                assert prev_no_reco is not None
+                assert prev_reco is not None
+                start_no_reco = np.zeros(n_demes, dtype=np.float64)
+                start_reco = np.zeros((n_demes, n_demes), dtype=np.float64)
+                prev_partition = self.partition_per_interval[interval - 1]
+                next_partition = self.partition_per_interval[interval]
+                for deme in range(n_demes):
+                    for member in _member_demes_for_interval_transition(
+                        prev_partition,
+                        next_partition,
+                        deme,
+                    ):
+                        start_no_reco[deme] += prev_no_reco[member]
+                for left_deme in range(n_demes):
+                    left_members = _member_demes_for_interval_transition(
+                        prev_partition,
+                        next_partition,
+                        left_deme,
                     )
-                else:
-                    part1 = self.partition_per_interval[next_interval - 1]
-                    part2 = self.partition_per_interval[next_interval]
-                    for ancient_one in range(n_curr):
-                        members_one = set(part1[ancient_one])
-                        for ancient_two in range(n_next):
-                            members_two = set(part2[ancient_two])
-                            if members_one.issubset(members_two):
-                                merge_map[ancient_one, ancient_two] = 1.0
-                                break
-                p_no[interval][next_interval] = p_no[interval][next_interval - 1] @ f_non @ merge_map
+                    for right_deme in range(n_demes):
+                        right_members = _member_demes_for_interval_transition(
+                            prev_partition,
+                            next_partition,
+                            right_deme,
+                        )
+                        for left_member in left_members:
+                            for right_member in right_members:
+                                start_reco[left_deme, right_deme] += prev_reco[
+                                    left_member,
+                                    right_member,
+                                ]
 
-        for start_interval in range(n_ref):
-            for end_interval in range(start_interval, n_ref):
-                n_end = self.n_anc_per_interval[end_interval]
-                f_abs = self._f_no_reco(end_interval)[:n_end, n_end : 2 * n_end]
-                q_no[start_interval][end_interval] = p_no[start_interval][end_interval] @ f_abs
+            epoch = _refined_interval_epoch(self.refined, interval)
+            pop_sizes = (
+                np.ones(n_demes, dtype=np.float64)
+                if epoch.pop_sizes is None
+                else np.asarray(epoch.pop_sizes, dtype=np.float64)
+            )
+            no_reco, reco = _ode_compute_r_epoch(
+                epoch=epoch,
+                base_absorption_rates=self.alpha_per_interval[interval],
+                recombination_rate=self.rho,
+                start_no_reco=start_no_reco,
+                start_reco=start_reco,
+                interval_start=float(self.refined.refined_boundaries[interval]),
+                interval_end=float(self.refined.refined_boundaries[interval + 1]),
+                init_pop_sizes=pop_sizes,
+                smc_prime=False,
+            )
+            no_reco_cache.append(no_reco)
+            reco_cache.append(reco)
+            prev_no_reco = no_reco
+            prev_reco = reco[:n_demes, :n_demes]
 
-        for state in range(self.n_states):
-            interval = int(self.state_interval[state])
-            ancient = int(self.state_ancient[state])
-            joint = q_no[0][interval][self.start_anc, ancient]
-            if joint <= 0 or self.log_initial[state] <= LOG_ZERO / 2:
-                continue
-            log_no_reco[state] = np.log(max(float(joint), 1e-300)) - self.log_initial[state]
+        log_no_reco = np.full(self.n_states, LOG_ZERO, dtype=np.float64)
+        ending_probs: np.ndarray | None = None
+        for interval in range(self.refined.n_refined):
+            n_demes = self.n_anc_per_interval[interval]
+            this_epoch_no_reco = no_reco_cache[interval]
+            if interval == 0:
+                ending_probs = this_epoch_no_reco.copy()
+            else:
+                assert ending_probs is not None
+                ending_probs = this_epoch_no_reco.copy()
+            for ancient in range(n_demes):
+                joint = float(ending_probs[n_demes + ancient])
+                state = self.state_index_map[(interval, ancient)]
+                if joint <= 0.0 or self.log_initial[state] <= LOG_ZERO / 2:
+                    continue
+                log_no_reco[state] = np.log(max(joint, 1e-300)) - self.log_initial[state]
+        self._ode_reco_cache = reco_cache
         self.log_no_reco = log_no_reco
+
+    def _compute_log_reco(self) -> None:
+        reco_cache: list[np.ndarray] = getattr(self, "_ode_reco_cache", [])
+        log_reco = np.full((self.n_states, self.n_states), LOG_ZERO, dtype=np.float64)
+        if not reco_cache:
+            self.log_reco = log_reco
+            return
+
+        def w_term(
+            first_absorb_interval: int,
+            first_absorb_ancient_deme: int,
+            second_absorb_interval: int,
+            second_absorb_ancient_deme: int,
+        ) -> float:
+            if second_absorb_interval < first_absorb_interval:
+                return w_term(
+                    second_absorb_interval,
+                    second_absorb_ancient_deme,
+                    first_absorb_interval,
+                    first_absorb_ancient_deme,
+                )
+            n_anc = self.n_anc_per_interval[first_absorb_interval]
+            if first_absorb_interval == second_absorb_interval:
+                return float(
+                    reco_cache[first_absorb_interval][
+                        n_anc + first_absorb_ancient_deme,
+                        n_anc + second_absorb_ancient_deme,
+                    ]
+                )
+            result = 0.0
+            next_interval = first_absorb_interval + 1
+            next_partition = self.partition_per_interval[next_interval]
+            prev_partition = self.partition_per_interval[first_absorb_interval]
+            for next_start_ancient_deme in range(self.n_anc_per_interval[next_interval]):
+                tmp = 0.0
+                for member_ancient_deme in _member_demes_for_interval_transition(
+                    prev_partition,
+                    next_partition,
+                    next_start_ancient_deme,
+                ):
+                    tmp += reco_cache[first_absorb_interval][
+                        n_anc + first_absorb_ancient_deme,
+                        member_ancient_deme,
+                    ]
+                tmp *= self.Q[next_interval][second_absorb_interval][
+                    next_start_ancient_deme,
+                    second_absorb_ancient_deme,
+                ]
+                result += tmp
+            return max(result, 0.0)
+
+        for src in range(self.n_states):
+            src_interval = int(self.state_interval[src])
+            src_ancient = int(self.state_ancient[src])
+            if self.log_initial[src] <= LOG_ZERO / 2:
+                continue
+            for dst in range(self.n_states):
+                dst_interval = int(self.state_interval[dst])
+                dst_ancient = int(self.state_ancient[dst])
+                joint = w_term(
+                    src_interval,
+                    src_ancient,
+                    dst_interval,
+                    dst_ancient,
+                )
+                if joint <= 0.0:
+                    continue
+                log_reco[src, dst] = np.log(max(joint, 1e-300)) - self.log_initial[src]
+        self.log_reco = log_reco
 
     def _f_no_reco(self, interval: int) -> np.ndarray:
         cached = self._f_no_reco_per_interval[interval]
         if cached is not None:
             return cached
-        epoch = self.refined.demo.epochs[self.refined.epoch_map[interval]]
+        epoch = _refined_interval_epoch(self.refined, interval)
         interval_start = self.refined.refined_boundaries[interval]
         interval_end = self.refined.refined_boundaries[interval + 1]
         f_matrix, _ = _integrate_transition_matrix(
@@ -1815,7 +2869,7 @@ class ODECore(EigenCore):
                 non_absorbing_dist = start_distribution @ non_absorbing
                 absorption_rates = _absorption_rates_at_time(
                     self.alpha_per_interval[interval],
-                    self.refined.demo.epochs[self.refined.epoch_map[interval]],
+                    _refined_interval_epoch(self.refined, interval),
                     float(time_point),
                 )
                 densities[grid_idx] = non_absorbing_dist[ancient] * absorption_rates[ancient]
@@ -1827,21 +2881,127 @@ class ODECore(EigenCore):
                 expected_times[state] = 0.5 * (interval_start + interval_end)
         return expected_times
 
+    def _absorption_density_grid(
+        self,
+        interval: int,
+        ancient: int,
+        *,
+        num_points: int = 65,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        state_prob = float(self.Q[0][interval][self.start_anc, ancient])
+        if state_prob <= EPS or self.refined.is_pulse(interval):
+            return (
+                np.zeros(0, dtype=np.float64),
+                np.zeros(0, dtype=np.float64),
+            )
+        solution = self._dense_transition_solutions[interval]
+        if solution is None:
+            return (
+                np.zeros(0, dtype=np.float64),
+                np.zeros(0, dtype=np.float64),
+            )
+        n_anc = self.n_anc_per_interval[interval]
+        interval_start = float(self.refined.refined_boundaries[interval])
+        interval_end = float(self.refined.refined_boundaries[interval + 1])
+        if not np.isfinite(interval_end):
+            alpha = max(float(self.alpha_per_interval[interval][ancient]), EPS)
+            interval_end = interval_start + max(50.0 / alpha, 10.0)
+        grid = np.linspace(interval_start, interval_end, num=num_points, dtype=np.float64)
+        start_distribution = np.asarray(self.P[0][interval][self.start_anc], dtype=np.float64)
+        densities = np.zeros_like(grid)
+        epoch = _refined_interval_epoch(self.refined, interval)
+        for grid_idx, time_point in enumerate(grid):
+            transition = np.asarray(solution(float(time_point))).reshape((2 * n_anc, 2 * n_anc))
+            non_absorbing = np.clip(
+                np.real(transition[:n_anc, :n_anc]),
+                0.0,
+                np.inf,
+            )
+            non_absorbing_dist = start_distribution @ non_absorbing
+            absorption_rates = _absorption_rates_at_time(
+                self.alpha_per_interval[interval],
+                epoch,
+                float(time_point),
+            )
+            densities[grid_idx] = non_absorbing_dist[ancient] * absorption_rates[ancient]
+        return grid, densities
+
     def _compute_log_emission(self) -> None:
         log_em = np.full(
             (self.n_states, self.n_alleles, self.n_alleles),
             LOG_ZERO,
             dtype=np.float64,
         )
-        expected_times = self._expected_absorption_times()
-        for state in range(self.n_states):
-            if self.log_initial[state] <= LOG_ZERO / 2:
-                continue
-            t_mean = max(float(expected_times[state]), 0.0)
-            p_mut = matrix_exp_eig(self._mutation_generator, 2.0 * t_mean)
-            p_mut = np.clip(np.real(p_mut), 1e-300, 1.0)
-            p_mut /= np.maximum(p_mut.sum(axis=1, keepdims=True), 1e-300)
-            log_em[state] = np.log(p_mut)
+        mutation_transitions: list[np.ndarray] = []
+        mutation_transition: list[np.ndarray] = []
+        for interval in range(self.refined.n_refined):
+            interval_transitions = _ode_compute_mutation_events(
+                epoch=_refined_interval_epoch(self.refined, interval),
+                base_absorption_rates=self.alpha_per_interval[interval],
+                mutation_rate=self.theta,
+                interval_start=float(self.refined.refined_boundaries[interval]),
+                interval_end=float(self.refined.refined_boundaries[interval + 1]),
+            )
+            mutation_transitions.append(interval_transitions)
+
+            n_demes = self.n_anc_per_interval[interval]
+            curr = np.zeros((2, 2 * n_demes), dtype=np.float64)
+            if interval == 0:
+                curr[:] = interval_transitions[self.start_anc]
+            else:
+                prev = mutation_transition[-1]
+                new_starts = np.zeros((2, n_demes), dtype=np.float64)
+                prev_partition = self.partition_per_interval[interval - 1]
+                next_partition = self.partition_per_interval[interval]
+                for n_mut in range(2):
+                    for start_deme in range(n_demes):
+                        for member in _member_demes_for_interval_transition(
+                            prev_partition,
+                            next_partition,
+                            start_deme,
+                        ):
+                            new_starts[n_mut, start_deme] += prev[n_mut, member]
+                f_matrix = self.f_per_interval[interval]
+                for end_deme in range(2 * n_demes):
+                    for start_deme in range(n_demes):
+                        curr[0, end_deme] += (
+                            new_starts[0, start_deme]
+                            * interval_transitions[start_deme, 0, end_deme]
+                        )
+                        curr[1, end_deme] += (
+                            new_starts[1, start_deme] * f_matrix[start_deme, end_deme]
+                            + new_starts[0, start_deme]
+                            * interval_transitions[start_deme, 1, end_deme]
+                        )
+            mutation_transition.append(curr)
+
+        for interval in range(self.refined.n_refined):
+            n_demes = self.n_anc_per_interval[interval]
+            curr_mut = mutation_transition[interval]
+            for ancient in range(n_demes):
+                state = self.state_index_map[(interval, ancient)]
+                if self.log_initial[state] <= LOG_ZERO / 2:
+                    continue
+                no_mut_joint = float(curr_mut[0, n_demes + ancient])
+                one_mut_joint = float(curr_mut[1, n_demes + ancient])
+                for emission_type in range(self.n_alleles):
+                    for trunk_type in range(self.n_alleles):
+                        prob = 0.0
+                        if trunk_type == emission_type:
+                            prob += no_mut_joint
+                        prob += one_mut_joint * float(
+                            self.mutation_matrix[trunk_type, emission_type]
+                        )
+                        if prob <= 0.0:
+                            continue
+                        log_em[state, trunk_type, emission_type] = (
+                            np.log(max(prob, 1e-300)) - self.log_initial[state]
+                        )
+                for trunk_type in range(self.n_alleles):
+                    row = log_em[state, trunk_type]
+                    if np.all(row <= LOG_ZERO / 2):
+                        continue
+                    log_em[state, trunk_type] = row - logsumexp(row)
         self.log_emission = log_em
 
 
@@ -1995,10 +3155,61 @@ def _expanded_state_block_emission_log(
     return float(value)
 
 
+def _pair_count_emission_log(
+    core: CoreMatrices,
+    pair_counts: np.ndarray,
+) -> np.ndarray:
+    log_em = np.zeros(core.n_states, dtype=np.float64)
+    present = np.argwhere(pair_counts > 0)
+    for add_allele, trunk_allele in present:
+        count = int(pair_counts[add_allele, trunk_allele])
+        log_em += count * core.log_emission[
+            np.arange(core.n_states),
+            int(trunk_allele),
+            int(add_allele),
+        ]
+    return log_em
+
+
+def _expanded_state_pair_count_emission_log(
+    core: CoreMatrices,
+    base_state: int,
+    pair_counts: np.ndarray,
+) -> float:
+    value = 0.0
+    present = np.argwhere(pair_counts > 0)
+    for add_allele, trunk_allele in present:
+        count = int(pair_counts[add_allele, trunk_allele])
+        value += count * core.log_emission[base_state, int(trunk_allele), int(add_allele)]
+    return float(value)
+
+
 def _scaled_transition_logs(
     core: CoreMatrices,
     step_size: int,
 ) -> tuple[np.ndarray, np.ndarray]:
+    if core.transition_provider is not None:
+        if core.transition_cache is None:
+            core.transition_cache = {}
+        cached = core.transition_cache.get(step_size)
+        if cached is not None:
+            return cached
+        provider = core.transition_provider
+        scaled_provider = type(provider)(
+            refined=provider.refined,
+            trunk=provider.trunk,
+            observed_present_deme=provider.observed_present_deme,
+            mutation_matrix=provider.mutation_matrix,
+            theta=provider.theta,
+            rho=provider.rho * step_size,
+        )
+        scaled_core = scaled_provider.core_matrices()
+        cached = (
+            np.asarray(scaled_core.log_no_reco, dtype=np.float64).copy(),
+            np.asarray(scaled_core.log_reco, dtype=np.float64).copy(),
+        )
+        core.transition_cache[step_size] = cached
+        return cached
     log_no = core.log_no_reco * step_size
     log_re = np.zeros_like(core.log_reco)
     no_reco_prob = np.exp(np.clip(log_no, -700, 0))
@@ -2012,6 +3223,26 @@ def _scaled_transition_logs_expanded(
     expanded: ExpandedCore,
     step_size: int,
 ) -> tuple[np.ndarray, np.ndarray]:
+    if expanded.base_core.transition_provider is not None:
+        if expanded.transition_cache is None:
+            expanded.transition_cache = {}
+        cached = expanded.transition_cache.get(step_size)
+        if cached is not None:
+            return cached
+        log_no_base, log_re_base = _scaled_transition_logs(expanded.base_core, step_size)
+        log_no = np.array(
+            [log_no_base[base] for base in expanded.expanded_to_base],
+            dtype=np.float64,
+        )
+        log_re = np.full_like(expanded.log_reco, LOG_ZERO)
+        for src in range(len(expanded.expanded_to_base)):
+            src_base = expanded.expanded_to_base[src]
+            for dst in range(len(expanded.expanded_to_base)):
+                dst_base = expanded.expanded_to_base[dst]
+                log_re[src, dst] = log_re_base[src_base, dst_base] + expanded.hap_fraction_logs[dst]
+        cached = (log_no, log_re)
+        expanded.transition_cache[step_size] = cached
+        return cached
     log_no = expanded.log_no_reco * step_size
     log_re = np.zeros_like(expanded.log_reco)
     no_reco_prob = np.exp(np.clip(log_no, -700, 0))
@@ -2052,6 +3283,41 @@ class ExpandedCore:
     log_no_reco: np.ndarray
     log_reco: np.ndarray
     trunk_sequences: np.ndarray
+    trunk_hap_indices: np.ndarray
+    hap_fraction_logs: np.ndarray
+    base_core: CoreMatrices
+    transition_cache: dict[int, tuple[np.ndarray, np.ndarray]] | None = None
+
+
+def _physical_block_pair_counts(
+    additional_seq: np.ndarray,
+    trunk_seq: np.ndarray,
+    *,
+    seg_positions: np.ndarray,
+    reference_length: int,
+    reference_alleles: np.ndarray,
+    loci_per_hmm_step: int,
+    n_alleles: int,
+) -> np.ndarray:
+    """Count allele pairs per physical multilocus block like upstream diCal2."""
+    num_steps = int(math.ceil(reference_length / loci_per_hmm_step))
+    pair_counts = np.zeros((num_steps, n_alleles, n_alleles), dtype=np.int64)
+    seg_map = {int(pos): idx for idx, pos in enumerate(np.asarray(seg_positions, dtype=np.int64))}
+    for locus in range(reference_length):
+        step = locus // loci_per_hmm_step
+        seg_idx = seg_map.get(locus)
+        if seg_idx is None:
+            allele = int(reference_alleles[locus])
+            if allele < 0:
+                continue
+            pair_counts[step, allele, allele] += 1
+            continue
+        add_allele = int(additional_seq[seg_idx])
+        trunk_allele = int(trunk_seq[seg_idx])
+        if add_allele < 0 or trunk_allele < 0:
+            continue
+        pair_counts[step, add_allele, trunk_allele] += 1
+    return pair_counts
 
 
 def expected_counts(
@@ -2132,6 +3398,7 @@ def _build_expanded_core(
     log_initial: list[float] = []
     log_no_reco: list[float] = []
     trunk_seq_rows: list[np.ndarray] = []
+    trunk_hap_rows: list[int] = []
     state_present: list[int] = []
     hap_fraction_logs: list[float] = []
 
@@ -2145,19 +3412,24 @@ def _build_expanded_core(
         )
 
     for base_state in range(core.n_states):
-        interval = int(core.state_interval[base_state])
-        ancient = int(core.state_ancient[base_state])
-        partition = core_obj.partition_per_interval[interval][ancient]
-        for present in partition:
+        if core.state_present is not None:
+            present_candidates = [int(core.state_present[base_state])]
+        else:
+            interval = int(core.state_interval[base_state])
+            ancient = int(core.state_ancient[base_state])
+            present_candidates = list(core_obj.partition_per_interval[interval][ancient])
+        for present in present_candidates:
             if present_totals.get(present, 0.0) <= 0:
                 continue
-            frac = trunk.fraction_ancient_to_present(
-                core_obj.partition_per_interval[interval],
-                present,
-                ancient,
-            )
-            if frac <= 0:
-                continue
+            if core.state_present is None:
+                interval = int(core.state_interval[base_state])
+                ancient = int(core.state_ancient[base_state])
+                frac = trunk.fraction_ancient_to_present(interval, present, ancient)
+                if frac <= 0:
+                    continue
+                present_log = np.log(frac)
+            else:
+                present_log = 0.0
             for h in trunk_idxs:
                 if trunk.config.haplotype_populations[h] != present:
                     continue
@@ -2169,11 +3441,12 @@ def _build_expanded_core(
                 expanded_to_base.append(base_state)
                 log_initial.append(
                     core.log_initial[base_state]
-                    + np.log(frac)
+                    + present_log
                     + np.log(mult / present_totals[present])
                 )
                 log_no_reco.append(core.log_no_reco[base_state])
                 trunk_seq_rows.append(grouped_trunk_sequences[h].astype(np.int64))
+                trunk_hap_rows.append(int(h))
                 state_present.append(present)
                 hap_fraction_logs.append(np.log(mult / present_totals[present]))
 
@@ -2184,14 +3457,16 @@ def _build_expanded_core(
         for dst in range(n_expanded):
             dst_base = expanded_to_base[dst]
             log_reco[src, dst] = core.log_reco[src_base, dst_base]
-            interval = int(core.state_interval[dst_base])
-            ancient = int(core.state_ancient[dst_base])
-            frac = trunk.fraction_ancient_to_present(
-                core_obj.partition_per_interval[interval],
-                state_present[dst],
-                ancient,
-            )
-            log_reco[src, dst] += np.log(max(frac, 1e-300)) + hap_fraction_logs[dst]
+            if core.state_present is None:
+                interval = int(core.state_interval[dst_base])
+                ancient = int(core.state_ancient[dst_base])
+                frac = trunk.fraction_ancient_to_present(
+                    interval,
+                    state_present[dst],
+                    ancient,
+                )
+                log_reco[src, dst] += np.log(max(frac, 1e-300))
+            log_reco[src, dst] += hap_fraction_logs[dst]
 
     return ExpandedCore(
         base_to_expanded=base_to_expanded,
@@ -2200,6 +3475,10 @@ def _build_expanded_core(
         log_no_reco=np.array(log_no_reco, dtype=np.float64),
         log_reco=log_reco,
         trunk_sequences=np.array(trunk_seq_rows, dtype=np.int64),
+        trunk_hap_indices=np.array(trunk_hap_rows, dtype=np.int64),
+        hap_fraction_logs=np.array(hap_fraction_logs, dtype=np.float64),
+        base_core=core,
+        transition_cache=None,
     )
 
 
@@ -2209,8 +3488,9 @@ def _expanded_expected_counts(
     obs_additional: np.ndarray,
     n_alleles: int,
     step_sizes: np.ndarray | None = None,
+    pair_counts: np.ndarray | None = None,
 ) -> ExpectedCounts:
-    L = len(obs_additional)
+    L = pair_counts.shape[1] if pair_counts is not None else len(obs_additional)
     H = len(expanded.expanded_to_base)
     if step_sizes is None:
         step_sizes = np.ones(L, dtype=np.int64)
@@ -2218,12 +3498,19 @@ def _expanded_expected_counts(
     logF = np.full((L, H), LOG_ZERO, dtype=np.float64)
     em0 = np.zeros(H, dtype=np.float64)
     for h in range(H):
-        em0[h] = _expanded_state_block_emission_log(
-            core,
-            int(expanded.expanded_to_base[h]),
-            obs_additional[0],
-            expanded.trunk_sequences[h][0],
-        )
+        if pair_counts is not None:
+            em0[h] = _expanded_state_pair_count_emission_log(
+                core,
+                int(expanded.expanded_to_base[h]),
+                pair_counts[h, 0],
+            )
+        else:
+            em0[h] = _expanded_state_block_emission_log(
+                core,
+                int(expanded.expanded_to_base[h]),
+                obs_additional[0],
+                expanded.trunk_sequences[h][0],
+            )
     logF[0] = expanded.log_initial + em0
 
     for ll in range(1, L):
@@ -2235,12 +3522,19 @@ def _expanded_expected_counts(
         log_nr = log_no_reco_step + logF[ll - 1]
         em = np.zeros(H, dtype=np.float64)
         for h in range(H):
-            em[h] = _expanded_state_block_emission_log(
-                core,
-                int(expanded.expanded_to_base[h]),
-                obs_additional[ll],
-                expanded.trunk_sequences[h][ll],
-            )
+            if pair_counts is not None:
+                em[h] = _expanded_state_pair_count_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    pair_counts[h, ll],
+                )
+            else:
+                em[h] = _expanded_state_block_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    obs_additional[ll],
+                    expanded.trunk_sequences[h][ll],
+                )
         logF[ll] = np.logaddexp(log_nr, logR) + em
 
     ll = logsumexp(logF[-1])
@@ -2249,12 +3543,19 @@ def _expanded_expected_counts(
     for ll_i in range(L - 2, -1, -1):
         nxt_em = np.zeros(H, dtype=np.float64)
         for h in range(H):
-            nxt_em[h] = _expanded_state_block_emission_log(
-                core,
-                int(expanded.expanded_to_base[h]),
-                obs_additional[ll_i + 1],
-                expanded.trunk_sequences[h][ll_i + 1],
-            )
+            if pair_counts is not None:
+                nxt_em[h] = _expanded_state_pair_count_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    pair_counts[h, ll_i + 1],
+                )
+            else:
+                nxt_em[h] = _expanded_state_block_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    obs_additional[ll_i + 1],
+                    expanded.trunk_sequences[h][ll_i + 1],
+                )
         nxt = logB[ll_i + 1] + nxt_em
         log_no_reco_step, log_reco_step = _scaled_transition_logs_expanded(
             expanded,
@@ -2273,23 +3574,33 @@ def _expanded_expected_counts(
     for h in range(H):
         initial_expect[expanded.expanded_to_base[h]] += post[0, h]
     for ll_i in range(L):
-        add_block = np.atleast_1d(obs_additional[ll_i])
         for h in range(H):
             base = expanded.expanded_to_base[h]
-            trunk_block = expanded.trunk_sequences[h][ll_i]
-            for a_o, a_t in zip(add_block, np.atleast_1d(trunk_block)):
-                if a_t >= 0 and a_o >= 0:
-                    emission_expect[base, int(a_t), int(a_o)] += post[ll_i, h]
+            if pair_counts is not None:
+                emission_expect[base] += post[ll_i, h] * pair_counts[h, ll_i].T
+            else:
+                add_block = np.atleast_1d(obs_additional[ll_i])
+                trunk_block = expanded.trunk_sequences[h][ll_i]
+                for a_o, a_t in zip(add_block, np.atleast_1d(trunk_block)):
+                    if a_t >= 0 and a_o >= 0:
+                        emission_expect[base, int(a_t), int(a_o)] += post[ll_i, h]
 
     for ll_i in range(L - 1):
         nxt_em = np.zeros(H, dtype=np.float64)
         for h in range(H):
-            nxt_em[h] = _expanded_state_block_emission_log(
-                core,
-                int(expanded.expanded_to_base[h]),
-                obs_additional[ll_i + 1],
-                expanded.trunk_sequences[h][ll_i + 1],
-            )
+            if pair_counts is not None:
+                nxt_em[h] = _expanded_state_pair_count_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    pair_counts[h, ll_i + 1],
+                )
+            else:
+                nxt_em[h] = _expanded_state_block_emission_log(
+                    core,
+                    int(expanded.expanded_to_base[h]),
+                    obs_additional[ll_i + 1],
+                    expanded.trunk_sequences[h][ll_i + 1],
+                )
         log_no_reco_step, log_reco_step = _scaled_transition_logs_expanded(
             expanded,
             int(step_sizes[ll_i]),
@@ -2799,10 +4110,14 @@ def _q_function(
     demo_template: DiCal2Demo,
     interval_boundaries: np.ndarray,
     counts_list: list[ExpectedCounts],
-    csd_setups: list[tuple[SimpleTrunk, int]],
+    csd_setups: list[tuple[int, list[int], int]],
+    config: DiCal2Config,
     mutation_matrix: np.ndarray,
     theta: float,
     rho: float,
+    trunk_style: str,
+    cake_style: str,
+    half_migration_rate: bool,
 ) -> float:
     """Negative Q-function (for minimization).
 
@@ -2818,10 +4133,23 @@ def _q_function(
     new_demo = _demo_from_params_or_none(params, demo_template)
     if new_demo is None:
         return float(np.inf)
-    refined = refine_demography(new_demo, interval_boundaries)
+    objective_demo = (
+        _halve_demo_migration_rates(new_demo)
+        if half_migration_rate
+        else new_demo
+    )
+    refined = refine_demography(objective_demo, interval_boundaries)
 
     total_q = 0.0
-    for (trunk, observed_present), counts in zip(csd_setups, counts_list):
+    for (additional_idx, trunk_idxs, observed_present), counts in zip(csd_setups, counts_list):
+        trunk = SimpleTrunk(
+            config=config,
+            additional_hap_idx=additional_idx,
+            trunk_hap_indices=trunk_idxs,
+            refined=refined,
+            trunk_style=trunk_style,
+            cake_style=cake_style,
+        )
         core_obj, _ = _build_native_core(
             refined=refined,
             trunk=trunk,
@@ -2874,8 +4202,15 @@ def _evaluate_total_log_likelihood(
     composite_mode: str,
     n_alleles: int,
     loci_per_hmm_step: int,
+    seg_positions: np.ndarray | None = None,
+    reference_length: int | None = None,
+    reference_alleles: np.ndarray | None = None,
+    trunk_style: str = "migratingethan",
+    cake_style: str = "average",
+    half_migration_rate: bool = False,
 ) -> float:
-    refined = refine_demography(demo, interval_boundaries)
+    objective_demo = _halve_demo_migration_rates(demo) if half_migration_rate else demo
+    refined = refine_demography(objective_demo, interval_boundaries)
     total_ll = 0.0
     for additional_idx, trunk_idxs in _enumerate_csd_pairs(sequences.shape[0], composite_mode):
         if not trunk_idxs:
@@ -2885,6 +4220,9 @@ def _evaluate_total_log_likelihood(
             config=config,
             additional_hap_idx=additional_idx,
             trunk_hap_indices=trunk_idxs,
+            refined=refined,
+            trunk_style=trunk_style,
+            cake_style=cake_style,
         )
         core_obj, _ = _build_native_core(
             refined=refined,
@@ -2895,21 +4233,47 @@ def _evaluate_total_log_likelihood(
             rho=rho,
         )
         core = core_obj.core_matrices()
-        obs_add, step_sizes = _group_observations(
-            sequences[additional_idx],
-            loci_per_hmm_step,
-        )
         grouped_trunks = {
             h: _group_observations(sequences[h], loci_per_hmm_step)[0]
             for h in trunk_idxs
         }
         expanded = _build_expanded_core(core_obj, core, trunk, trunk_idxs, grouped_trunks)
+        pair_counts = None
+        if (
+            loci_per_hmm_step > 1
+            and seg_positions is not None
+            and reference_length is not None
+            and reference_alleles is not None
+        ):
+            pair_counts = np.array(
+                [
+                    _physical_block_pair_counts(
+                        sequences[additional_idx],
+                        sequences[int(h)],
+                        seg_positions=seg_positions,
+                        reference_length=int(reference_length),
+                        reference_alleles=reference_alleles,
+                        loci_per_hmm_step=loci_per_hmm_step,
+                        n_alleles=n_alleles,
+                    )
+                    for h in expanded.trunk_hap_indices
+                ],
+                dtype=np.int64,
+            )
+            step_sizes = np.full(pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64)
+            obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
+        else:
+            obs_add, step_sizes = _group_observations(
+                sequences[additional_idx],
+                loci_per_hmm_step,
+            )
         total_ll += _expanded_expected_counts(
             core,
             expanded,
             obs_add,
             n_alleles,
             step_sizes=step_sizes,
+            pair_counts=pair_counts,
         ).log_likelihood
     return float(total_ll)
 
@@ -2970,10 +4334,14 @@ def _q_function_ordered(
     demo_template: DiCal2Demo,
     interval_boundaries: np.ndarray,
     counts_list: list[ExpectedCounts],
-    csd_setups: list[tuple[SimpleTrunk, int]],
+    csd_setups: list[tuple[int, list[int], int]],
+    config: DiCal2Config,
     mutation_matrix: np.ndarray,
     theta: float,
     rho: float,
+    trunk_style: str,
+    cake_style: str,
+    half_migration_rate: bool,
 ) -> float:
     candidate = _clone_demo_parameters(params_template)
     ordered_params = np.asarray(ordered_params, dtype=np.float64)
@@ -2986,9 +4354,13 @@ def _q_function_ordered(
         interval_boundaries,
         counts_list,
         csd_setups,
+        config,
         mutation_matrix,
         theta,
         rho,
+        trunk_style,
+        cake_style,
+        half_migration_rate,
     )
 
 
@@ -3038,18 +4410,110 @@ def _ordered_bounds(
     ]
 
 
+class _JavaRandom:
+    """Small ``java.util.Random`` compatible RNG for upstream-parity search paths."""
+
+    _MULTIPLIER = 0x5DEECE66D
+    _ADDEND = 0xB
+    _MASK = (1 << 48) - 1
+
+    def __init__(self, seed: int | None):
+        self._seed = (
+            None
+            if seed is None
+            else (int(seed) ^ self._MULTIPLIER) & self._MASK
+        )
+        self._fallback = np.random.default_rng() if seed is None else None
+        self._have_next_gaussian = False
+        self._next_gaussian = 0.0
+
+    def _next(self, bits: int) -> int:
+        if self._seed is None:
+            assert self._fallback is not None
+            return int(self._fallback.integers(0, 1 << bits, endpoint=False))
+        self._seed = (self._seed * self._MULTIPLIER + self._ADDEND) & self._MASK
+        return int(self._seed >> (48 - bits))
+
+    def random(self) -> float:
+        return ((self._next(26) << 27) + self._next(27)) / float(1 << 53)
+
+    @staticmethod
+    def _signed_int32(value: int) -> int:
+        value &= (1 << 32) - 1
+        if value >= (1 << 31):
+            value -= 1 << 32
+        return value
+
+    def next_long(self) -> int:
+        if self._seed is None:
+            assert self._fallback is not None
+            return int(
+                self._fallback.integers(
+                    np.iinfo(np.int64).min,
+                    np.iinfo(np.int64).max,
+                    endpoint=True,
+                    dtype=np.int64,
+                )
+            )
+        upper = self._signed_int32(self._next(32))
+        lower = self._signed_int32(self._next(32))
+        return (upper << 32) + lower
+
+    def next_boolean(self) -> bool:
+        return bool(self._next(1))
+
+    def next_int(self, upper: int) -> int:
+        if upper <= 0:
+            raise ValueError("upper must be positive")
+        if self._seed is None:
+            assert self._fallback is not None
+            return int(self._fallback.integers(0, upper, endpoint=False))
+        if (upper & -upper) == upper:
+            return int((upper * self._next(31)) >> 31)
+        bits = self._next(31)
+        value = bits % upper
+        while bits - value + (upper - 1) < 0:
+            bits = self._next(31)
+            value = bits % upper
+        return int(value)
+
+    def normal(self) -> float:
+        if self._have_next_gaussian:
+            self._have_next_gaussian = False
+            return self._next_gaussian
+        while True:
+            v1 = 2.0 * self.random() - 1.0
+            v2 = 2.0 * self.random() - 1.0
+            s = v1 * v1 + v2 * v2
+            if 0.0 < s < 1.0:
+                break
+        multiplier = math.sqrt(-2.0 * math.log(s) / s)
+        self._next_gaussian = v2 * multiplier
+        self._have_next_gaussian = True
+        return v1 * multiplier
+
+    def permutation(self, size: int) -> np.ndarray:
+        values = list(range(size))
+        for idx in range(size - 1, 0, -1):
+            swap_idx = self.next_int(idx + 1)
+            values[idx], values[swap_idx] = values[swap_idx], values[idx]
+        return np.asarray(values, dtype=np.int64)
+
+    def spawn_offspring(self) -> "_JavaRandom":
+        return _JavaRandom(self.next_long())
+
+
 def _initial_step_sizes(
     curr_point: np.ndarray,
     nm_fraction: float | None,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
 ) -> np.ndarray | None:
     if nm_fraction is None:
         return None
     step_sizes = np.empty_like(curr_point, dtype=np.float64)
     for idx, value in enumerate(curr_point):
         signed_step = float(nm_fraction) * float(value)
-        if rng.random() >= 0.5:
-            signed_step *= -1.0
+        signed_step *= 1.0 if rng.next_boolean() else -1.0
         step_sizes[idx] = max(1e-8, signed_step)
     return step_sizes
 
@@ -3061,9 +4525,9 @@ def _initial_simplex(
     if step_sizes is None:
         return None
     simplex = [curr_point.astype(np.float64, copy=True)]
-    for idx, step in enumerate(step_sizes):
+    for idx in range(len(step_sizes)):
         vertex = curr_point.astype(np.float64, copy=True)
-        vertex[idx] = vertex[idx] + step
+        vertex[: idx + 1] = vertex[: idx + 1] + step_sizes[: idx + 1]
         simplex.append(vertex)
     return np.array(simplex, dtype=np.float64)
 
@@ -3075,32 +4539,130 @@ def _update_point(
     relative_error_m: float | None,
     nm_fraction: float | None,
     use_param_rel_err_m: bool,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
+    trace: dict[str, object] | None = None,
 ) -> np.ndarray:
     initial_simplex = _initial_simplex(
         curr_point,
         _initial_step_sizes(curr_point, nm_fraction, rng),
     )
+    if rng._seed is None:
+        options: dict[str, object] = {"disp": False}
+        if initial_simplex is not None:
+            options["initial_simplex"] = initial_simplex
+        if number_iterations_mstep is not None:
+            options["maxiter"] = int(number_iterations_mstep)
+        elif relative_error_m is not None:
+            if use_param_rel_err_m:
+                options["xatol"] = float(relative_error_m)
+                options["fatol"] = 0.0
+            else:
+                options["xatol"] = 0.0
+                options["fatol"] = float(relative_error_m)
+        result = minimize(
+            objective_function,
+            np.asarray(curr_point, dtype=np.float64),
+            method="Nelder-Mead",
+            options=options,
+        )
+        if trace is not None:
+            trace["mode"] = "scipy"
+            trace["initial_point"] = np.asarray(curr_point, dtype=np.float64).copy()
+            trace["initial_simplex"] = None if initial_simplex is None else np.asarray(initial_simplex, dtype=np.float64).copy()
+            trace["result_point"] = np.asarray(result.x, dtype=np.float64).copy()
+            trace["result_value"] = float(result.fun)
+        return np.asarray(result.x, dtype=np.float64)
+    if initial_simplex is None:
+        initial_simplex = _initial_simplex(
+            np.asarray(curr_point, dtype=np.float64),
+            np.ones_like(curr_point, dtype=np.float64),
+        )
+    assert initial_simplex is not None
 
-    options: dict[str, object] = {"disp": False}
-    if initial_simplex is not None:
-        options["initial_simplex"] = initial_simplex
-    if number_iterations_mstep is not None:
-        options["maxiter"] = int(number_iterations_mstep)
-    elif relative_error_m is not None:
-        if use_param_rel_err_m:
-            options["xatol"] = float(relative_error_m)
-            options["fatol"] = 0.0
+    simplex = np.asarray(initial_simplex, dtype=np.float64)
+    values = np.array([float(objective_function(point)) for point in simplex], dtype=np.float64)
+    iterations = 0
+    trace_iterations: list[dict[str, object]] = []
+
+    while True:
+        order = np.argsort(values)
+        simplex = simplex[order]
+        values = values[order]
+        trace_iterations.append(
+            {
+                "iteration": iterations,
+                "simplex": simplex.copy(),
+                "values": values.copy(),
+            }
+        )
+        best = simplex[0]
+        worst = simplex[-1]
+        maximums = np.max(simplex, axis=0)
+        minimums = np.min(simplex, axis=0)
+        error_coord = _max_relative_error(maximums, minimums)
+        error_q = _relative_error(float(values[0]), float(values[-1]))
+
+        if relative_error_m is not None:
+            if iterations > 0:
+                if use_param_rel_err_m:
+                    if error_coord < float(relative_error_m):
+                        break
+                elif error_q < float(relative_error_m):
+                    break
+        elif number_iterations_mstep is not None and iterations >= int(number_iterations_mstep):
+            break
+
+        centroid = np.mean(simplex[:-1], axis=0)
+        reflected = centroid + (centroid - worst)
+        reflected_value = float(objective_function(reflected))
+        if values[0] <= reflected_value < values[-2]:
+            simplex[-1] = reflected
+            values[-1] = reflected_value
+            iterations += 1
+            continue
+        if reflected_value < values[0]:
+            expanded = centroid + 2.0 * (reflected - centroid)
+            expanded_value = float(objective_function(expanded))
+            if expanded_value < reflected_value:
+                simplex[-1] = expanded
+                values[-1] = expanded_value
+            else:
+                simplex[-1] = reflected
+                values[-1] = reflected_value
+            iterations += 1
+            continue
+        if reflected_value < values[-1]:
+            contracted = centroid + 0.5 * (reflected - centroid)
+            contracted_value = float(objective_function(contracted))
+            if contracted_value <= reflected_value:
+                simplex[-1] = contracted
+                values[-1] = contracted_value
+                iterations += 1
+                continue
         else:
-            options["xatol"] = 0.0
-            options["fatol"] = float(relative_error_m)
-    result = minimize(
-        objective_function,
-        np.asarray(curr_point, dtype=np.float64),
-        method="Nelder-Mead",
-        options=options,
-    )
-    return np.asarray(result.x, dtype=np.float64)
+            contracted = centroid - 0.5 * (centroid - worst)
+            contracted_value = float(objective_function(contracted))
+            if contracted_value < values[-1]:
+                simplex[-1] = contracted
+                values[-1] = contracted_value
+                iterations += 1
+                continue
+
+        for idx in range(1, len(simplex)):
+            simplex[idx] = best + 0.5 * (simplex[idx] - best)
+            values[idx] = float(objective_function(simplex[idx]))
+        iterations += 1
+
+    if trace is not None:
+        trace["mode"] = "native"
+        trace["initial_point"] = np.asarray(curr_point, dtype=np.float64).copy()
+        trace["initial_simplex"] = np.asarray(initial_simplex, dtype=np.float64).copy()
+        trace["iterations"] = trace_iterations
+        trace["final_simplex"] = simplex.copy()
+        trace["final_values"] = values.copy()
+        trace["result_point"] = np.asarray(simplex[0], dtype=np.float64).copy()
+        trace["result_value"] = float(values[0])
+    return np.asarray(simplex[0], dtype=np.float64)
 
 
 def _update_point_coordinatewise(
@@ -3111,19 +4673,22 @@ def _update_point_coordinatewise(
     nm_fraction: float | None,
     use_param_rel_err_m: bool,
     coordinate_order: tuple[int, ...] | None,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
+    trace: dict[str, object] | None = None,
 ) -> np.ndarray:
     local_curr_point = np.asarray(curr_point, dtype=np.float64).copy()
     if coordinate_order is None:
         permutation = list(rng.permutation(len(local_curr_point)))
     else:
         permutation = list(coordinate_order)
+    coordinate_traces: list[dict[str, object]] = []
     for idx in permutation:
         def clamped_objective(arg: np.ndarray) -> float:
             point = local_curr_point.copy()
             point[idx] = float(arg[0])
             return float(objective_function(point))
 
+        coordinate_trace: dict[str, object] = {}
         local_curr_point[idx] = _update_point(
             np.array([local_curr_point[idx]], dtype=np.float64),
             clamped_objective,
@@ -3132,7 +4697,19 @@ def _update_point_coordinatewise(
             nm_fraction=nm_fraction,
             use_param_rel_err_m=use_param_rel_err_m,
             rng=rng,
+            trace=coordinate_trace,
         )[0]
+        coordinate_traces.append(
+            {
+                "coordinate_index": idx,
+                "trace": coordinate_trace,
+            }
+        )
+    if trace is not None:
+        trace["mode"] = "coordinatewise"
+        trace["coordinate_order"] = np.asarray(permutation, dtype=np.int64)
+        trace["coordinate_traces"] = coordinate_traces
+        trace["result_point"] = local_curr_point.copy()
     return local_curr_point
 
 
@@ -3149,7 +4726,7 @@ def _meta_get_new_point(
     bounds: list[tuple[float, float]] | None,
     stretch_proportion: float,
     disperse_factor: float,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
 ) -> np.ndarray:
     new_point = np.empty_like(parent, dtype=np.float64)
     if rng.random() > stretch_proportion:
@@ -3176,6 +4753,7 @@ def _meta_get_new_point(
 
 def _meta_next_generation(
     generation_results: list[tuple[float, np.ndarray]],
+    demo: DiCal2Demo,
     params: DemoParameters,
     *,
     meta_keep_best: int,
@@ -3183,7 +4761,8 @@ def _meta_next_generation(
     stretch_proportion: float,
     disperse_factor: float,
     sd_percentage_if_zero: float,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
+    trace: dict[str, object] | None = None,
 ) -> np.ndarray:
     sorted_results = sorted(generation_results, key=lambda result: result[0], reverse=True)
     kept_points = [
@@ -3194,23 +4773,54 @@ def _meta_next_generation(
     best_point = kept_points[0]
     for idx in range(len(sd)):
         if sd[idx] < EPS:
-            sd[idx] = sd_percentage_if_zero * max(abs(best_point[idx]), 1.0)
+            sd[idx] = sd_percentage_if_zero * best_point[idx]
     next_generation = [point.copy() for point in kept_points]
     bounds = _ordered_bounds(params)
+    proposal_trace: list[dict[str, object]] = []
     while len(next_generation) < meta_num_points:
-        parent = kept_points[int(rng.random() * len(kept_points))]
-        new_point = _meta_get_new_point(
-            parent,
-            sd,
-            bounds,
-            stretch_proportion=stretch_proportion,
-            disperse_factor=disperse_factor,
-            rng=rng,
+        parent_idx = int(rng.random() * len(kept_points))
+        parent = kept_points[parent_idx]
+        candidate_point: np.ndarray | None = None
+        tries = 0
+        while candidate_point is None:
+            new_point = _meta_get_new_point(
+                parent,
+                sd,
+                bounds,
+                stretch_proportion=stretch_proportion,
+                disperse_factor=disperse_factor,
+                rng=rng,
+            )
+            candidate = _clone_demo_parameters(params)
+            candidate.set_ordered_param_values(new_point)
+            if _demo_from_params_or_none(candidate, demo) is not None:
+                candidate_point = candidate.ordered_param_values().copy()
+            tries += 1
+            if tries >= _META_MAX_NEW_POINT_TRIES * 1000:
+                raise RuntimeError(
+                    "Could not find a valid diCal2 meta-start offspring after repeated retries."
+                )
+        proposal_trace.append(
+            {
+                "parent_index": parent_idx,
+                "parent": parent.copy(),
+                "tries": tries,
+                "candidate": candidate_point.copy(),
+            }
         )
-        candidate = _clone_demo_parameters(params)
-        candidate.set_ordered_param_values(new_point)
-        candidate.clip_to_bounds()
-        next_generation.append(candidate.ordered_param_values())
+        next_generation.append(candidate_point)
+    if trace is not None:
+        trace["sorted_generation"] = [
+            {
+                "log_likelihood": float(ll),
+                "params": np.asarray(point, dtype=np.float64).copy(),
+            }
+            for ll, point in sorted_results
+        ]
+        trace["kept_points"] = [point.copy() for point in kept_points]
+        trace["effective_sd"] = sd.copy()
+        trace["offspring"] = proposal_trace
+        trace["next_generation"] = [point.copy() for point in next_generation]
     return np.array(next_generation, dtype=np.float64)
 
 
@@ -3227,6 +4837,12 @@ def _run_dical2_em(
     composite_mode: str,
     n_alleles: int,
     loci_per_hmm_step: int,
+    seg_positions: np.ndarray | None,
+    reference_length: int | None,
+    reference_alleles: np.ndarray | None,
+    trunk_style: str,
+    cake_style: str,
+    half_migration_rate: bool,
     number_iterations_em: int,
     number_iterations_mstep: int | None,
     relative_error_e: float | None,
@@ -3236,7 +4852,8 @@ def _run_dical2_em(
     coordinatewise_mstep: bool,
     coordinate_order: tuple[int, ...] | None,
     nm_fraction: float | None,
-    rng: np.random.Generator,
+    rng: _JavaRandom,
+    record_mstep_trace: bool = False,
 ) -> tuple[DemoParameters, list[dict], float, str]:
     n_hap = sequences.shape[0]
     csd_pairs = _enumerate_csd_pairs(n_hap, composite_mode)
@@ -3246,10 +4863,16 @@ def _run_dical2_em(
     selected_core_type = "eigen"
 
     for em_iter in range(number_iterations_em + 1):
-        refined = refine_demography(params.to_demo(demo), interval_boundaries)
+        current_demo = params.to_demo(demo)
+        objective_demo = (
+            _halve_demo_migration_rates(current_demo)
+            if half_migration_rate
+            else current_demo
+        )
+        refined = refine_demography(objective_demo, interval_boundaries)
 
         counts_list: list[ExpectedCounts] = []
-        csd_setups: list[tuple[SimpleTrunk, int]] = []
+        csd_setups: list[tuple[int, list[int], int]] = []
         total_ll = 0.0
 
         for additional_idx, trunk_idxs in csd_pairs:
@@ -3260,6 +4883,9 @@ def _run_dical2_em(
                 config=config,
                 additional_hap_idx=additional_idx,
                 trunk_hap_indices=trunk_idxs,
+                refined=refined,
+                trunk_style=trunk_style,
+                cake_style=cake_style,
             )
             core_obj, selected_core_type = _build_native_core(
                 refined=refined,
@@ -3270,10 +4896,6 @@ def _run_dical2_em(
                 rho=rho,
             )
             core = core_obj.core_matrices()
-            obs_add, step_sizes = _group_observations(
-                sequences[additional_idx],
-                loci_per_hmm_step,
-            )
             grouped_trunks = {
                 h: _group_observations(sequences[h], loci_per_hmm_step)[0]
                 for h in trunk_idxs
@@ -3285,6 +4907,35 @@ def _run_dical2_em(
                 trunk_idxs,
                 grouped_trunks,
             )
+            pair_counts = None
+            if (
+                loci_per_hmm_step > 1
+                and seg_positions is not None
+                and reference_length is not None
+                and reference_alleles is not None
+            ):
+                pair_counts = np.array(
+                    [
+                        _physical_block_pair_counts(
+                            sequences[additional_idx],
+                            sequences[int(h)],
+                            seg_positions=seg_positions,
+                            reference_length=int(reference_length),
+                            reference_alleles=reference_alleles,
+                            loci_per_hmm_step=loci_per_hmm_step,
+                            n_alleles=n_alleles,
+                        )
+                        for h in expanded.trunk_hap_indices
+                    ],
+                    dtype=np.int64,
+                )
+                step_sizes = np.full(pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64)
+                obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
+            else:
+                obs_add, step_sizes = _group_observations(
+                    sequences[additional_idx],
+                    loci_per_hmm_step,
+                )
 
             counts = _expanded_expected_counts(
                 core,
@@ -3292,10 +4943,11 @@ def _run_dical2_em(
                 obs_add,
                 n_alleles,
                 step_sizes=step_sizes,
+                pair_counts=pair_counts,
             )
             counts.n_states = core.n_states  # type: ignore[attr-defined]
             counts_list.append(counts)
-            csd_setups.append((trunk, present_deme))
+            csd_setups.append((additional_idx, list(trunk_idxs), present_deme))
             total_ll += counts.log_likelihood
 
         rounds.append(
@@ -3330,10 +4982,15 @@ def _run_dical2_em(
             interval_boundaries,
             counts_list,
             csd_setups,
+            config,
             mutation_matrix,
             theta,
             rho,
+            trunk_style,
+            cake_style,
+            half_migration_rate,
         )
+        mstep_trace: dict[str, object] | None = {} if record_mstep_trace else None
         try:
             if coordinatewise_mstep:
                 next_point = _update_point_coordinatewise(
@@ -3345,6 +5002,7 @@ def _run_dical2_em(
                     use_param_rel_err_m=use_param_rel_err_m,
                     coordinate_order=coordinate_order,
                     rng=rng,
+                    trace=mstep_trace,
                 )
             else:
                 next_point = _update_point(
@@ -3355,11 +5013,14 @@ def _run_dical2_em(
                     nm_fraction=nm_fraction,
                     use_param_rel_err_m=use_param_rel_err_m,
                     rng=rng,
+                    trace=mstep_trace,
                 )
             next_params = _clone_demo_parameters(params)
             next_params.set_ordered_param_values(next_point)
             if _demo_from_params_or_none(next_params, demo) is not None:
                 params = next_params
+                if record_mstep_trace:
+                    rounds[-1]["mstep_trace"] = mstep_trace
         except Exception as exc:  # pragma: no cover - safety net
             logger.warning("M-step failed at iteration %d: %s", em_iter, exc)
 
@@ -3367,6 +5028,55 @@ def _run_dical2_em(
         prev_ll = total_ll
 
     return params, rounds, float(prev_ll), selected_core_type
+
+
+def _scaled_dical2_result_fields(
+    *,
+    demo_template: DiCal2Demo,
+    params: DemoParameters,
+    interval_boundaries: np.ndarray,
+    theta: float,
+    mu: float,
+    generation_time: float,
+    n_ref: float | None,
+) -> dict[str, object]:
+    """Build public time/Ne outputs from a fitted demographic parameter vector."""
+    final_demo = params.to_demo(demo_template)
+    pop_sizes_arr = [ep.pop_sizes.copy() for ep in final_demo.epochs if ep.pop_sizes is not None]
+    growth_rates_arr = [
+        (
+            ep.growth_rates.copy()
+            if ep.growth_rates is not None
+            else np.zeros(len(ep.partition), dtype=np.float64)
+        )
+        for ep in final_demo.epochs
+        if ep.pop_sizes is not None
+    ]
+    pop_sizes_flat = np.array([sizes[0] for sizes in pop_sizes_arr], dtype=np.float64)
+    growth_rates_flat = np.array([rates[0] for rates in growth_rates_arr], dtype=np.float64)
+
+    n_ref_value = float(theta / (4.0 * mu)) if n_ref is None and mu > 0 else float(
+        1e4 if n_ref is None else n_ref
+    )
+    ne = pop_sizes_flat * n_ref_value
+    structured_ne = [sizes * n_ref_value for sizes in pop_sizes_arr]
+    time = interval_boundaries[:-1] * 2.0 * n_ref_value
+    time_years = time * generation_time
+
+    return {
+        "time": time,
+        "time_years": time_years,
+        "ne": ne,
+        "structured_ne": structured_ne,
+        "pop_sizes": pop_sizes_flat,
+        "epoch_pop_sizes": pop_sizes_arr,
+        "growth_rates": growth_rates_flat,
+        "epoch_growth_rates": growth_rates_arr,
+        "interval_boundaries": interval_boundaries,
+        "n_ref": n_ref_value,
+        "ordered_params": params.ordered_param_values(),
+        "param_ids": list(params.ordered_param_ids),
+    }
 
 
 # ===========================================================================
@@ -3455,8 +5165,9 @@ def dical2(
         RNG seed (currently unused — kept for API symmetry).
     implementation : {"auto", "native", "upstream"}
         Algorithm provenance selector. ``"native"`` runs the in-repo diCal2
-        port. ``"upstream"`` currently raises because the public upstream bridge
-        is not exposed yet. ``"auto"`` resolves to the best available implementation.
+        port. ``"upstream"`` runs the vendored ``diCal2.jar`` through the
+        public upstream bridge when the Java runtime is ready. ``"auto"``
+        resolves to the best available implementation.
 
     Returns
     -------
@@ -3468,13 +5179,20 @@ def dical2(
         implementation,
         upstream_available=method_upstream_available("dical2"),
     )
+    warn_if_native_not_trusted("dical2", implementation_used)
     source_paths = data.uns.get("source_paths", {})
     upstream_required_inputs = ["param_file", "demo_file", "config_file", "reference_file", "sequences"]
     if implementation == "auto" and implementation_used == "upstream":
         if any(not source_paths.get(key) for key in upstream_required_inputs):
             implementation_used = "native"
     allowed_method_option_keys = {
+        "add_trunk_intervals",
+        "addTrunkIntervals",
+        "ancient_deme_states",
+        "ancientDemeStates",
         "bounds",
+        "cake_style",
+        "cakeStyle",
         "composite_mode",
         "compositeLikelihood",
         "coordinate_order",
@@ -3513,15 +5231,33 @@ def dical2(
         "relativeErrorE",
         "relative_error_m",
         "relativeErrorM",
+        "record_meta_trace",
+        "recordMetaTrace",
+        "record_mstep_trace",
+        "recordMstepTrace",
         "seed",
         "start_point",
         "startPoint",
+        "trunk_style",
+        "trunkStyle",
         "use_param_rel_err",
         "useParamRelErr",
         "use_param_rel_err_m",
         "useParamRelErrM",
     }
     native_method_options = {} if native_options is None else dict(native_options)
+    record_meta_trace = bool(
+        native_method_options.pop(
+            "record_meta_trace",
+            native_method_options.pop("recordMetaTrace", False),
+        )
+    )
+    record_mstep_trace = bool(
+        native_method_options.pop(
+            "record_mstep_trace",
+            native_method_options.pop("recordMstepTrace", False),
+        )
+    )
     if native_method_options:
         unsupported = sorted(set(native_method_options) - allowed_method_option_keys)
         if unsupported:
@@ -3575,6 +5311,8 @@ def dical2(
             implementation_requested=implementation,
         )
 
+    initialization_metadata: dict[str, object] | None = None
+
     if data.sequences is None:
         raise ValueError("data.sequences is None — call read_dical2 first.")
     sequences = np.asarray(data.sequences, dtype=np.int8)
@@ -3613,12 +5351,20 @@ def dical2(
         params.ordered_upper_bounds = np.array([hi for _, hi in parsed_bounds], dtype=np.float64)
     theta = float(data.params.get("theta", 0.0005))
     rho = float(data.params.get("rho", 0.0005))
-    rng = np.random.default_rng(resolved_native.seed)
+    seg_positions = data.uns.get("seg_positions")
+    reference_length = data.uns.get("reference_length")
+    reference_alleles = data.uns.get("reference_alleles")
+    if seg_positions is not None:
+        seg_positions = np.asarray(seg_positions, dtype=np.int64)
+    if reference_alleles is not None:
+        reference_alleles = np.asarray(reference_alleles, dtype=np.int8)
+    rng = _JavaRandom(resolved_native.seed)
 
     best_params: DemoParameters | None = None
     best_rounds: list[dict] = []
     best_ll = -np.inf
     best_core_type = "eigen"
+    meta_trace: list[dict[str, object]] | None = [] if record_meta_trace else None
 
     if resolved_native.meta_start_file is not None:
         candidate_points = np.loadtxt(
@@ -3632,11 +5378,30 @@ def dical2(
         candidate_points = candidate_points[:effective_meta_num_points].copy()
         for meta_iter in range(max(resolved_native.meta_num_iterations, 1)):
             generation_results: list[tuple[float, np.ndarray]] = []
-            for row in candidate_points:
+            generation_run_records: list[dict[str, object]] = []
+            generation_trace: dict[str, object] | None = None
+            if meta_trace is not None:
+                generation_trace = {
+                    "meta_iteration": meta_iter,
+                    "starting_points": [row.copy() for row in candidate_points],
+                    "runs": [],
+                }
+            for start_idx, row in enumerate(candidate_points):
                 local_params = _clone_demo_parameters(params)
                 local_params.set_ordered_param_values(np.asarray(row, dtype=np.float64))
                 if _demo_from_params_or_none(local_params, demo) is None:
+                    if generation_trace is not None:
+                        cast_runs = cast(list[dict[str, object]], generation_trace["runs"])
+                        cast_runs.append(
+                            {
+                                "start_index": start_idx,
+                                "start_point": np.asarray(row, dtype=np.float64).copy(),
+                                "valid_start": False,
+                            }
+                        )
                     continue
+                spawn_seed = rng.next_long()
+                local_rng = _JavaRandom(spawn_seed)
                 local_params, rounds, ll, core_type = _run_dical2_em(
                     demo=demo,
                     params=local_params,
@@ -3649,6 +5414,14 @@ def dical2(
                     composite_mode=resolved_native.composite_mode,
                     n_alleles=n_alleles,
                     loci_per_hmm_step=resolved_native.loci_per_hmm_step,
+                    seg_positions=seg_positions,
+                    reference_length=reference_length,
+                    reference_alleles=reference_alleles,
+                    trunk_style=resolved_native.trunk_style,
+                    cake_style=resolved_native.cake_style,
+                    half_migration_rate=_trunk_style_halves_migration_rates(
+                        resolved_native.trunk_style
+                    ),
                     number_iterations_em=resolved_native.number_iterations_em,
                     number_iterations_mstep=resolved_native.number_iterations_mstep,
                     relative_error_e=resolved_native.relative_error_e,
@@ -3658,20 +5431,63 @@ def dical2(
                     coordinatewise_mstep=resolved_native.coordinatewise_mstep,
                     coordinate_order=resolved_native.coordinate_order,
                     nm_fraction=resolved_native.nm_fraction,
-                    rng=rng,
+                    rng=local_rng,
+                    record_mstep_trace=record_mstep_trace,
                 )
-                generation_results.append((ll, local_params.ordered_param_values()))
-                if ll > best_ll:
-                    best_ll = ll
-                    best_rounds = rounds
-                    best_params = _clone_demo_parameters(local_params)
-                    best_core_type = core_type
+                ordered = local_params.ordered_param_values().copy()
+                generation_results.append((ll, ordered))
+                generation_run_records.append(
+                    {
+                        "start_index": start_idx,
+                        "start_point": np.asarray(row, dtype=np.float64).copy(),
+                        "spawn_seed": spawn_seed,
+                        "params": ordered,
+                        "log_likelihood": float(ll),
+                        "rounds": rounds,
+                        "core_type": core_type,
+                    }
+                )
+                if generation_trace is not None:
+                    cast_runs = cast(list[dict[str, object]], generation_trace["runs"])
+                    cast_runs.append(
+                        {
+                            "start_index": start_idx,
+                            "start_point": np.asarray(row, dtype=np.float64).copy(),
+                            "spawn_seed": spawn_seed,
+                            "valid_start": True,
+                            "params": ordered,
+                            "log_likelihood": float(ll),
+                            "core_type": core_type,
+                            "n_iterations": len(rounds),
+                            "rounds": rounds,
+                        }
+                    )
             if not generation_results:
                 raise ValueError("No valid diCal2 meta-start points remained after applying bounds.")
+            generation_best_record = max(
+                generation_run_records,
+                key=lambda record: float(record["log_likelihood"]),
+            )
+            if generation_trace is not None:
+                generation_trace["best_log_likelihood"] = float(generation_best_record["log_likelihood"])
+                generation_trace["best_params"] = np.asarray(
+                    generation_best_record["params"],
+                    dtype=np.float64,
+                ).copy()
             if meta_iter == max(resolved_native.meta_num_iterations, 1) - 1:
+                best_ll = float(generation_best_record["log_likelihood"])
+                best_rounds = cast(list[dict], generation_best_record["rounds"])
+                best_params = _clone_demo_parameters(local_params)
+                best_params.set_ordered_param_values(
+                    np.asarray(generation_best_record["params"], dtype=np.float64)
+                )
+                best_core_type = cast(str, generation_best_record["core_type"])
+                if meta_trace is not None and generation_trace is not None:
+                    meta_trace.append(generation_trace)
                 break
             candidate_points = _meta_next_generation(
                 generation_results,
+                demo,
                 params,
                 meta_keep_best=resolved_native.meta_keep_best,
                 meta_num_points=effective_meta_num_points,
@@ -3679,12 +5495,16 @@ def dical2(
                 disperse_factor=resolved_native.meta_disperse_factor,
                 sd_percentage_if_zero=resolved_native.meta_sd_percentage_if_zero,
                 rng=rng,
+                trace=generation_trace,
             )
+            if meta_trace is not None and generation_trace is not None:
+                meta_trace.append(generation_trace)
     else:
         if resolved_native.start_point is not None:
             params.set_ordered_param_values(np.asarray(resolved_native.start_point, dtype=np.float64))
             if _demo_from_params_or_none(params, demo) is None:
                 raise ValueError("diCal2 start_point is outside bounds or yields an invalid demography.")
+        local_rng = rng.spawn_offspring()
         params, best_rounds, best_ll, best_core_type = _run_dical2_em(
             demo=demo,
             params=params,
@@ -3697,6 +5517,14 @@ def dical2(
             composite_mode=resolved_native.composite_mode,
             n_alleles=n_alleles,
             loci_per_hmm_step=resolved_native.loci_per_hmm_step,
+            seg_positions=seg_positions,
+            reference_length=reference_length,
+            reference_alleles=reference_alleles,
+            trunk_style=resolved_native.trunk_style,
+            cake_style=resolved_native.cake_style,
+            half_migration_rate=_trunk_style_halves_migration_rates(
+                resolved_native.trunk_style
+            ),
             number_iterations_em=resolved_native.number_iterations_em,
             number_iterations_mstep=resolved_native.number_iterations_mstep,
             relative_error_e=resolved_native.relative_error_e,
@@ -3706,7 +5534,8 @@ def dical2(
             coordinatewise_mstep=resolved_native.coordinatewise_mstep,
             coordinate_order=resolved_native.coordinate_order,
             nm_fraction=resolved_native.nm_fraction,
-            rng=rng,
+            rng=local_rng,
+            record_mstep_trace=record_mstep_trace,
         )
         best_params = params
 
@@ -3715,50 +5544,26 @@ def dical2(
     rounds = best_rounds
     prev_ll = best_ll
 
-    # Final pop sizes per epoch (single deme assumption for the convenience field)
-    final_demo = params.to_demo(demo)
-    pop_sizes_arr = [ep.pop_sizes.copy() for ep in final_demo.epochs if ep.pop_sizes is not None]
-    growth_rates_arr = [
-        (
-            ep.growth_rates.copy()
-            if ep.growth_rates is not None
-            else np.zeros(len(ep.partition), dtype=np.float64)
-        )
-        for ep in final_demo.epochs
-        if ep.pop_sizes is not None
-    ]
-    pop_sizes_flat = np.array([sizes[0] for sizes in pop_sizes_arr], dtype=np.float64)
-    growth_rates_flat = np.array([rates[0] for rates in growth_rates_arr], dtype=np.float64)
-
-    # Convert to absolute Ne and time
-    if n_ref is None:
-        # theta = 4 * N_ref * mu  ⇒  N_ref = theta / (4 * mu)
-        n_ref = theta / (4.0 * mu) if mu > 0 else 1e4
-    ne = pop_sizes_flat * n_ref
-    structured_ne = [sizes * n_ref for sizes in pop_sizes_arr]
-    time = interval_boundaries[:-1] * 2.0 * n_ref  # in generations
-    time_years = time * generation_time
-
     data.results["dical2"] = annotate_result({
-        "time": time,
-        "time_years": time_years,
-        "ne": ne,
-        "structured_ne": structured_ne,
-        "pop_sizes": pop_sizes_flat,
-        "epoch_pop_sizes": pop_sizes_arr,
-        "growth_rates": growth_rates_flat,
-        "epoch_growth_rates": growth_rates_arr,
+        **_scaled_dical2_result_fields(
+            demo_template=demo,
+            params=params,
+            interval_boundaries=interval_boundaries,
+            theta=theta,
+            mu=mu,
+            generation_time=generation_time,
+            n_ref=n_ref,
+        ),
         "log_likelihood": float(prev_ll),
         "n_iterations": len(rounds),
         "rounds": rounds,
-        "interval_boundaries": interval_boundaries,
-        "n_ref": float(n_ref),
         "composite_mode": resolved_native.composite_mode,
         "loci_per_hmm_step": resolved_native.loci_per_hmm_step,
-        "ordered_params": params.ordered_param_values(),
-        "param_ids": list(params.ordered_param_ids),
         "core_type": best_core_type,
         "resolved_options": _resolved_options_metadata(resolved_native),
+        "initialization": initialization_metadata,
+        "meta_trace": meta_trace,
+        "best_params": params.ordered_param_values().copy(),
     }, implementation_requested=implementation, implementation_used=implementation_used)
     data.params.setdefault("mu", mu)
     data.params.setdefault("generation_time", generation_time)
@@ -3912,6 +5717,28 @@ def _dical2_upstream(
             f"stderr:\n{proc.stderr}"
         )
     em_path, best = _parse_dical2_stdout(proc.stdout)
+    normalized_payload: dict[str, object] = {}
+    if best is not None:
+        demo: DiCal2Demo | None = data.uns.get("demo")
+        config: DiCal2Config | None = data.uns.get("config")
+        if demo is not None and config is not None:
+            params = _build_free_params(demo)
+            best_params = np.asarray(best["params"], dtype=np.float64)
+            if len(best_params) == len(params.ordered_param_ids):
+                params.set_ordered_param_values(best_params)
+                interval_boundaries = _resolve_interval_boundaries(demo, config, resolved)
+                theta = float(data.params.get("theta", 0.0005))
+                mu = float(data.params.get("mu", 1.25e-8))
+                generation_time = float(data.params.get("generation_time", 25.0))
+                normalized_payload = _scaled_dical2_result_fields(
+                    demo_template=demo,
+                    params=params,
+                    interval_boundaries=interval_boundaries,
+                    theta=theta,
+                    mu=mu,
+                    generation_time=generation_time,
+                    n_ref=None,
+                )
     data.results["dical2"] = annotate_result(
         {
             "backend": "upstream",
@@ -3919,6 +5746,7 @@ def _dical2_upstream(
             "best_params": None if best is None else np.asarray(best["params"], dtype=np.float64),
             "em_path": em_path,
             "resolved_options": _resolved_options_metadata(resolved),
+            **normalized_payload,
             "upstream": standard_upstream_metadata(
                 "dical2",
                 effective_args={

@@ -17,6 +17,7 @@ import numpy as np
 
 HMM_TINY = 1e-25
 PSMC_T_INF = 1000.0
+PSMC_PARAM_FLOOR = 1e-12
 PSMC_N_PARAMS = 3
 
 
@@ -357,6 +358,24 @@ def compute_time_intervals_jit(n, max_t, alpha):
     return t
 
 
+@numba.njit(cache=True)
+def stabilize_psmc_params_jit(params, divergence):
+    """Clamp optimized PSMC parameters away from zero."""
+    out = np.empty_like(params)
+    for i in range(params.shape[0]):
+        out[i] = abs(params[i])
+
+    for i in range(min(3, out.shape[0])):
+        if out[i] < PSMC_PARAM_FLOOR:
+            out[i] = PSMC_PARAM_FLOOR
+
+    for i in range(PSMC_N_PARAMS, out.shape[0] - (1 if divergence else 0)):
+        if out[i] < PSMC_PARAM_FLOOR:
+            out[i] = PSMC_PARAM_FLOOR
+
+    return out
+
+
 # ---------------------------------------------------------------------------
 # 8. Coalescent params -> HMM params
 # ---------------------------------------------------------------------------
@@ -382,13 +401,14 @@ def compute_hmm_params_jit(params, par_map, n, t, divergence):
     C_sigma : float
     """
     n_states = n + 1
-    theta = params[0]
-    rho = params[1]
+    theta = params[0] if params[0] > PSMC_PARAM_FLOOR else PSMC_PARAM_FLOOR
+    rho = params[1] if params[1] > PSMC_PARAM_FLOOR else PSMC_PARAM_FLOOR
 
     # Lambda for each state
     lam = np.empty(n_states, dtype=np.float64)
     for k in range(n_states):
-        lam[k] = params[par_map[k] + PSMC_N_PARAMS]
+        value = params[par_map[k] + PSMC_N_PARAMS]
+        lam[k] = value if value > PSMC_PARAM_FLOOR else PSMC_PARAM_FLOOR
 
     # Divergence time
     if divergence:
@@ -447,7 +467,9 @@ def compute_hmm_params_jit(params, par_map, n, t, divergence):
     for k in range(n_states):
         C_pi += lam[k] * ak1[k]
 
-    C_sigma = 1.0 / (C_pi * rho) + 0.5
+    C_pi_safe = C_pi if C_pi > PSMC_PARAM_FLOOR else PSMC_PARAM_FLOOR
+    rho_scale = C_pi_safe * rho
+    C_sigma = 1.0 / rho_scale + 0.5
 
     # Cumulative sum_t
     sum_t = np.empty(n_states, dtype=np.float64)
@@ -461,8 +483,8 @@ def compute_hmm_params_jit(params, par_map, n, t, divergence):
     sigma = np.empty(n_states, dtype=np.float64)
     for k in range(n_states):
         cpik[k] = ak1[k] * (sum_t[k] + lam[k]) - alpha[k + 1] * tau[k]
-        pik[k] = cpik[k] / C_pi
-        sigma[k] = (ak1[k] / (C_pi * rho) + pik[k] / 2.0) / C_sigma
+        pik[k] = cpik[k] / C_pi_safe
+        sigma[k] = (ak1[k] / rho_scale + pik[k] / 2.0) / C_sigma
 
     # avg_t with fallback
     avg_t = np.empty(n_states, dtype=np.float64)
@@ -580,10 +602,7 @@ def _eval_neg_Q(x, par_map, n, A_sum, E_sum, Q0_val, divergence):
         -Q(|x|)
     """
     n_params = x.shape[0]
-    x_abs = np.empty(n_params, dtype=np.float64)
-    for i in range(n_params):
-        x_abs[i] = abs(x[i])
-
+    x_abs = stabilize_psmc_params_jit(x, divergence)
     t = compute_time_intervals_jit(n, x_abs[2], 0.1)
     a, e, _, _, _ = compute_hmm_params_jit(x_abs, par_map, n, t, divergence)
     return -q_function_jit(a, e, A_sum, E_sum, Q0_val)
@@ -715,8 +734,4 @@ def kmin_hj_jit(params, par_map, n, A_sum, E_sum, Q0_val, divergence):
             break
 
     # Return absolute values and the Q value (negate back)
-    result = np.empty(n_dim, dtype=np.float64)
-    for i in range(n_dim):
-        result[i] = abs(x[i])
-
-    return result, -fx
+    return stabilize_psmc_params_jit(x, divergence), -fx

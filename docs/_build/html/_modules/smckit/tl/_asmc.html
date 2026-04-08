@@ -1,0 +1,1429 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smckit.tl._asmc &mdash; smckit 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=e37cf168" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/pretext-layout.js?v=cc9de092"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            smckit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-is-the-coalescent">What is the coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-is-the-sequentially-markovian-coalescent">What is the Sequentially Markovian Coalescent?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#the-landscape-of-smc-tools">The landscape of SMC tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#what-smckit-provides">What smckit provides</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#hello-smckit">Hello, smckit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/introduction.html#where-to-go-next">Where to go next</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-source">Install from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#repo-environment-commands">Repo environment commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#upstream-tool-readiness">Upstream tool readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#runtime-and-bootstrap-matrix">Runtime and bootstrap matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#platform-install-recipes">Platform install recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#windows">Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#bootstrapping-examples">Bootstrapping examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-psmc.html">Quickstart: PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#run-psmc">Run PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-psmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-asmc.html">Quickstart: ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#run-asmc">Run ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-asmc.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html">Quickstart: MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#run-msmc2">Run MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html">Quickstart: MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#run-msmc-im">Run MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-msmc-im.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html">Quickstart: eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#run-esmc2">Run eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-esmc2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html">Quickstart: SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-dical2.html">Quickstart: diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#what-the-input-files-are">What the input files are</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/smcdata.html">The SmcData Container</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#anatomy-of-an-smcdata">Anatomy of an SmcData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#the-pipeline-pattern">The pipeline pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#which-fields-each-method-uses">Which fields each method uses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/smcdata.html#comparison-with-anndata">Comparison with AnnData</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/io-formats.html">I/O Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#quick-index">Quick index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#psmcfa">PSMCFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#multihetsep">Multihetsep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#msmc-combined-output">MSMC combined output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#asmc-file-bundle">ASMC file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#smc-span-encoded-input">SMC++ span-encoded input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#dical2-model-file-bundle">diCal2 model-file bundle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/io-formats.html#output-readers">Output readers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/choosing-a-method.html">Choosing a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#read-this-table-first">Read this table first</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#a-simple-decision-path">A simple decision path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#one-diploid-genome">One diploid genome</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#multiple-phased-haplotypes">Multiple phased haplotypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#many-unphased-genomes">Many unphased genomes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/choosing-a-method.html#structured-demographic-model-files-already-exist">Structured demographic model files already exist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#how-implementation-choice-affects-method-choice">How implementation choice affects method choice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#if-you-are-unsure">If you are unsure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/choosing-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/interpreting-results.html">Interpreting Results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#what-does-n-e-t-mean">What does <span class="math notranslate nohighlight">\(N_e(t)\)</span> mean?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#the-data-results-dictionary">The <code class="docutils literal notranslate"><span class="pre">data.results</span></code> dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#assessing-convergence">Assessing convergence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#em-based-methods-psmc-esmc2-msmc2">EM-based methods (PSMC, eSMC2, MSMC2)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#gradient-based-methods-psmc-ssm-smc">Gradient-based methods (PSMC-SSM, SMC++)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#common-pitfalls">Common pitfalls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/interpreting-results.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/plotting.html">Plotting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#selecting-a-method">Selecting a method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#overlaying-multiple-methods">Overlaying multiple methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#unit-conversion">Unit conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/gallery.html">Gallery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/psmc-ssm.html">PSMC-SSM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#why-we-built-it">Why We Built It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#what-it-is">What It Is</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#what-it-buys-you">What It Buys You</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#explicit-hmm-access">1. Explicit HMM access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#a-unified-fitting-interface">2. A unified fitting interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#a-clean-extension-point">3. A clean extension point</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#when-to-use-it">When To Use It</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-to-use-it">How To Use It</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#standard-setup">Standard setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#em-fitting">EM fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#gradient-fitting">Gradient fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#convert-back-to-demographic-history">Convert back to demographic history</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-it-is-implemented">How It Is Implemented</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-method-em-relates-to-smckit-tl-psmc">How <code class="docutils literal notranslate"><span class="pre">method=&quot;em&quot;</span></code> Relates To <code class="docutils literal notranslate"><span class="pre">smckit.tl.psmc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-method-gradient-works">How <code class="docutils literal notranslate"><span class="pre">method=&quot;gradient&quot;</span></code> Works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#benchmark-snapshot">Benchmark Snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#how-to-implement-a-new-smc-model-on-this-pattern">How To Implement A New SMC Model On This Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-1-define-the-hidden-states-and-observations">Step 1: define the hidden states and observations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-2-subclass-smcstatespace">Step 2: subclass <code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-3-add-a-parameter-initializer">Step 3: add a parameter initializer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-4-add-physical-unit-conversion">Step 4: add physical-unit conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-5-validate-against-an-oracle">Step 5: validate against an oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/psmc-ssm.html#step-6-only-then-add-a-gradient-path">Step 6: only then add a gradient path</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#recommended-reading-order">Recommended Reading Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/psmc-ssm.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Method Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/psmc.html">PSMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/asmc.html">ASMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/msmc2.html">MSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/msmc-im.html">MSMC-IM</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/esmc2.html">eSMC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/smcpp.html">SMC++</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/dical2.html">diCal2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#implementations">Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#development-setup">Development setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#code-style">Code style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#running-tests">Running tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#pull-request-workflow">Pull request workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#reporting-bugs">Reporting bugs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/contributing.html#asking-questions">Asking questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/architecture.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#project-identity">Project identity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#api-design-scanpy-philosophy">API design (scanpy philosophy)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#implementation-provenance">Implementation provenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#upstream-registry-and-bootstrap-contract">Upstream registry and bootstrap contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#compute-backend-strategy">Compute backend strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#vectorization-requirements">Vectorization requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#ssm-state-space-model-integration">SSM (state-space model) integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#algorithms-roadmap">Algorithms roadmap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#file-organization">File organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#three-tier-validation">Three-tier validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/architecture.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/adding-a-method.html">Adding a Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-1-write-the-internals-document">Step 1: Write the internals document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-2-implement-the-i-o-reader">Step 2: Implement the I/O reader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-3-implement-the-inference-tool">Step 3: Implement the inference tool</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/adding-a-method.html#result-key-conventions">Result key conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-4-numba-jit-optional-but-encouraged">Step 4: Numba JIT (optional but encouraged)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-5-validation-against-the-original-tool">Step 5: Validation against the original tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-6-unit-tests">Step 6: Unit tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-7-add-to-method-comparison">Step 7: Add to method comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#step-8-ssm-subclass-optional">Step 8: SSM subclass (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/adding-a-method.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#dical2">diCal2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-psmc.html">PSMC Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#source-map">Source map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#core-model">Core model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#the-parts-that-matter-for-parity">The parts that matter for parity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-psmc.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-smcpp.html">SMC++ Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#core-ingredients">Core ingredients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#porting-hotspots">Porting hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#current-native-state">Current native state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#handoff-notes">Handoff notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#upstream-bridge-notes">Upstream bridge notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-esmc2.html">eSMC2 Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#core-model-additions-over-psmc">Core model additions over PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#practical-parity-notes">Practical parity notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#upstream-bridge">Upstream bridge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-esmc2.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-msmc-im.html">MSMC-IM Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#why-this-page-exists">Why this page exists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#internal-model-shape">Internal model shape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#review-hotspots">Review hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#where-to-read-code">Where to read code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-msmc-im.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Agent Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents/using-smckit.html">Using smckit as an Agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#core-contract">Core contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#check-upstream-readiness">Check upstream readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#bootstrap-when-needed">Bootstrap when needed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#choose-implementation-intentionally">Choose implementation intentionally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#method-specific-controls">Method-specific controls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/using-smckit.html#validation-workflow">Validation workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../agents/algorithms.html">Algorithm Map for Agents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#psmc">PSMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#msmc2">MSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#msmc-im">MSMC-IM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#smc">SMC++</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#esmc2">eSMC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#asmc">ASMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../agents/algorithms.html#dical2">diCal2</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/core.html">Core: SmcData</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/core.html#smckit.SmcData"><code class="docutils literal notranslate"><span class="pre">SmcData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.sequences"><code class="docutils literal notranslate"><span class="pre">SmcData.sequences</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.window_size"><code class="docutils literal notranslate"><span class="pre">SmcData.window_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.params"><code class="docutils literal notranslate"><span class="pre">SmcData.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/io.html">IO: Input / Output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_psmcfa"><code class="docutils literal notranslate"><span class="pre">read_psmcfa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_psmc_output"><code class="docutils literal notranslate"><span class="pre">read_psmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_psmc_output"><code class="docutils literal notranslate"><span class="pre">write_psmc_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#msmc-msmc2">MSMC / MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_multihetsep"><code class="docutils literal notranslate"><span class="pre">read_multihetsep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_combined_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_combined_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">read_msmc_im_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_msmc_im_output"><code class="docutils literal notranslate"><span class="pre">write_msmc_im_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_asmc"><code class="docutils literal notranslate"><span class="pre">read_asmc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_decoding_quantities"><code class="docutils literal notranslate"><span class="pre">read_decoding_quantities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_hap"><code class="docutils literal notranslate"><span class="pre">read_hap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_samples"><code class="docutils literal notranslate"><span class="pre">read_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_map"><code class="docutils literal notranslate"><span class="pre">read_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2"><code class="docutils literal notranslate"><span class="pre">read_dical2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_param"><code class="docutils literal notranslate"><span class="pre">read_dical2_param()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_demo"><code class="docutils literal notranslate"><span class="pre">read_dical2_demo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/tl.html">Tools: Inference Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#psmc">PSMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.psmc"><code class="docutils literal notranslate"><span class="pre">psmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#esmc2">eSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.esmc2"><code class="docutils literal notranslate"><span class="pre">esmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#msmc2">MSMC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.msmc2"><code class="docutils literal notranslate"><span class="pre">msmc2()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#msmc-im">MSMC-IM</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.msmc_im"><code class="docutils literal notranslate"><span class="pre">msmc_im()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#asmc">ASMC</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.asmc"><code class="docutils literal notranslate"><span class="pre">asmc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_obs"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.transition_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.emission_matrix"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.initial_distribution"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.log_likelihood()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.fit"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM"><code class="docutils literal notranslate"><span class="pre">PsmcSSM</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.transition_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.transition_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.emission_matrix"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.emission_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.initial_distribution"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.initial_distribution()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.make_initial_params"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.make_initial_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.PsmcSSM.to_physical_units"><code class="docutils literal notranslate"><span class="pre">PsmcSSM.to_physical_units()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult"><code class="docutils literal notranslate"><span class="pre">FitResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.params"><code class="docutils literal notranslate"><span class="pre">FitResult.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.log_likelihood"><code class="docutils literal notranslate"><span class="pre">FitResult.log_likelihood</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.n_iterations"><code class="docutils literal notranslate"><span class="pre">FitResult.n_iterations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.converged"><code class="docutils literal notranslate"><span class="pre">FitResult.converged</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.FitResult.history"><code class="docutils literal notranslate"><span class="pre">FitResult.history</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/settings.html">Settings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.verbosity"><code class="docutils literal notranslate"><span class="pre">Settings.verbosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.backend"><code class="docutils literal notranslate"><span class="pre">Settings.backend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.n_jobs"><code class="docutils literal notranslate"><span class="pre">Settings.n_jobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.seed"><code class="docutils literal notranslate"><span class="pre">Settings.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.upstream_cache_dir"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_cache_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.upstream_runtime_overrides"><code class="docutils literal notranslate"><span class="pre">Settings.upstream_runtime_overrides</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/settings.html#smckit.settings.Settings.use_gpu"><code class="docutils literal notranslate"><span class="pre">Settings.use_gpu()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">smckit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">smckit.tl._asmc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for smckit.tl._asmc</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;ASMC: Ascertained Sequentially Markovian Coalescent.</span>
+
+<span class="sd">Reimplementation of Palamara et al. (2018) Nature Genetics.</span>
+<span class="sd">Infers pairwise coalescence times along the genome using a linear-time</span>
+<span class="sd">HMM with B/U/D transition decomposition.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._asmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">DecodingQuantities</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.tl._implementation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">annotate_result</span><span class="p">,</span>
+    <span class="n">choose_implementation</span><span class="p">,</span>
+    <span class="n">method_upstream_available</span><span class="p">,</span>
+    <span class="n">normalize_implementation</span><span class="p">,</span>
+    <span class="n">require_upstream_available</span><span class="p">,</span>
+    <span class="n">standard_upstream_metadata</span><span class="p">,</span>
+    <span class="n">warn_if_native_not_trusted</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.upstream</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap</span> <span class="k">as</span> <span class="n">bootstrap_upstream</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.upstream</span><span class="w"> </span><span class="kn">import</span> <span class="n">status</span> <span class="k">as</span> <span class="n">upstream_status</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Rounding defaults (matching C++ implementation)</span>
+<span class="n">PRECISION</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">MIN_GENETIC</span> <span class="o">=</span> <span class="mf">1e-10</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Utilities</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">round_morgans</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">PRECISION</span><span class="p">,</span> <span class="n">min_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MIN_GENETIC</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Round a genetic distance to a fixed number of significant figures.</span>
+
+<span class="sd">    Matches the C++ ``asmc::roundMorgans`` function used to key</span>
+<span class="sd">    precomputed transition vectors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : float</span>
+<span class="sd">        Genetic distance in Morgans.</span>
+<span class="sd">    precision : int</span>
+<span class="sd">        One less than the number of significant figures.</span>
+<span class="sd">    min_val : float</span>
+<span class="sd">        Minimum returned value.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Rounded value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">min_val</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">min_val</span>
+    <span class="n">correction</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+    <span class="n">L10</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="o">+</span> <span class="n">correction</span><span class="p">)</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="mf">10.0</span> <span class="o">-</span> <span class="n">L10</span><span class="p">)</span>
+    <span class="n">scaled</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">factor</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">scaled</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="n">factor</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Pair observations</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PairObservations</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoded observations for a pair of haplotypes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obs_is_zero : (L,) float32</span>
+<span class="sd">        1.0 where both haplotypes carry the same allele (XOR=0, AND=0), else 0.</span>
+<span class="sd">    obs_is_two : (L,) float32</span>
+<span class="sd">        1.0 where both carry the minor/derived allele (AND=1), else 0.</span>
+<span class="sd">    hap_i : int</span>
+<span class="sd">        Index of first haplotype.</span>
+<span class="sd">    hap_j : int</span>
+<span class="sd">        Index of second haplotype.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obs_is_zero</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">obs_is_two</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">hap_i</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">hap_j</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_pair</span><span class="p">(</span>
+    <span class="n">haplotypes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PairObservations</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode a haplotype pair into ASMC observation vectors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    haplotypes : (n_haps, n_sites) uint8</span>
+<span class="sd">    i, j : int</span>
+<span class="sd">        Haplotype indices.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    PairObservations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hap_i</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+    <span class="n">hap_j</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+
+    <span class="n">xor_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_xor</span><span class="p">(</span><span class="n">hap_i</span><span class="p">,</span> <span class="n">hap_j</span><span class="p">)</span>   <span class="c1"># heterozygous</span>
+    <span class="n">and_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">hap_i</span><span class="p">,</span> <span class="n">hap_j</span><span class="p">)</span>    <span class="c1"># both derived</span>
+
+    <span class="c1"># C++ obsIsZero = !obsBits = !(XOR): 1 when NOT heterozygous</span>
+    <span class="c1"># (includes both-ancestral AND both-derived)</span>
+    <span class="n">obs_is_zero</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">xor_bits</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">obs_is_two</span> <span class="o">=</span> <span class="n">and_bits</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">PairObservations</span><span class="p">(</span>
+        <span class="n">obs_is_zero</span><span class="o">=</span><span class="n">obs_is_zero</span><span class="p">,</span>
+        <span class="n">obs_is_two</span><span class="o">=</span><span class="n">obs_is_two</span><span class="p">,</span>
+        <span class="n">hap_i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+        <span class="n">hap_j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Emission preparation</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_emissions</span><span class="p">(</span>
+    <span class="n">dq</span><span class="p">:</span> <span class="n">DecodingQuantities</span><span class="p">,</span>
+    <span class="n">genetic_positions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">n_sites</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">use_csfs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">skip_csfs_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fold_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">decoding_sequence</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">undistinguished_counts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Precompute per-site emission vectors.</span>
+
+<span class="sd">    Returns three arrays of shape (n_sites, states) that encode the</span>
+<span class="sd">    emission model as::</span>
+
+<span class="sd">        emission(pos, k) = e1[pos,k]</span>
+<span class="sd">                         + e0m1[pos,k] * obs_is_zero[pos]</span>
+<span class="sd">                         + e2m0[pos,k] * obs_is_two[pos]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dq : DecodingQuantities</span>
+<span class="sd">    genetic_positions : (n_sites,) float32</span>
+<span class="sd">    n_sites : int</span>
+<span class="sd">    use_csfs : bool</span>
+<span class="sd">        Whether to use CSFS emissions at eligible sites.</span>
+<span class="sd">    skip_csfs_distance : float</span>
+<span class="sd">        Minimum genetic distance (Morgans) between CSFS sites.</span>
+<span class="sd">    fold_data : bool</span>
+<span class="sd">        Whether to use folded CSFS tables.</span>
+<span class="sd">    decoding_sequence : bool</span>
+<span class="sd">        True for whole-genome sequencing, False for array data.</span>
+<span class="sd">    undistinguished_counts : (n_sites, 3) int, optional</span>
+<span class="sd">        Per-site undistinguished allele counts for obs types 0, 1, 2.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    emission1 : (n_sites, states)</span>
+<span class="sd">    emission0minus1 : (n_sites, states)</span>
+<span class="sd">    emission2minus0 : (n_sites, states)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">states</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">states</span>
+    <span class="n">e1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">e0m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">e2m0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Determine which sites use CSFS</span>
+    <span class="n">use_csfs_at</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_sites</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_csfs</span> <span class="ow">and</span> <span class="n">skip_csfs_distance</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">):</span>
+        <span class="n">use_csfs_at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">last_csfs_pos</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_sites</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">-</span> <span class="n">last_csfs_pos</span> <span class="o">&gt;=</span> <span class="n">skip_csfs_distance</span><span class="p">:</span>
+                <span class="n">use_csfs_at</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">last_csfs_pos</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+
+    <span class="c1"># Select emission tables</span>
+    <span class="k">if</span> <span class="n">decoding_sequence</span><span class="p">:</span>
+        <span class="n">classic_e0</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">classic_emission</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">classic_e1</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">classic_emission</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">classic_e0</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">compressed_emission</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">classic_e1</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">compressed_emission</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sites</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">use_csfs_at</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="ow">and</span> <span class="n">undistinguished_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">uc</span> <span class="o">=</span> <span class="n">undistinguished_counts</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">fold_data</span><span class="p">:</span>
+                <span class="n">csfs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">folded_ascertained_csfs_map</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">decoding_sequence</span> <span class="k">else</span> <span class="n">dq</span><span class="o">.</span><span class="n">folded_csfs_map</span>
+                <span class="c1"># folded: 2 rows (obs=0, obs=1)</span>
+                <span class="n">uc1</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">uc1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># else e1 stays 0</span>
+
+                <span class="n">uc0</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">uc0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">e0m1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">e0m1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+
+                <span class="n">uc2</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">uc2</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc2</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">uc0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">uc0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">csfs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">ascertained_csfs_map</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">decoding_sequence</span> <span class="k">else</span> <span class="n">dq</span><span class="o">.</span><span class="n">csfs_map</span>
+                <span class="n">uc1</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">uc1</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="n">uc0</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">e0_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">uc0</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">e0_val</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">e0m1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">e0_val</span> <span class="o">-</span> <span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+
+                <span class="n">uc2</span> <span class="o">=</span> <span class="n">uc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">uc2</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc2</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Handle monomorphic derived folding</span>
+                    <span class="k">if</span> <span class="n">uc2</span> <span class="o">==</span> <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">e0_val</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">csfs</span><span class="p">[</span><span class="n">uc2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">e0_val</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">e0_val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Non-CSFS site: use classic/compressed emission</span>
+            <span class="n">e1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">classic_e1</span>
+            <span class="n">e0m1</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">classic_e0</span> <span class="o">-</span> <span class="n">classic_e1</span>
+            <span class="c1"># emission2 = emission0 for non-CSFS sites</span>
+            <span class="n">e2m0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e0m1</span><span class="p">,</span> <span class="n">e2m0</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Forward algorithm (linear time via B/U/D decomposition)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_transition_vectors</span><span class="p">(</span>
+    <span class="n">dq</span><span class="p">:</span> <span class="n">DecodingQuantities</span><span class="p">,</span>
+    <span class="n">rec_dist</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up B, U, D, row_ratio vectors for a given genetic distance.</span>
+
+<span class="sd">    Falls back to nearest available key if exact match is missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">rec_dist</span> <span class="ow">in</span> <span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dq</span><span class="o">.</span><span class="n">B_vectors</span><span class="p">[</span><span class="n">rec_dist</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">U_vectors</span><span class="p">[</span><span class="n">rec_dist</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="p">[</span><span class="n">rec_dist</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">row_ratio_vectors</span><span class="p">[</span><span class="n">rec_dist</span><span class="p">]</span>
+
+    <span class="c1"># Nearest key fallback</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">keys</span> <span class="o">-</span> <span class="n">rec_dist</span><span class="p">))</span>
+    <span class="n">nearest</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">dq</span><span class="o">.</span><span class="n">B_vectors</span><span class="p">[</span><span class="n">nearest</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">U_vectors</span><span class="p">[</span><span class="n">nearest</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="p">[</span><span class="n">nearest</span><span class="p">],</span> <span class="n">dq</span><span class="o">.</span><span class="n">row_ratio_vectors</span><span class="p">[</span><span class="n">nearest</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+    <span class="n">dq</span><span class="p">:</span> <span class="n">DecodingQuantities</span><span class="p">,</span>
+    <span class="n">emission1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">emission0minus1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">emission2minus0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">obs_is_zero</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">obs_is_two</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">genetic_positions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">from_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">to_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scaling_skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scaled forward algorithm with B/U/D transition decomposition.</span>
+
+<span class="sd">    Runs in O(states * L) time instead of O(states^2 * L).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dq : DecodingQuantities</span>
+<span class="sd">    emission1, emission0minus1, emission2minus0 : (L, states)</span>
+<span class="sd">    obs_is_zero, obs_is_two : (L,) float32</span>
+<span class="sd">    genetic_positions : (L,) float32 in Morgans</span>
+<span class="sd">    from_pos, to_pos : int</span>
+<span class="sd">        Subsequence range.</span>
+<span class="sd">    scaling_skip : int</span>
+<span class="sd">        Apply scaling every this many positions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha : (L, states) float32</span>
+<span class="sd">        Scaled forward probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">to_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">to_pos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">)</span>
+
+    <span class="n">states</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">states</span>
+    <span class="c1"># Use float32 to match C++ SIMD precision exactly</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">to_pos</span><span class="p">,</span> <span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">init_prob</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">initial_state_prob</span>  <span class="c1"># float32</span>
+
+    <span class="c1"># Initialize at from_pos</span>
+    <span class="n">em_vec</span> <span class="o">=</span> <span class="n">emission1</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">+</span> <span class="n">emission0minus1</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_zero</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">+</span> <span class="n">emission2minus0</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_two</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span>
+    <span class="n">alpha</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">init_prob</span> <span class="o">*</span> <span class="n">em_vec</span>
+
+    <span class="c1"># Scale initial</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">alpha</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span> <span class="o">/=</span> <span class="n">s</span>
+
+    <span class="n">last_gen_pos</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">from_pos</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">from_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">to_pos</span><span class="p">):</span>
+        <span class="n">rec_dist</span> <span class="o">=</span> <span class="n">round_morgans</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">-</span> <span class="n">last_gen_pos</span><span class="p">))</span>
+
+        <span class="n">B</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_get_transition_vectors</span><span class="p">(</span><span class="n">dq</span><span class="p">,</span> <span class="n">rec_dist</span><span class="p">)</span>
+        <span class="n">col_ratios</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">column_ratios</span>
+
+        <span class="n">prev</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># alphaC: cumulative sum from top (state states-1 down to 0)</span>
+        <span class="n">alphaC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">alphaC</span><span class="p">[</span><span class="n">states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev</span><span class="p">[</span><span class="n">states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">states</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">alphaC</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">alphaC</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">prev</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="c1"># AU: upward accumulator (float32 to match C++)</span>
+        <span class="n">AU</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">states</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">AU</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">prev</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">col_ratios</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">AU</span>
+
+            <span class="c1"># Transition: AU + D[k]*prev[k] + B[k]*alphaC[k+1]</span>
+            <span class="n">trans</span> <span class="o">=</span> <span class="n">AU</span> <span class="o">+</span> <span class="n">D</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">prev</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">trans</span> <span class="o">+=</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">alphaC</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">em</span> <span class="o">=</span> <span class="p">(</span><span class="n">emission1</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+                  <span class="o">+</span> <span class="n">emission0minus1</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_zero</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+                  <span class="o">+</span> <span class="n">emission2minus0</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_two</span><span class="p">[</span><span class="n">pos</span><span class="p">])</span>
+            <span class="n">alpha</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">em</span> <span class="o">*</span> <span class="n">trans</span>
+
+        <span class="c1"># Scale (unconditionally, matching C++ behavior)</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">%</span> <span class="n">scaling_skip</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">alpha</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">/=</span> <span class="n">s</span>
+
+        <span class="n">last_gen_pos</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">alpha</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Backward algorithm (linear time via B/U/D decomposition)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span>
+    <span class="n">dq</span><span class="p">:</span> <span class="n">DecodingQuantities</span><span class="p">,</span>
+    <span class="n">emission1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">emission0minus1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">emission2minus0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">obs_is_zero</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">obs_is_two</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">genetic_positions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">from_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">to_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scaling_skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scaled backward algorithm with B/U/D transition decomposition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dq : DecodingQuantities</span>
+<span class="sd">    emission1, emission0minus1, emission2minus0 : (L, states)</span>
+<span class="sd">    obs_is_zero, obs_is_two : (L,) float32</span>
+<span class="sd">    genetic_positions : (L,) float32 in Morgans</span>
+<span class="sd">    from_pos, to_pos : int</span>
+<span class="sd">    scaling_skip : int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    beta : (L, states) float32</span>
+<span class="sd">        Scaled backward probabilities.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">to_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">to_pos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">)</span>
+
+    <span class="n">states</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">states</span>
+    <span class="c1"># Use float32 to match C++ SIMD precision exactly</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">to_pos</span><span class="p">,</span> <span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Initialize at to_pos - 1</span>
+    <span class="n">beta</span><span class="p">[</span><span class="n">to_pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[</span><span class="n">to_pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">beta</span><span class="p">[</span><span class="n">to_pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/=</span> <span class="n">s</span>
+
+    <span class="n">last_gen_pos</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">to_pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">to_pos</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">from_pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">rec_dist</span> <span class="o">=</span> <span class="n">round_morgans</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">last_gen_pos</span> <span class="o">-</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]))</span>
+
+        <span class="n">B</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">RR</span> <span class="o">=</span> <span class="n">_get_transition_vectors</span><span class="p">(</span><span class="n">dq</span><span class="p">,</span> <span class="n">rec_dist</span><span class="p">)</span>
+
+        <span class="c1"># vec[k] = emission(pos+1, k) * beta(pos+1, k)</span>
+        <span class="n">em_next</span> <span class="o">=</span> <span class="p">(</span><span class="n">emission1</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                   <span class="o">+</span> <span class="n">emission0minus1</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_zero</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                   <span class="o">+</span> <span class="n">emission2minus0</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">obs_is_two</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">em_next</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># BU: upward sweep from bottom</span>
+        <span class="n">BU</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">states</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">BU</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">vec</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">RR</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">BU</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># BL: downward cumulative + D diagonal</span>
+        <span class="n">BL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">states</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">BL</span> <span class="o">+=</span> <span class="n">B</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">vec</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">beta</span><span class="p">[</span><span class="n">pos</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">BL</span> <span class="o">+</span> <span class="n">D</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">vec</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">BU</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="c1"># Scale (unconditionally, matching C++ behavior)</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">%</span> <span class="n">scaling_skip</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">beta</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">/=</span> <span class="n">s</span>
+
+        <span class="n">last_gen_pos</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">beta</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Posterior computation</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_posteriors</span><span class="p">(</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">from_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">to_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute normalized posterior probabilities from alpha and beta.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha, beta : (L, states) float32</span>
+<span class="sd">    from_pos, to_pos : int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posteriors : (L, states) float32</span>
+<span class="sd">        P(state=k | data) at each position.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">to_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">to_pos</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">posteriors</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">from_pos</span><span class="p">:</span><span class="n">to_pos</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="n">from_pos</span><span class="p">:</span><span class="n">to_pos</span><span class="p">]</span>
+    <span class="n">row_sums</span> <span class="o">=</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">row_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">row_sums</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">row_sums</span><span class="p">)</span>
+    <span class="n">posteriors</span> <span class="o">/=</span> <span class="n">row_sums</span>
+    <span class="k">return</span> <span class="n">posteriors</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_mean_tmrca</span><span class="p">(</span>
+    <span class="n">posteriors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">expected_times</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute posterior mean TMRCA at each site.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    posteriors : (L, states)</span>
+<span class="sd">    expected_times : (states,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    means : (L,) float32</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">posteriors</span> <span class="o">@</span> <span class="n">expected_times</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_map_tmrca</span><span class="p">(</span>
+    <span class="n">posteriors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">expected_times</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">initial_state_prob</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute upstream ASMC ``perPairMAP`` state indices at each site.</span>
+
+<span class="sd">    Upstream ASMC stores ``perPairMAP`` as the posterior argmax state index.</span>
+<span class="sd">    This differs from the segment-level ``getMAP`` helper in the C++ code,</span>
+<span class="sd">    which divides by the initial-state prior before taking the argmax.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    posteriors : (L, states)</span>
+<span class="sd">    expected_times : (states,)</span>
+<span class="sd">    initial_state_prob : (states,)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    map_states : (L,) int32</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">posteriors</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Public API</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AsmcResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Results from an ASMC decoding run.&quot;&quot;&quot;</span>
+
+    <span class="n">expected_times</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>          <span class="c1"># (states,) time per state</span>
+    <span class="n">discretization</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>          <span class="c1"># (states+1,) time boundaries</span>
+    <span class="n">sum_of_posteriors</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>       <span class="c1"># (n_sites, states) aggregated posteriors</span>
+    <span class="n">per_pair_posterior_means</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">per_pair_maps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">per_pair_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">n_pairs_decoded</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="asmc">
+<a class="viewcode-back" href="../../../api/tl.html#smckit.tl.asmc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">asmc</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">pairs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+    <span class="n">fold_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">skip_csfs_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">scaling_skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">store_per_pair_posterior_mean</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">store_per_pair_map</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">implementation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">native_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run ASMC pairwise coalescence time inference.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : SmcData</span>
+<span class="sd">        Input data from ``smckit.io.read_asmc()``.</span>
+<span class="sd">    pairs : list of (int, int), optional</span>
+<span class="sd">        Haplotype index pairs to decode. If None, decodes all unique pairs.</span>
+<span class="sd">    mode : {&quot;array&quot;, &quot;sequence&quot;}</span>
+<span class="sd">        &quot;array&quot; uses compressed/ascertained emissions;</span>
+<span class="sd">        &quot;sequence&quot; uses classic emissions.</span>
+<span class="sd">    fold_data : bool</span>
+<span class="sd">        Use folded CSFS tables.</span>
+<span class="sd">    skip_csfs_distance : float</span>
+<span class="sd">        Minimum distance between CSFS sites (Morgans).</span>
+<span class="sd">    scaling_skip : int</span>
+<span class="sd">        Apply scaling every this many positions.</span>
+<span class="sd">    store_per_pair_posterior_mean : bool</span>
+<span class="sd">        Store per-pair posterior mean TMRCA.</span>
+<span class="sd">    store_per_pair_map : bool</span>
+<span class="sd">        Store per-pair MAP state indices, matching upstream ASMC ``perPairMAP``.</span>
+<span class="sd">    implementation : {&quot;auto&quot;, &quot;native&quot;, &quot;upstream&quot;}</span>
+<span class="sd">        Algorithm provenance selector. ``&quot;native&quot;`` runs the in-repo decoder.</span>
+<span class="sd">        ``&quot;upstream&quot;`` currently raises because the public upstream bridge is</span>
+<span class="sd">        not exposed yet. ``&quot;auto&quot;`` resolves to the best available implementation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    SmcData</span>
+<span class="sd">        Input data with results stored in ``data.results[&quot;asmc&quot;]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">implementation</span> <span class="o">=</span> <span class="n">normalize_implementation</span><span class="p">(</span><span class="n">implementation</span><span class="p">)</span>
+    <span class="n">implementation_used</span> <span class="o">=</span> <span class="n">choose_implementation</span><span class="p">(</span>
+        <span class="n">implementation</span><span class="p">,</span>
+        <span class="n">upstream_available</span><span class="o">=</span><span class="n">method_upstream_available</span><span class="p">(</span><span class="s2">&quot;asmc&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">warn_if_native_not_trusted</span><span class="p">(</span><span class="s2">&quot;asmc&quot;</span><span class="p">,</span> <span class="n">implementation_used</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">implementation_used</span> <span class="o">==</span> <span class="s2">&quot;upstream&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_asmc_upstream</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">skip_csfs_distance</span><span class="o">=</span><span class="n">skip_csfs_distance</span><span class="p">,</span>
+            <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
+            <span class="n">upstream_options</span><span class="o">=</span><span class="n">upstream_options</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">native_options</span><span class="p">:</span>
+        <span class="n">unsupported</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">native_options</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported asmc native_options keys: </span><span class="si">{</span><span class="n">unsupported</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">haplotypes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;haplotypes&quot;</span><span class="p">]</span>
+    <span class="n">genetic_positions</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;genetic_positions&quot;</span><span class="p">]</span>
+    <span class="n">dq</span><span class="p">:</span> <span class="n">DecodingQuantities</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;decoding_quantities&quot;</span><span class="p">]</span>
+    <span class="n">n_haps</span><span class="p">,</span> <span class="n">n_sites</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">decoding_sequence</span> <span class="o">=</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sequence&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ASMC: </span><span class="si">%d</span><span class="s2"> haplotypes, </span><span class="si">%d</span><span class="s2"> sites, </span><span class="si">%d</span><span class="s2"> states&quot;</span><span class="p">,</span> <span class="n">n_haps</span><span class="p">,</span> <span class="n">n_sites</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">states</span><span class="p">)</span>
+
+    <span class="c1"># Prepare emissions (no CSFS for now unless undistinguished counts provided)</span>
+    <span class="n">undist_counts</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;undistinguished_counts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">use_csfs</span> <span class="o">=</span> <span class="n">undist_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="n">emission1</span><span class="p">,</span> <span class="n">emission0minus1</span><span class="p">,</span> <span class="n">emission2minus0</span> <span class="o">=</span> <span class="n">prepare_emissions</span><span class="p">(</span>
+        <span class="n">dq</span><span class="p">,</span> <span class="n">genetic_positions</span><span class="p">,</span> <span class="n">n_sites</span><span class="p">,</span>
+        <span class="n">use_csfs</span><span class="o">=</span><span class="n">use_csfs</span><span class="p">,</span>
+        <span class="n">skip_csfs_distance</span><span class="o">=</span><span class="n">skip_csfs_distance</span><span class="p">,</span>
+        <span class="n">fold_data</span><span class="o">=</span><span class="n">fold_data</span><span class="p">,</span>
+        <span class="n">decoding_sequence</span><span class="o">=</span><span class="n">decoding_sequence</span><span class="p">,</span>
+        <span class="n">undistinguished_counts</span><span class="o">=</span><span class="n">undist_counts</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Generate pairs</span>
+    <span class="k">if</span> <span class="n">pairs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_haps</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_haps</span><span class="p">):</span>
+                <span class="n">pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
+
+    <span class="n">sum_of_posteriors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">states</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">per_pair_means</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">per_pair_maps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">per_pair_indices</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">pair_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pairs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pair_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">pair_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;  Decoding pair </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> (haps </span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">pair_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">),</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">encode_pair</span><span class="p">(</span><span class="n">haplotypes</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">forward</span><span class="p">(</span>
+            <span class="n">dq</span><span class="p">,</span> <span class="n">emission1</span><span class="p">,</span> <span class="n">emission0minus1</span><span class="p">,</span> <span class="n">emission2minus0</span><span class="p">,</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">obs_is_zero</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">obs_is_two</span><span class="p">,</span>
+            <span class="n">genetic_positions</span><span class="p">,</span>
+            <span class="n">scaling_skip</span><span class="o">=</span><span class="n">scaling_skip</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">backward</span><span class="p">(</span>
+            <span class="n">dq</span><span class="p">,</span> <span class="n">emission1</span><span class="p">,</span> <span class="n">emission0minus1</span><span class="p">,</span> <span class="n">emission2minus0</span><span class="p">,</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">obs_is_zero</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">obs_is_two</span><span class="p">,</span>
+            <span class="n">genetic_positions</span><span class="p">,</span>
+            <span class="n">scaling_skip</span><span class="o">=</span><span class="n">scaling_skip</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">posteriors</span> <span class="o">=</span> <span class="n">compute_posteriors</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="n">sum_of_posteriors</span> <span class="o">+=</span> <span class="n">posteriors</span>
+        <span class="n">per_pair_indices</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">store_per_pair_posterior_mean</span><span class="p">:</span>
+            <span class="n">per_pair_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posterior_mean_tmrca</span><span class="p">(</span><span class="n">posteriors</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">expected_times</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">store_per_pair_map</span><span class="p">:</span>
+            <span class="n">per_pair_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">posterior_map_tmrca</span><span class="p">(</span><span class="n">posteriors</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">expected_times</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">initial_state_prob</span><span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">AsmcResult</span><span class="p">(</span>
+        <span class="n">expected_times</span><span class="o">=</span><span class="n">dq</span><span class="o">.</span><span class="n">expected_times</span><span class="p">,</span>
+        <span class="n">discretization</span><span class="o">=</span><span class="n">dq</span><span class="o">.</span><span class="n">discretization</span><span class="p">,</span>
+        <span class="n">sum_of_posteriors</span><span class="o">=</span><span class="n">sum_of_posteriors</span><span class="p">,</span>
+        <span class="n">per_pair_posterior_means</span><span class="o">=</span><span class="n">per_pair_means</span><span class="p">,</span>
+        <span class="n">per_pair_maps</span><span class="o">=</span><span class="n">per_pair_maps</span><span class="p">,</span>
+        <span class="n">per_pair_indices</span><span class="o">=</span><span class="n">per_pair_indices</span><span class="p">,</span>
+        <span class="n">n_pairs_decoded</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;asmc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">({</span>
+        <span class="s2">&quot;expected_times&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">expected_times</span><span class="p">,</span>
+        <span class="s2">&quot;discretization&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">discretization</span><span class="p">,</span>
+        <span class="s2">&quot;sum_of_posteriors&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">sum_of_posteriors</span><span class="p">,</span>
+        <span class="s2">&quot;per_pair_posterior_means&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">per_pair_posterior_means</span><span class="p">,</span>
+        <span class="s2">&quot;per_pair_maps&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">per_pair_maps</span><span class="p">,</span>
+        <span class="s2">&quot;per_pair_indices&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">per_pair_indices</span><span class="p">,</span>
+        <span class="s2">&quot;n_pairs_decoded&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">n_pairs_decoded</span><span class="p">,</span>
+    <span class="p">},</span> <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span> <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_asmc_binary_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">upstream_status</span><span class="p">(</span><span class="s2">&quot;asmc&quot;</span><span class="p">)</span>
+    <span class="n">cache_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">status</span><span class="p">[</span><span class="s2">&quot;cache_path&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="s2">&quot;bin/ASMC_exe&quot;</span>
+    <span class="k">if</span> <span class="n">cache_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">cache_path</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_gz_matrix</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
+
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_asmc_upstream</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">skip_csfs_distance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">implementation_requested</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+    <span class="n">input_root</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input_file_root&quot;</span><span class="p">)</span>
+    <span class="n">dq_path</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decoding_quantities_path&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">input_root</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">dq_path</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Upstream ASMC requires input file root and decoding quantities path.&quot;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">upstream_status</span><span class="p">(</span><span class="s2">&quot;asmc&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">[</span><span class="s2">&quot;cache_ready&quot;</span><span class="p">]:</span>
+        <span class="n">bootstrap_upstream</span><span class="p">(</span><span class="s2">&quot;asmc&quot;</span><span class="p">)</span>
+    <span class="n">binary</span> <span class="o">=</span> <span class="n">_asmc_binary_path</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">binary</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Upstream ASMC executable is unavailable after bootstrap.&quot;</span><span class="p">)</span>
+    <span class="n">effective_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;inFileRoot&quot;</span><span class="p">:</span> <span class="n">input_root</span><span class="p">,</span>
+        <span class="s2">&quot;decodingQuantFile&quot;</span><span class="p">:</span> <span class="n">dq_path</span><span class="p">,</span>
+        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+        <span class="s2">&quot;skipCSFSdistance&quot;</span><span class="p">:</span> <span class="n">skip_csfs_distance</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">upstream_options</span><span class="p">:</span>
+        <span class="n">effective_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">upstream_options</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;smckit-asmc-&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
+        <span class="n">out_root</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;asmc&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">binary</span><span class="p">),</span>
+            <span class="s2">&quot;--decodingQuantFile&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">dq_path</span><span class="p">),</span>
+            <span class="s2">&quot;--inFileRoot&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">input_root</span><span class="p">),</span>
+            <span class="s2">&quot;--outFileRoot&quot;</span><span class="p">,</span>
+            <span class="n">out_root</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sequence&quot;</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--mode&quot;</span><span class="p">,</span> <span class="s2">&quot;sequence&quot;</span><span class="p">,</span> <span class="s2">&quot;--posteriorSums&quot;</span><span class="p">])</span>
+            <span class="n">output_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">out_root</span> <span class="o">+</span> <span class="s2">&quot;.1-1.sumOverPairs.gz&quot;</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--majorMinorPosteriorSums&quot;</span><span class="p">)</span>
+            <span class="n">output_paths</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">out_root</span> <span class="o">+</span> <span class="s2">&quot;.00.sumOverPairs.gz&quot;</span><span class="p">),</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">out_root</span> <span class="o">+</span> <span class="s2">&quot;.01.sumOverPairs.gz&quot;</span><span class="p">),</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">out_root</span> <span class="o">+</span> <span class="s2">&quot;.11.sumOverPairs.gz&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">skip_csfs_distance</span><span class="p">):</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--compress&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">skip_csfs_distance</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--skipCSFSdistance&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">skip_csfs_distance</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span><span class="p">)])</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Upstream ASMC backend failed.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;stdout:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;stderr:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">matrices</span> <span class="o">=</span> <span class="p">[</span><span class="n">_load_gz_matrix</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">output_paths</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;upstream&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;n_pairs_decoded&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;upstream&quot;</span><span class="p">:</span> <span class="n">standard_upstream_metadata</span><span class="p">(</span>
+                <span class="s2">&quot;asmc&quot;</span><span class="p">,</span>
+                <span class="n">effective_args</span><span class="o">=</span><span class="n">effective_args</span><span class="p">,</span>
+                <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;binary&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">binary</span><span class="p">),</span>
+                    <span class="s2">&quot;out_file_root&quot;</span><span class="p">:</span> <span class="n">out_root</span><span class="p">,</span>
+                    <span class="s2">&quot;stdout&quot;</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
+                    <span class="s2">&quot;stderr&quot;</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
+                    <span class="s2">&quot;output_paths&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">output_paths</span><span class="p">],</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sequence&quot;</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors_major_minor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;00&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+                <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+                <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="p">}</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors_major_minor&quot;</span><span class="p">][</span><span class="s2">&quot;00&quot;</span><span class="p">]</span>
+                <span class="o">+</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors_major_minor&quot;</span><span class="p">][</span><span class="s2">&quot;01&quot;</span><span class="p">]</span>
+                <span class="o">+</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sum_of_posteriors_major_minor&quot;</span><span class="p">][</span><span class="s2">&quot;11&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;asmc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">(</span>
+            <span class="n">result</span><span class="p">,</span>
+            <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation_requested</span><span class="p">,</span>
+            <span class="n">implementation_used</span><span class="o">=</span><span class="s2">&quot;upstream&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

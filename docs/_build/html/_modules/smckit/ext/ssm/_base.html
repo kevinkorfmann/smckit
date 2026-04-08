@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smckit.ext.ssm._base &mdash; smckit 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            smckit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/quickstart-psmc.html">Quickstart: PSMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get-started/quickstart-asmc.html">Quickstart: ASMC</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/smcdata.html">The SmcData Container</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/io-formats.html">I/O Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/choosing-a-method.html">Choosing a Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/interpreting-results.html">Interpreting Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/gallery.html">Gallery</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Method Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/psmc.html">PSMC — Pairwise Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/asmc.html">ASMC — Ascertained Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/esmc2.html">eSMC2 — Ecological Sequentially Markovian Coalescent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/msmc-im.html">MSMC-IM — Isolation-Migration Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/smcpp.html">SMC++ — Sequentially Markovian Coalescent for Many Individuals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/ssm.html">SSM — State-Space Model Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../methods/msmc2.html">MSMC2 — Multiple Sequentially Markovian Coalescent v2</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/adding-a-method.html">Adding a Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../developer/testing.html">Testing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">smckit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">smckit.ext.ssm._base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for smckit.ext.ssm._base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract base class for State-Space Model formulations of SMC methods.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="FitResult">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.FitResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FitResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result from fitting an SMC state-space model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : np.ndarray</span>
+<span class="sd">        Optimized parameter vector [theta, rho, max_t, lam_0, ..., lam_{n_free-1}].</span>
+<span class="sd">    log_likelihood : float</span>
+<span class="sd">        Final log-likelihood value.</span>
+<span class="sd">    n_iterations : int</span>
+<span class="sd">        Number of iterations performed.</span>
+<span class="sd">    converged : bool</span>
+<span class="sd">        Whether the optimizer converged.</span>
+<span class="sd">    history : list of dict</span>
+<span class="sd">        Per-iteration records (loss, params, etc.).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">log_likelihood</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">converged</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SmcStateSpace">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SmcStateSpace</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract state-space model for SMC methods.</span>
+
+<span class="sd">    Subclasses define the coalescent-to-HMM mapping by implementing three</span>
+<span class="sd">    methods: :meth:`transition_matrix`, :meth:`emission_matrix`, and</span>
+<span class="sd">    :meth:`initial_distribution`. The base class provides generic</span>
+<span class="sd">    :meth:`log_likelihood` and :meth:`fit` using these building blocks.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        Number of hidden states (coalescent time intervals).</span>
+<span class="sd">    n_obs : int</span>
+<span class="sd">        Number of observation symbols.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_obs</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="SmcStateSpace.transition_matrix">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.transition_matrix">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transition_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the (n_states, n_states) transition matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : np.ndarray</span>
+<span class="sd">            Flat parameter vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Row-stochastic transition matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="SmcStateSpace.emission_matrix">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.emission_matrix">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">emission_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the (n_obs, n_states) emission matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : np.ndarray</span>
+<span class="sd">            Flat parameter vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Emission probabilities per symbol per state.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="SmcStateSpace.initial_distribution">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.initial_distribution">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initial_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the (n_states,) initial state distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : np.ndarray</span>
+<span class="sd">            Flat parameter vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Probability vector summing to 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="SmcStateSpace.log_likelihood">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.log_likelihood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_likelihood</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">observations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute log P(observations | params) via the scaled forward algorithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : np.ndarray</span>
+<span class="sd">            Flat parameter vector.</span>
+<span class="sd">        observations : list of np.ndarray</span>
+<span class="sd">            Each element is an int8 observation sequence (e.g. one chromosome).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Total log-likelihood summed over all sequences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.backends._numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">forward_jit</span><span class="p">,</span> <span class="n">log_likelihood_jit</span>
+
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_distribution</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">total_ll</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">:</span>
+            <span class="n">f</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">forward_jit</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">a0</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+            <span class="n">total_ll</span> <span class="o">+=</span> <span class="n">log_likelihood_jit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">total_ll</span></div>
+
+
+<div class="viewcode-block" id="SmcStateSpace.fit">
+<a class="viewcode-back" href="../../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">observations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">params_init</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gradient&quot;</span><span class="p">,</span>
+        <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FitResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model to observations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        observations : list of np.ndarray</span>
+<span class="sd">            Observation sequences (one per chromosome/record).</span>
+<span class="sd">        params_init : np.ndarray</span>
+<span class="sd">            Initial parameter vector.</span>
+<span class="sd">        method : str</span>
+<span class="sd">            ``&quot;gradient&quot;`` for JAX gradient-based optimization (requires JAX),</span>
+<span class="sd">            ``&quot;em&quot;`` for EM with Hooke-Jeeves M-step (NumPy/Numba fallback).</span>
+<span class="sd">        n_iterations : int, optional</span>
+<span class="sd">            Number of iterations. Defaults to 500 for gradient, 30 for EM.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Passed to the backend fitting function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FitResult</span>
+<span class="sd">            Optimization results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;gradient&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.ext.ssm._jax_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">fit_gradient</span>
+
+            <span class="k">if</span> <span class="n">n_iterations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_iterations</span> <span class="o">=</span> <span class="mi">500</span>
+            <span class="k">return</span> <span class="n">fit_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observations</span><span class="p">,</span> <span class="n">params_init</span><span class="p">,</span>
+                                <span class="n">n_iterations</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;em&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.ext.ssm._numpy_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">fit_em</span>
+
+            <span class="k">if</span> <span class="n">n_iterations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_iterations</span> <span class="o">=</span> <span class="mi">30</span>
+            <span class="k">return</span> <span class="n">fit_em</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observations</span><span class="p">,</span> <span class="n">params_init</span><span class="p">,</span>
+                          <span class="n">n_iterations</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown method </span><span class="si">{</span><span class="n">method</span><span class="si">!r}</span><span class="s2">. Use &#39;gradient&#39; or &#39;em&#39;.&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

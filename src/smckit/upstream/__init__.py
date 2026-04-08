@@ -11,6 +11,7 @@ from smckit.upstream._registry import (
     repo_root,
     tool_names,
 )
+from smckit.upstream._install import install_help as _install_help
 
 
 def status(tool: str | None = None) -> dict[str, Any]:
@@ -37,6 +38,12 @@ def bootstrap(tool: str | None = None) -> dict[str, Any]:
     return results
 
 
+def install_help(tool: str) -> str:
+    """Return platform-aware install guidance for one upstream tool."""
+    spec = get_tool(tool)
+    return _install_help(tool, source_present=spec.source_present())
+
+
 def is_ready(tool: str) -> bool:
     """Return whether a tool's public upstream path is ready to run."""
     return bool(get_tool(tool).status()["ready"])
@@ -51,6 +58,7 @@ def method_status(method_name: str) -> dict[str, Any] | None:
 __all__ = [
     "bootstrap",
     "get_tool",
+    "install_help",
     "is_ready",
     "method_status",
     "repo_root",

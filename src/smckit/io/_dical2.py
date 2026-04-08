@@ -533,11 +533,14 @@ def read_dical2_vcf(
     reference_file: str | Path,
     config: DiCal2Config,
     filter_pass_string: str = ".",
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray, int, np.ndarray]:
     """Read a diCal2-style VCF plus reference into a haplotype matrix.
 
-    Missing reference bases are encoded as ``-1`` and sites with any missing
-    called allele are masked out across all selected haplotypes.
+    Matches diCal2's upstream representation more closely: only segregating
+    sites for the selected haplotypes are retained in the returned matrix.
+    Missing alleles remain encoded as ``-1`` at segregating sites. The
+    ``reference_alleles`` return value records the upstream reference-state
+    allele carried at each physical locus after VCF preprocessing.
     """
     vcf_file = Path(vcf_file)
     reference_lines = []
@@ -551,10 +554,20 @@ def read_dical2_vcf(
         raise ValueError(f"Reference file {reference_file} contains no sequence")
 
     include_mask = np.array(config.haplotypes_to_include, dtype=bool)
-    seqs = np.zeros((int(include_mask.sum()), len(reference)), dtype=np.int8)
-    for idx, base in enumerate(reference):
-        if base in {"N", "U", "W", "S", "M", "K", "R", "Y", "B", "D", "H", "V", "."}:
-            seqs[:, idx] = -1
+    missing_bases = {"N", "U", "W", "S", "M", "K", "R", "Y", "B", "D", "H", "V", "."}
+    if config.n_alleles < 4:
+        reference_alleles = np.array(
+            [-1 if base in missing_bases else 0 for base in reference],
+            dtype=np.int8,
+        )
+    else:
+        base_to_idx = {"A": 0, "C": 1, "G": 2, "T": 3}
+        reference_alleles = np.array(
+            [base_to_idx.get(base, -1) for base in reference],
+            dtype=np.int8,
+        )
+    selected_variants: list[np.ndarray] = []
+    seg_positions: list[int] = []
 
     with vcf_file.open() as fh:
         n_haps_total = None
@@ -581,31 +594,27 @@ def read_dical2_vcf(
             alt_field = fields[4].upper()
             filt = fields[6]
             if filt != filter_pass_string:
-                seqs[:, pos] = -1
+                reference_alleles[pos] = -1
                 continue
-            if alt_field == ".":
-                continue
-            alt_alleles = alt_field.split(",")
+            alt_alleles = [] if alt_field == "." else alt_field.split(",")
             if len(alt_alleles) > config.n_alleles - 1:
-                seqs[:, pos] = -1
+                reference_alleles[pos] = -1
                 continue
-            if reference[pos] not in {ref_allele, "N"}:
+            if reference[pos] != ref_allele:
                 raise ValueError(
                     f"Reference allele mismatch at position {pos + 1}: VCF has {ref_allele}, "
                     f"reference has {reference[pos]}"
                 )
 
-            allele_map = {"0": 0}
+            allele_map = {"0": -1 if ref_allele in missing_bases else 0}
             for idx, _alt in enumerate(alt_alleles, start=1):
-                allele_map[str(idx)] = idx if config.n_alleles > 2 else idx
+                allele_map[str(idx)] = -1 if _alt in missing_bases else idx
 
             full_column: list[int] = []
-            has_missing = False
             for sample in fields[9:]:
                 gt = sample.split(":", 1)[0]
                 if gt in {"./.", ".|."}:
                     full_column.extend([-1, -1])
-                    has_missing = True
                     continue
                 if "|" in gt:
                     a, b = gt.split("|")
@@ -613,29 +622,30 @@ def read_dical2_vcf(
                     a, b = gt.split("/")
                     if a != b:
                         full_column.extend([-1, -1])
-                        has_missing = True
                         continue
                 else:
                     a = b = gt
                 if a == "." or b == ".":
                     full_column.extend([-1, -1])
-                    has_missing = True
                     continue
                 full_column.extend([allele_map.get(a, -1), allele_map.get(b, -1)])
-                if full_column[-1] < 0 or full_column[-2] < 0:
-                    has_missing = True
 
             column = np.array(full_column, dtype=np.int8)[include_mask]
             uniq = set(int(x) for x in column)
             if len(uniq) <= 1:
-                if len(uniq) == 1 and next(iter(uniq)) >= 0:
-                    seqs[:, pos] = next(iter(uniq))
+                reference_alleles[pos] = np.int8(next(iter(uniq)))
                 continue
-            if has_missing:
-                seqs[:, pos] = -1
-            else:
-                seqs[:, pos] = column
-    return seqs
+            selected_variants.append(column)
+            seg_positions.append(pos)
+            reference_alleles[pos] = -1
+
+    if not selected_variants:
+        raise ValueError(
+            "No segregating sites left in the input vcf after pre-processing and filtering."
+        )
+
+    seqs = np.stack(selected_variants, axis=1).astype(np.int8, copy=False)
+    return seqs, np.asarray(seg_positions, dtype=np.int64), len(reference), reference_alleles
 
 
 # ---------------------------------------------------------------------------
@@ -716,7 +726,7 @@ def read_dical2(
                 raise ValueError("reference_file is required when reading a VCF")
             if config is None:
                 raise ValueError("config_file is required when reading a VCF")
-            seqs = read_dical2_vcf(
+            seqs, seg_positions, reference_length, reference_alleles = read_dical2_vcf(
                 seq_path,
                 reference_file,
                 config,
@@ -724,8 +734,14 @@ def read_dical2(
             )
         else:
             seqs = read_dical2_sequences(seq_path, n_alleles=n_alleles)
+            seg_positions = None
+            reference_length = None
+            reference_alleles = None
     else:
         seqs = np.asarray(sequences, dtype=np.int8)
+        seg_positions = None
+        reference_length = None
+        reference_alleles = None
 
     n_hap, seq_len = seqs.shape
 
@@ -753,6 +769,9 @@ def read_dical2(
             "config": config,
             "n_haplotypes": n_hap,
             "seq_length": seq_len,
+            "seg_positions": seg_positions,
+            "reference_length": reference_length,
+            "reference_alleles": reference_alleles,
             "n_alleles": n_alleles,
             "source_paths": {
                 "sequences": None if not isinstance(sequences, (str, Path)) else str(Path(sequences)),

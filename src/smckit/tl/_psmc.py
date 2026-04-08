@@ -33,6 +33,7 @@ from smckit.tl._implementation import (
     normalize_implementation,
     require_upstream_available,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 from smckit.upstream import bootstrap as bootstrap_upstream
 from smckit.upstream import status as upstream_status
@@ -283,6 +284,7 @@ def psmc(
         implementation,
         upstream_available=method_upstream_available("psmc"),
     )
+    warn_if_native_not_trusted("psmc", implementation_used)
     if implementation_used == "upstream":
         return _psmc_upstream(
             data,
