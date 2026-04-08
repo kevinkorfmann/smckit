@@ -120,11 +120,11 @@ Python environment.
      - `2.27%` max rel loglik delta
      - Public upstream Java bridge parses the EM-path stdout into structured results; the gallery currently keeps only the upstream panel.
    * - SSM
-     - ✗
+     - n/a
      - ✓
      - ✗
      - —
-     - Experimental extension framework rather than an upstream compatibility target.
+     - Novel in-repo extension framework rather than an upstream compatibility target.
 
 .. class:: smckit-method-note
 
