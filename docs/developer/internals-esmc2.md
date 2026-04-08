@@ -20,9 +20,14 @@ workflow; this page is for implementation review and parity work.
 
 - The native HMM builder is a line-by-line translation target for the vendored
   R formulas.
-- Formula-level comparisons already match at machine precision.
-- Full native-vs-upstream inference parity is still incomplete, so the method
-  remains dual-path and `auto` should prefer upstream when available.
+- Final-state builder and sufficient-statistics comparisons match the upstream
+  oracle on the tracked fixture matrix.
+- Native fit parity is currently enforced for fixed-rho, rho-redo, beta,
+  sigma, beta+sigma, and grouped `pop_vect=[3,3]` cases on the clean 800 bp
+  fixture.
+- Broader grouped layouts and multi-sequence coverage are still not fully
+  gated, so the method remains dual-path and `auto` should prefer upstream
+  when available.
 
 ## Upstream bridge
 

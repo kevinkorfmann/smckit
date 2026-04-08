@@ -21,7 +21,7 @@ important and you need more than a plain PSMC history.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | In-repo Python/Numba implementation. |
+| `implementation="native"` | Available | In-repo Python/Numba implementation with tracked fit parity on the current oracle fixture matrix. |
 | `implementation="upstream"` | Available | Runs the vendored R implementation through `Rscript`. |
 | `implementation="auto"` | Available | Currently prefers upstream when the R environment is configured. |
 
@@ -66,8 +66,11 @@ print(res["implementation"], res["beta"], res["sigma"])
 - Dormancy and selfing can be hard to separate from sequence data alone.
 - `implementation="auto"` is preferred when you have the upstream R
   environment available.
-- Formula-level parity is already excellent, but end-to-end native-vs-upstream
-  fitting still needs work.
+- Native/upstream fit parity is enforced on the current oracle fixture matrix
+  for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped
+  `pop_vect=[3,3]` runs.
+- Upstream remains the safer choice outside that tracked matrix, especially for
+  multi-sequence inputs and broader grouped-`Xi` layouts.
 
 ## Learn more
 

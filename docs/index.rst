@@ -105,8 +105,8 @@ Python environment.
      - ✓
      - ✓
      - ✗
-     - `-0.998936` Xi corr
-     - Both paths exist; end-to-end native-vs-upstream fitting still needs work.
+     - `<= 0.3605%` max tracked `Xi` rel err
+     - Both paths exist; tracked fit parity is enforced for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped `pop_vect=[3,3]`, with upstream still preferred outside that matrix.
    * - SMC++
      - ✓
      - ✓

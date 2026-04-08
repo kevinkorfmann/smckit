@@ -1,13 +1,16 @@
 # Gallery
 
-This page is the visual check board for smckit. Each method gets two panels on
+This page is the visual check board for smckit. Most methods get two panels on
 the same fixture or simulation: one from the native path and one from the
-upstream or reference path. The x and y limits are matched inside each pair so
-left/right comparison is direct rather than approximate.
+upstream or reference path. When a raw left/right pair would overstate current
+agreement, the gallery switches to scoped validation figures instead. The x
+and y limits are matched inside each pair so comparison is direct rather than
+approximate.
 
 The layout is intentionally gentle rather than dense. You should be able to
 scan it and immediately see whether a method is behaving similarly across both
-implementations.
+implementations, and where the comparison is only claimed on a tracked oracle
+fixture matrix rather than across arbitrary runs.
 
 ## PSMC
 
@@ -99,19 +102,23 @@ implementations.
 .. list-table::
    :widths: 1 1
 
-   * - **Native**
+   * - **Tracked Demography**
 
-       .. image:: ../gallery/esmc2_native.png
-          :alt: eSMC2 native figure
+       .. image:: ../gallery/esmc2_parity_demography.png
+          :alt: eSMC2 tracked parity demography figure
 
-       Native eSMC2 HMM quantities for a matched dormancy/selfing validation case.
+       Oracle-backed native/upstream overlays on the clean 800 bp fixture for
+       the six enforced fit branches: fixed rho, rho redo, beta, sigma,
+       beta+sigma, and grouped ``pop_vect=[3,3]``.
 
-     - **Upstream**
+     - **Transition Agreement**
 
-       .. image:: ../gallery/esmc2_upstream.png
-          :alt: eSMC2 upstream figure
+       .. image:: ../gallery/esmc2_parity_transition.png
+          :alt: eSMC2 tracked parity transition figure
 
-       Reference formulas translated directly from the original R implementation, on the same task and ranges.
+       Final-state transition matrices for representative challenging branches.
+       This is a scoped parity check on tracked fixtures, not a blanket claim
+       for every eSMC2 input shape.
 ```
 
 ## SMC++
