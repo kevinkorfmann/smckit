@@ -1,0 +1,4 @@
+sut:
+  build: .
+  working_dir: /src
+  entrypoint: test/run_tests.sh

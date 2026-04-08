@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: smcpp
+Version: 0.0.0
+Summary: SMC++
+Home-page: https://github.com/popgenmethods/smc++
+Author: Jonathan Terhorst, Jack Kamm, Yun S. Song
+Author-email: jonth@umich.edu
+License: UNKNOWN
+Platform: UNKNOWN
+License-File: LICENSE
+Requires-Dist: tqdm
+Requires-Dist: appdirs
+Requires-Dist: scipy>=1.8
+Requires-Dist: numpy>=1.18
+Requires-Dist: matplotlib>=3
+Requires-Dist: pysam>=0.18
+Requires-Dist: pandas>=1.4
+Requires-Dist: scikit-learn>=1
+
+UNKNOWN
+

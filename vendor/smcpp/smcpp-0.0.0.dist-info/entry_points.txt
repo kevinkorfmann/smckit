@@ -1,0 +1,3 @@
+[console_scripts]
+smc++ = smcpp.frontend.console:main
+

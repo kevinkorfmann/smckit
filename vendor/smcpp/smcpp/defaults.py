@@ -1,0 +1,13 @@
+additional_knots = []
+regularization_penalty = 6
+xtol = .1
+ftol = 1e-4
+pieces = 100
+knots = 8
+minimum = 1e-4
+maximum = 1e4
+spline = "piecewise"
+cores = None
+perplexity_threshold = .5
+minimum_population_size = 1e-3
+maximum_population_size = 1e3
