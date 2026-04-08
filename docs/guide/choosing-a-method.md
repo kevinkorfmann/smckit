@@ -11,7 +11,7 @@ implementation maturity.
 | **eSMC2** | one diploid genome with dormancy/selfing | `.psmcfa` or pairwise sequence input | `N_e(t)` + `beta` + `sigma` | native and upstream |
 | **MSMC2** | 2-8 phased haplotypes | `.multihetsep` | coalescence rates and `N_e(t)` | native public path, upstream bridge pending |
 | **MSMC-IM** | two-population MSMC output | `.combined.msmc2.final.txt` | `N1(t)`, `N2(t)`, `m(t)`, `M(t)` | native and upstream, auto prefers upstream |
-| **SMC++** | many unphased genomes | `.smc.gz` | `N_e(t)` | native and upstream, auto prefers upstream |
+| **SMC++** | many unphased genomes | `.smc.gz` | `N_e(t)` | native and upstream; tracked one-pop parity is enforced |
 | **ASMC** | per-site pairwise ancestry | hap/map/samples + decoding quantities | TMRCA along the genome | native public path |
 | **diCal2** | explicit structured demographic models | `.param`, `.demo`, `.config`, sequences | sizes, growth, migration parameters | native public path |
 | **PSMC-SSM** | research and optimizer experimentation | `psmcfa`-style observations | differentiable PSMC | native-only framework |

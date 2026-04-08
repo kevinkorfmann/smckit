@@ -308,10 +308,10 @@ def test_smcpp_native_vs_upstream_agreement_on_default_onepop_path():
     assert native["preprocessing"]["applied"] is True
     assert native["observation_scale"] == 100.0
     assert upstream["optimization"]["history"]
-    assert log_corr >= 0.94
-    assert 0.97 < scale_ratio < 1.04
-    assert median_log10_error < 0.01
-    assert float(np.median(rel)) < 0.04
+    assert log_corr >= 0.999
+    assert 0.998 < scale_ratio < 1.002
+    assert median_log10_error < 0.001
+    assert float(np.median(rel)) < 0.002
 
 
 @pytest.mark.slow

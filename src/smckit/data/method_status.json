@@ -1,0 +1,98 @@
+[
+  {
+    "method": "psmc",
+    "display_name": "PSMC",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
+    "tracked_agreement": "0.9999223 lambda corr",
+    "notes": "Public upstream bridge now runs the vendored binary; native port remains stable.",
+    "install_extra": "psmc",
+    "native_warning": null
+  },
+  {
+    "method": "asmc",
+    "display_name": "ASMC",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
+    "tracked_agreement": "0.9984 MAP agreement",
+    "notes": "Public upstream path uses the documented ASMC executable outputs.",
+    "install_extra": "asmc",
+    "native_warning": null
+  },
+  {
+    "method": "msmc2",
+    "display_name": "MSMC2",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
+    "tracked_agreement": ">= 0.999999865 lambda corr",
+    "notes": "Public upstream bridge runs the vendored MSMC2 CLI.",
+    "install_extra": "msmc2",
+    "native_warning": null
+  },
+  {
+    "method": "msmc_im",
+    "display_name": "MSMC-IM",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "tracked_agreement": "<= 3.36e-03 rel err on N1/N2",
+    "notes": "Public upstream bridge runs the vendored Python fitter; the native path is working and closely tracked against it, with upstream still acting as the fidelity baseline.",
+    "install_extra": "msmc_im",
+    "native_warning": "The native MSMC-IM path is runnable but not yet trusted enough to present as the default package path. Prefer the upstream fitter when oracle provenance matters."
+  },
+  {
+    "method": "esmc2",
+    "display_name": "eSMC2",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "tracked_agreement": "<= 0.3605% max tracked Xi rel err",
+    "notes": "Both paths exist; tracked fit parity is enforced for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped pop_vect=[3,3], with upstream still preferred outside that matrix.",
+    "install_extra": "esmc2",
+    "native_warning": "The native eSMC2 path is convenient for packaged quickstarts, but the docs do not treat it as trustworthy enough for general-use defaults yet. Prefer the upstream R-backed path for fidelity-sensitive work."
+  },
+  {
+    "method": "smcpp",
+    "display_name": "SMC++",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": true,
+    "native_trusted_for_docs": true,
+    "tracked_agreement": ">= 0.999125 tracked one-pop log-Ne corr",
+    "notes": "Public upstream path exists; the native one-pop path now clears the strict small control and larger tracked `.smc` parity fixtures, with fixed-model E-step statistics matching upstream on the same matrix.",
+    "install_extra": "smcpp",
+    "native_warning": null
+  },
+  {
+    "method": "dical2",
+    "display_name": "diCal2",
+    "upstream": "✓",
+    "native": "✓",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "tracked_agreement": "README exp fixed-point dloglik=7.45e-4; explicit starts <=2.21e-4; full search dloglik=9.73e-2",
+    "notes": "Public upstream Java bridge parses the EM-path stdout into structured results; docs now show both README exp panels, but the current full native search still misses the upstream fit and IM parity is still open.",
+    "install_extra": "dical2",
+    "native_warning": "The native diCal2 path is available for packaged examples, but it is not yet trusted enough to recommend over upstream. Prefer the upstream Java path when the result matters."
+  },
+  {
+    "method": "ssm",
+    "display_name": "SSM",
+    "upstream": "n/a",
+    "native": "✓",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "tracked_agreement": "—",
+    "notes": "Novel in-repo extension framework rather than an upstream compatibility target.",
+    "install_extra": null,
+    "native_warning": "The SSM framework is experimental and should not be treated as a production-trusted method surface yet."
+  }
+]

@@ -2,6 +2,8 @@
 
 This page holds the technical notes behind {func}`smckit.tl.smcpp`. The
 user-facing overview lives on [the SMC++ method page](../methods/smcpp.md).
+The step-by-step parity closure record lives on
+[SMC++ parity closure notes](./smcpp-parity-closure.md).
 
 ## Why this page exists
 
@@ -37,23 +39,24 @@ This page preserves the deeper implementation notes needed for parity work.
 - The native one-pop reduced-emission path now respects the upstream
   observation scale (`alpha = bin width`) after preprocessing, which removed
   the earlier order-of-magnitude scale drift on the tracked fixture.
-- The default native one-pop path now expands short compressed preprocessed
-  spans back into unit observations during the HMM/E-step. That fixed the last
-  tracked shape-sign mismatch and brought the small parity fixture above the
-  `0.99` log-correlation gate.
-- The fixed-model one-pop internals already have strong oracle checks against
-  the upstream runtime, but end-to-end parity on larger one-pop fixtures is
-  still incomplete.
+- The default native one-pop preprocessing path now also mirrors the upstream
+  `BreakLongSpans` leading missing-base offset. That one-base phase shift was
+  the last small-control preprocessing difference.
+- The native one-pop HMM now stays on the compressed upstream run-length
+  observation stream rather than expanding spans back into unit rows.
+- The strict small control and larger tracked one-pop `.smc` fixture now both
+  clear the shared-grid parity gate, and fixed-model `gamma0`, `xisum`, and
+  log-likelihood match upstream tightly on the same matrix.
 
 ## Handoff notes
 
 - Treat `vendor/smcpp` as the oracle source tree for future parity work.
-- The remaining gap is now mostly optimizer trajectory fidelity and fixture
-  coverage, not basic emission/transition mechanics.
-- Small one-pop parity fixtures now pass in the test suite, but that should
-  not be read as full parity.
-- The current tracked fixture now has both near-perfect scale agreement and
-  the correct trajectory direction.
+- The remaining work is fixture coverage, not the tracked one-pop HMM or
+  optimizer semantics.
+- Tracked one-pop parity now holds on both enforced fixtures, but that still
+  does not automatically prove parity for future untracked SMC++ input shapes.
+- The larger tracked `.smc` fixture remains in the docs gallery as the more
+  realistic one-pop parity panel.
 - The expensive legacy one-distinguished truth tests still exist for explicit
   compatibility checks; they are no longer the default native ceremony.
 
@@ -71,6 +74,7 @@ This page preserves the deeper implementation notes needed for parity work.
 - `src/smckit/tl/_smcpp.py`
 - `src/smckit/tl/_smcpp_upstream_runner.py`
 - `vendor/smcpp/`
+- `docs/developer/smcpp-parity-closure.md`
 
 ## What stayed out of the main docs
 

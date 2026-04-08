@@ -32,8 +32,10 @@
 - Upstream status: vendored upstream source tree plus public bridge; execution
   still depends on a controlled side Python environment for the compiled runtime.
 - Native status: available; default native behavior now follows the upstream
-  one-pop preprocessing and hidden-state path, but upstream should still be
-  treated as the preferred fidelity path on larger fixtures.
+  one-pop preprocessing, hidden-state, and compressed HMM path. The tracked
+  one-pop matrix now clears strict parity on both the small control and the
+  bundled larger `.smc` fixture, with fixed-model HMM statistics also matching
+  upstream on that matrix.
 - Main outputs: `ne`, `time`, `theta`, `rho`, hidden-state metadata.
 
 ## eSMC2
@@ -59,5 +61,7 @@
 - Purpose: fit structured demographic histories with migration and multiple populations.
 - Input: `.param`, `.demo`, `.config`, phased sequence data.
 - Upstream status: vendored `diCal2.jar` plus public stdout-parsing upstream bridge.
-- Native status: available with tracked oracle comparisons.
+- Native status: available with tracked oracle comparisons; README `exp`
+  oracle-point and explicit-start parity are now close, but full meta-start
+  interchangeability is still pending.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.

@@ -47,19 +47,19 @@ and the remaining work before declaring the oracle complete.
 
 ## diCal2
 
-**Progress:** Vendored oracle runs (from the README examples) cap log-likelihood deltas at `0.36` absolute (`2.27%` relative) and `0.86` absolute (`1.22%` relative) for the `IM` variant.
-**Decisions:** Keep the `diCal2.jar` bundle as the reference and target the documented experiment sequences.
+**Progress:** The vendored README fixtures now share upstream/native result normalization, and the native search path runs independently again with Java-style RNG handling and upstream-style meta-start machinery. On the tracked README `exp` fixture, the native fixed-point likelihood gap at the upstream best-fit parameters is now about `7.45e-4`, and explicit `exp.rand` start-point replays now match the upstream endpoint to displayed precision with log-likelihood deltas at or below about `2.21e-4`. The current full independent `exp` meta-start run still misses the oracle fit, however, landing around `-15.9743` versus the upstream `-15.8771`.
+**Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and use the README `exp` sequence bundle as the first hard parity gate.
 **Context:** diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer and JADE bridging code.
-**Remaining tasks:** Increase fixture coverage across `exp`/`IM` settings and document how `smckit.tl.dical2` is configured to match the original command lines.
-**References:** :doc:`methods/dical2`
+**Remaining tasks:** Close the remaining README `exp` meta-start selection gap, then bring the README `IM` grouped-locus likelihood/search path up to the same standard. Only after those fit-level gates are restored should the native trust warning be reconsidered.
+**References:** :doc:`methods/dical2`, :doc:`internals-dical2`, ``tests/integration/test_dical2_upstream_validation.py``
 
 ## SMC++
 
-**Progress:** The repo now vendors the upstream SMC++ source tree, the public upstream bridge still runs through the controlled side Python environment, and the default native path has been moved onto the upstream-style one-pop interpretation (two distinguished haplotypes, one-pop preprocessing, one-pop observation scaling, and an EM/coordinate-update optimizer with the upstream-style global scale step). On the tracked small one-pop fixture, native now clears the shared-grid parity gate with `log_corr > 0.99`, scale ratio near `1.0`, and median relative `N_e(t)` error below `1%`.
-**Decisions:** Treat the vendored upstream tree as the oracle, keep `implementation="upstream"` as the fidelity path, and use the default native path only as an improving port rather than a parity claim.
+**Progress:** The repo now vendors the upstream SMC++ source tree, the public upstream bridge still runs through the controlled side Python environment, and the default native path follows the upstream-style one-pop interpretation (two distinguished haplotypes, one-pop preprocessing, one-pop observation scaling, and an EM/coordinate-update optimizer with the upstream-style global scale step). The strict small one-pop control fixture and the larger tracked `.smc` one-pop fixture now both clear the shared-grid parity gate, and fixed-model `gamma0`, `xisum`, and log-likelihood also match upstream tightly on the same matrix.
+**Decisions:** Treat the vendored upstream tree as the oracle, keep `implementation="upstream"` as the fidelity path when users want the original tool, and promote native one-pop SMC++ only where the tracked upstream-backed matrix is green.
 **Context:** SMC++ is the conditioned SFS method that will stress-test the prepared `SmcData` container and cross-method comparison plots.
-**Remaining tasks:** Confirm the same behavior on a larger realistic one-pop fixture, add tracked `.smc` fixtures in `tests/data`, and promote that larger fixture to the same parity gate before claiming completion.
-**References:** :doc:`methods/smcpp`
+**Remaining tasks:** Expand the one-pop matrix beyond the current strict small control plus bundled larger `.smc` fixture, then decide whether additional SMC++ input families deserve separate parity contracts.
+**References:** :doc:`methods/smcpp`, :doc:`smcpp-parity-closure`
 
 ## SSM
 

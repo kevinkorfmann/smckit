@@ -1,5 +1,51 @@
 """Sphinx configuration for smckit documentation."""
 
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+sys.path.insert(0, str(SRC))
+
+
+def _render_method_status_matrix() -> None:
+    data = json.loads((SRC / "smckit" / "data" / "method_status.json").read_text(encoding="utf-8"))
+    target_dir = ROOT / "docs" / "_generated"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / "method_status_matrix.rst"
+
+    lines = [
+        ".. list-table::",
+        "   :header-rows: 1",
+        "",
+        "   * - Method",
+        "     - Upstream",
+        "     - Native",
+        "     - Native default eligible",
+        "     - Tracked agreement",
+        "     - Notes",
+    ]
+    for entry in data:
+        eligible = "✓" if entry["native_default_eligible"] else "✗"
+        lines.extend(
+            [
+                f"   * - {entry['display_name']}",
+                f"     - {entry['upstream']}",
+                f"     - {entry['native']}",
+                f"     - {eligible}",
+                f"     - `{entry['tracked_agreement']}`",
+                f"     - {entry['notes']}",
+            ]
+        )
+
+    target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+_render_method_status_matrix()
+
 project = "smckit"
 author = "Kevin Korfmann"
 release = "0.0.1"

@@ -27,12 +27,14 @@ from smckit.tl._implementation import (
     method_upstream_available,
     normalize_implementation,
     standard_upstream_metadata,
+    warn_if_native_not_trusted,
 )
 
 logger = logging.getLogger(__name__)
 
 SMCPP_T_INF = 1000.0
 SMCPP_INTERNAL_PIECES = 100
+SMCPP_MSTEP_XATOL = 1e-4
 
 
 # ---------------------------------------------------------------------------
@@ -70,16 +72,11 @@ def compute_time_intervals(
     return t
 
 
-def _balanced_hidden_states_constant(n_intervals: int, eta0: float = 2.0) -> np.ndarray:
-    """Approximate upstream one-pop hidden-state initialization on a constant model.
-
-    Upstream initializes one-pop hidden states from balanced coalescence
-    probability intervals under an approximately constant model, then derives
-    model knots from alternating hidden-state boundaries.
-    """
-    if n_intervals < 2:
+def _balanced_hidden_states_constant(total_breaks: int, eta0: float = 2.0) -> np.ndarray:
+    """Approximate upstream one-pop hidden-state initialization on a constant model."""
+    if total_breaks < 2:
         return np.array([0.0, np.inf], dtype=np.float64)
-    m = 2 * n_intervals - 1
+    m = total_breaks - 1
     hs = [0.0]
     for i in range(1, m):
         hs.append(-eta0 * np.log((m - i) / m))
@@ -119,7 +116,7 @@ def _native_time_grid(
     if n_distinguished != 2:
         return compute_time_intervals(n_intervals, max_t, alpha), None
 
-    hs = _balanced_hidden_states_constant(n_intervals, eta0=init_eta0)
+    hs = _balanced_hidden_states_constant(2 * n_intervals, eta0=init_eta0)
     finite_hs = hs[np.isfinite(hs)]
     if len(finite_hs) < n_intervals + 1:
         return compute_time_intervals(n_intervals, max_t, alpha), hs
@@ -127,6 +124,30 @@ def _native_time_grid(
     if len(t) == n_intervals:
         t = np.r_[t, finite_hs[-1]]
     return np.asarray(t[: n_intervals + 1], dtype=np.float64), hs
+
+
+def _onepop_knots_from_hidden_states(hidden_states: np.ndarray) -> np.ndarray:
+    """Mirror upstream ``_init_knots`` for the one-pop piecewise model."""
+    hs = np.asarray(hidden_states, dtype=np.float64)
+    if hs.size < 3:
+        return np.array([0.0], dtype=np.float64)
+    return np.r_[0.0, hs[1:-1:2]]
+
+
+def _piecewise_log_eta_at_knots(
+    old_knots: np.ndarray,
+    old_log_eta: np.ndarray,
+    new_knots: np.ndarray,
+) -> np.ndarray:
+    """Evaluate an upstream-style piecewise spline at new knot locations."""
+    old_knots = np.asarray(old_knots, dtype=np.float64)
+    old_log_eta = np.asarray(old_log_eta, dtype=np.float64)
+    new_knots = np.asarray(new_knots, dtype=np.float64)
+    if old_log_eta.size == 0 or new_knots.size == 0:
+        return np.asarray(old_log_eta, dtype=np.float64).copy()
+    idx = np.searchsorted(old_knots, new_knots, side="right") - 1
+    idx = np.clip(idx, 0, old_log_eta.size - 1)
+    return old_log_eta[idx]
 
 
 def _empirical_hidden_states_from_records(
@@ -1568,6 +1589,12 @@ def _emission_vector_onepop(
         a_full = a_obs
         if a_full == 2 and b_full == full_n:
             a_full, b_full = 0, 0
+        # Upstream recodes fully derived monomorphic rows to (0, 0) and then
+        # treats that monomorphic key directly rather than splitting it across
+        # the folded (2, n) mirror under polarization error.
+        if a_full == 0 and b_full == 0:
+            weights[(0, 0)] = weights.get((0, 0), 0.0) + prob
+            continue
         weights[(a_full, b_full)] = weights.get((a_full, b_full), 0.0) + (1.0 - polarization_error) * prob
         a_fold, b_fold, _ = _fold_onepop_key(a_full, b_full, full_n)
         weights[(a_fold, b_fold)] = weights.get((a_fold, b_fold), 0.0) + polarization_error * prob
@@ -1694,7 +1721,14 @@ def _preprocess_onepop_records(records: list[dict], n_undist: int) -> list[dict]
     processed = []
     for rec in records:
         rec_n_undist = int(rec.get("n_undist", n_undist))
-        obs = _thin_onepop_observations(rec["observations"], thinning, rec_n_undist)
+        # Upstream's BaseAnalysis always passes one-pop contigs through
+        # BreakLongSpans first, which prepends a single missing row even when
+        # no long missing spans are present. That one-base offset changes the
+        # thinning/binning phase on small fixtures, so keep it here too.
+        raw_obs = [(1, -1, 0, 0)] + [
+            _unpack_observation(obs, rec_n_undist) for obs in rec["observations"]
+        ]
+        obs = _thin_onepop_observations(raw_obs, thinning, rec_n_undist)
         obs = _bin_onepop_observations(obs, 100, rec_n_undist)
         obs = _recode_monomorphic_onepop(obs, rec_n_undist)
         obs = _compress_onepop_observations(obs, rec_n_undist)
@@ -1841,12 +1875,11 @@ def _compute_onepop_transition_and_pi(
             if np.isfinite(inc):
                 p_coal *= -np.expm1(-inc)
             phi[j - 1, k - 1] += p_float * p_coal
-        phi[j - 1, j - 1] = max(1.0 - phi[j - 1].sum(), 0.0)
+        phi[j - 1, j - 1] = 1.0 - phi[j - 1].sum()
 
     phi = np.maximum(phi, 1e-20)
     beta = 1e-5
-    phi = phi * (1.0 - beta) + beta / m
-    phi /= phi.sum(axis=1, keepdims=True)
+    phi = phi * (1.0 - beta) + beta / (m + 1)
     return phi, pi
 
 
@@ -1878,22 +1911,40 @@ def _forward_spans(
         if span <= 0:
             continue
         if hp.n_distinguished == 2:
+            em_direct = _emission_vector_onepop(hp, a_obs, b_obs, n_obs)
+        else:
+            obs_idx_direct = encode_obs(a_obs, b_obs, n_undist, hp.n_distinguished)
+            em_direct = e[obs_idx_direct]
+        if span == 1:
+            f_new = em_direct * (a.T @ f)
+            f_new = np.real_if_close(f_new).astype(np.float64)
+            f_new = np.maximum(f_new, 0.0)
+            s_raw = f_new.sum()
+            if s_raw > 0:
+                f = f_new / s_raw
+                log_c = np.log(max(s_raw, 1e-300))
+            else:
+                f = np.ones(K, dtype=np.float64) / K
+                log_c = np.log(1e-300)
+            f = np.maximum(f, 1e-10)
+            f_list.append(f.copy())
+            log_c_list.append(float(log_c))
+            continue
+        if hp.n_distinguished == 2:
             obs_key = (a_obs, b_obs, n_obs)
             if obs_key not in power_cache:
-                em = _emission_vector_onepop(hp, a_obs, b_obs, n_obs)
-                M_obs = a * em[np.newaxis, :]
+                M_obs = a * em_direct[np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs.T)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
                 power_cache[obs_key] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
             eigvals, V, V_inv, scale = power_cache[obs_key]
         else:
-            obs_idx = encode_obs(a_obs, b_obs, n_undist, hp.n_distinguished)
-            if obs_idx not in power_cache:
-                M_obs = a * e[obs_idx][np.newaxis, :]
+            if obs_idx_direct not in power_cache:
+                M_obs = a * em_direct[np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs.T)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
-                power_cache[obs_idx] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
-            eigvals, V, V_inv, scale = power_cache[obs_idx]
+                power_cache[obs_idx_direct] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
+            eigvals, V, V_inv, scale = power_cache[obs_idx_direct]
         eigpow = (eigvals / scale) ** span
         f_new = np.real_if_close(V @ (eigpow * (V_inv @ f))).astype(np.float64)
         f_new = np.maximum(f_new, 0.0)
@@ -1995,12 +2046,95 @@ def _span_geometric_sum(eigvals: np.ndarray, span: int) -> np.ndarray:
     return q
 
 
+def _expectation_stats_unit_observations(
+    hp: SmcppHmmParams,
+    observations: list[tuple[int, int, int, int]],
+) -> SmcppExpectationStats:
+    """Exact scaled forward-backward statistics for unit-span observations."""
+    k = hp.a.shape[0]
+    e_vectors: list[np.ndarray] = []
+    obs_keys: list[int | tuple[int, int, int]] = []
+    alpha_prev_list: list[np.ndarray] = []
+    alpha_hat_list: list[np.ndarray] = []
+    c_list: list[float] = []
+
+    prev = np.asarray(hp.a0, dtype=np.float64)
+    for span, a_obs, b_obs, n_obs in observations:
+        if span != 1:
+            raise ValueError("Unit-observation expectation path requires span=1 rows")
+        if hp.n_distinguished == 2:
+            obs_key = (a_obs, b_obs, n_obs)
+            e_obs = _emission_vector_onepop(hp, a_obs, b_obs, n_obs)
+        else:
+            obs_key = encode_obs(a_obs, b_obs, hp.n_undist, hp.n_distinguished)
+            e_obs = hp.e[obs_key]
+        alpha_prev_list.append(prev.copy())
+        alpha = e_obs * (hp.a.T @ prev)
+        c = max(float(alpha.sum()), 1e-300)
+        prev = alpha / c
+        obs_keys.append(obs_key)
+        e_vectors.append(e_obs)
+        alpha_hat_list.append(prev.copy())
+        c_list.append(c)
+
+    gamma_sums: dict[object, np.ndarray] = {}
+    xisum = np.zeros((k, k), dtype=np.float64)
+    beta_hat = np.ones(k, dtype=np.float64)
+    gamma0 = np.zeros(k, dtype=np.float64)
+
+    for i in range(len(obs_keys) - 1, -1, -1):
+        obs_key = obs_keys[i]
+        gamma = np.maximum(alpha_hat_list[i] * beta_hat, 1e-300)
+        gamma /= max(gamma.sum(), 1e-300)
+        gamma_sums.setdefault(obs_key, np.zeros(k, dtype=np.float64))
+        gamma_sums[obs_key] += gamma
+
+        xi = alpha_prev_list[i][:, np.newaxis] * hp.a * (e_vectors[i] * beta_hat)[np.newaxis, :]
+        xi /= max(c_list[i], 1e-300)
+        xi /= max(xi.sum(), 1e-300)
+        xisum += np.maximum(xi, 1e-300)
+        if i == 0:
+            gamma0 = xi.sum(axis=1)
+        beta_hat = hp.a @ (e_vectors[i] * beta_hat)
+        beta_hat /= max(c_list[i], 1e-300)
+
+    log_likelihood = float(np.sum(np.log(np.asarray(c_list, dtype=np.float64))))
+    return SmcppExpectationStats(
+        gamma0=np.maximum(gamma0, 1e-20),
+        gamma_sums=gamma_sums,
+        xisum=np.maximum(xisum, 1e-20),
+        log_likelihood=log_likelihood,
+    )
+
+
 def _expectation_stats_spans(
     hp: SmcppHmmParams,
     observations: list[tuple[int, int, int]],
 ) -> SmcppExpectationStats:
     """Port of the upstream HMM E-step sufficient for one-pop native Q()."""
     k = hp.a.shape[0]
+    if k == 1:
+        gamma_sums: dict[object, np.ndarray] = {}
+        total_span = 0
+        for obs in observations:
+            span, a_obs, b_obs, n_obs = _unpack_observation(obs, hp.n_undist)
+            if span <= 0:
+                continue
+            if hp.n_distinguished == 2:
+                obs_idx = (a_obs, b_obs, n_obs)
+            else:
+                obs_idx = encode_obs(a_obs, b_obs, hp.n_undist, hp.n_distinguished)
+            gamma_sums.setdefault(obs_idx, np.zeros(1, dtype=np.float64))
+            gamma_sums[obs_idx][0] += float(span)
+            total_span += int(span)
+        _, log_c_list = _forward_spans(hp, observations)
+        return SmcppExpectationStats(
+            gamma0=np.ones(1, dtype=np.float64),
+            gamma_sums=gamma_sums,
+            xisum=np.full((1, 1), float(total_span), dtype=np.float64),
+            log_likelihood=_log_likelihood_spans(log_c_list),
+        )
+
     f_list, log_c_list = _forward_spans(hp, observations)
     log_likelihood = _log_likelihood_spans(log_c_list)
 
@@ -2047,7 +2181,6 @@ def _expectation_stats_spans(
             xis_vals = np.abs(np.real_if_close(p @ q_r @ pinv @ np.diag(e_obs)).astype(np.float64))
             xis_vals = np.maximum(xis_vals, 1e-300)
             xis = np.exp(np.log(xis_vals) - log_c_list[ell] + log_p + log_c)
-            xis *= hp.a
 
             beta_vals = np.real_if_close(
                 pinv.T @ ((d_scaled ** span) * (p.T @ beta))
@@ -2063,7 +2196,6 @@ def _expectation_stats_spans(
             v /= p_norm
             xis = alpha_prev[:, np.newaxis] * (beta * e_obs)[np.newaxis, :]
             xis /= max(np.exp(log_c_list[ell]) * p_norm, 1e-300)
-            xis *= hp.a
             beta = hp.a @ (e_obs * beta)
 
         xisum += np.maximum(xis, 1e-20)
@@ -2076,7 +2208,7 @@ def _expectation_stats_spans(
     return SmcppExpectationStats(
         gamma0=gamma0,
         gamma_sums=gamma_sums,
-        xisum=np.maximum(xisum, 1e-20),
+        xisum=np.maximum(xisum * hp.a, 1e-20),
         log_likelihood=log_likelihood,
     )
 
@@ -2086,27 +2218,9 @@ def _maybe_expand_onepop_observation_spans(
     hp: SmcppHmmParams,
     max_expanded_length: int = 50000,
 ) -> list[tuple[int, int, int, int]]:
-    """Expand small compressed one-pop spans to avoid spectral drift.
-
-    The default one-pop path bins and compresses observations, leaving mostly
-    short repeated spans. Expanding those spans back into unit observations is
-    cheap and matches the exact repeated-observation semantics without relying
-    on the spectral power shortcut.
-    """
-    if hp.n_distinguished != 2:
-        return [_unpack_observation(obs, hp.n_undist) for obs in observations]
-    total_span = 0
-    unpacked = []
-    for obs in observations:
-        row = _unpack_observation(obs, hp.n_undist)
-        unpacked.append(row)
-        total_span += row[0]
-        if total_span > max_expanded_length:
-            return unpacked
-    expanded: list[tuple[int, int, int, int]] = []
-    for span, a_obs, b_obs, n_obs in unpacked:
-        expanded.extend((1, a_obs, b_obs, n_obs) for _ in range(span))
-    return expanded
+    """Preserve upstream one-pop run-length semantics."""
+    del max_expanded_length
+    return [_unpack_observation(obs, hp.n_undist) for obs in observations]
 
 
 def _collect_expectation_stats(
@@ -2282,7 +2396,7 @@ def _coordinate_optimize_m_step(
             objective_scalar,
             bounds=(float(lower[0]), float(upper[0])),
             method="bounded",
-            options={"xatol": 0.1},
+            options={"xatol": SMCPP_MSTEP_XATOL},
         )
         updated = _set_log_eta_coords(log_eta, coords, np.asarray([res.x], dtype=np.float64))
         return updated, {
@@ -2337,9 +2451,13 @@ def _scale_optimize_m_step(
     observation_scale: float,
 ) -> tuple[np.ndarray, dict]:
     x0 = np.asarray(log_eta, dtype=np.float64)
+    x0_eval = np.array(x0, copy=True, dtype=np.float64)
+    current = np.array(x0, copy=True, dtype=np.float64)
 
     def objective_scalar(shift: float) -> float:
-        trial = x0 + shift
+        nonlocal current
+        trial = x0_eval + shift
+        current = np.array(trial, copy=True, dtype=np.float64)
         return _m_step_objective(
             trial,
             stats,
@@ -2358,13 +2476,18 @@ def _scale_optimize_m_step(
         objective_scalar,
         bounds=(-1.0, 1.0),
         method="bounded",
-        options={"xatol": 0.1},
     )
-    return x0 + float(res.x), {
+    # Match upstream ScaleOptimizer's aliased final assignment. The bounded
+    # search evaluates against a fixed starting vector, but the final
+    # ``analysis.model[:] = x0 + res.x`` uses a view that already contains the
+    # last trial point, effectively applying ``res.x`` on top of that state.
+    updated = current + float(res.x)
+    return updated, {
         "success": bool(res.success),
         "fun": float(res.fun),
         "nfev": int(res.nfev),
         "shift": float(res.x),
+        "last_trial_shift": float(current[0] - x0_eval[0]),
     }
 
 
@@ -2524,7 +2647,7 @@ def _watterson_theta(records: list[dict], default_n_undist: int | None = None) -
                 continue
             sample_size = 0
             if a_obs >= 0:
-                sample_size += rec.get("n_distinguished", 1)
+                sample_size += 1
             if b_obs >= 0:
                 sample_size += row_n_undist
             if a_obs >= 1 or b_obs > 0:
@@ -2682,6 +2805,461 @@ def _run_upstream_smcpp(
         return json.loads((tmpdir_path / "smcpp_result.json").read_text(encoding="utf-8"))
 
 
+def _run_upstream_smcpp_fixed_model_stats(
+    data: SmcData,
+    *,
+    model_vector: np.ndarray | None = None,
+    model_dict: dict | None = None,
+    alpha: float,
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict:
+    """Evaluate upstream one-pop E-step statistics at a fixed model."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-fixed-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "fixed_model_stats",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_fixed_stats.json"),
+            "alpha": float(alpha),
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+        }
+        if model_dict is not None:
+            payload["model_dict"] = model_dict
+        elif model_vector is not None:
+            payload["model_vector"] = np.asarray(model_vector, dtype=float).tolist()
+        else:
+            raise ValueError("Provide either model_vector or model_dict")
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ fixed-model stats failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        return json.loads((tmpdir_path / "smcpp_fixed_stats.json").read_text(encoding="utf-8"))
+
+
+def _run_upstream_smcpp_fixed_stats_q_compare(
+    data: SmcData,
+    *,
+    start_model_vector: np.ndarray,
+    candidate_models: dict[str, np.ndarray],
+    alpha: float,
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict[str, float]:
+    """Evaluate upstream ``analysis.Q()`` on frozen stats for candidate models."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-q-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "fixed_stats_q_compare",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_fixed_q.json"),
+            "alpha": float(alpha),
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+            "start_model_vector": np.asarray(start_model_vector, dtype=float).tolist(),
+            "candidate_models": {
+                str(name): np.asarray(vec, dtype=float).tolist()
+                for name, vec in candidate_models.items()
+            },
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ fixed-stats Q compare failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        result = json.loads((tmpdir_path / "smcpp_fixed_q.json").read_text(encoding="utf-8"))
+        return {str(name): float(value) for name, value in result.items()}
+
+
+def _run_upstream_smcpp_fixed_stats_one_mstep(
+    data: SmcData,
+    *,
+    start_model_vector: np.ndarray,
+    alpha: float,
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict:
+    """Run exactly one upstream frozen-stats M-step from a fixed start model."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-onemstep-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "fixed_stats_one_mstep",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_one_mstep.json"),
+            "alpha": float(alpha),
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+            "start_model_vector": np.asarray(start_model_vector, dtype=float).tolist(),
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ fixed-stats one-M-step failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+        )
+        return json.loads((tmpdir_path / "smcpp_one_mstep.json").read_text(encoding="utf-8"))
+
+
+def _run_upstream_smcpp_onepop_initialization_summary(
+    data: SmcData,
+    *,
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict:
+    """Return upstream one-pop prefit and main-loop initialization models."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-init-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "onepop_initialization_summary",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_init.json"),
+            "alpha": 1.0,
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ initialization summary failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        return json.loads((tmpdir_path / "smcpp_init.json").read_text(encoding="utf-8"))
+
+
+def _run_upstream_smcpp_onepop_prefit_fixed_stats_q_compare(
+    data: SmcData,
+    *,
+    start_model_vector: np.ndarray,
+    candidate_models: dict[str, np.ndarray],
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict[str, float]:
+    """Evaluate upstream one-pop prefit fixed-stats Q on candidate models."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-prefitq-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "onepop_prefit_fixed_stats_q_compare",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_prefit_q.json"),
+            "alpha": 1.0,
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+            "start_model_vector": np.asarray(start_model_vector, dtype=float).tolist(),
+            "candidate_models": {
+                str(name): np.asarray(vec, dtype=float).tolist()
+                for name, vec in candidate_models.items()
+            },
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ prefit fixed-stats Q compare failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        result = json.loads((tmpdir_path / "smcpp_prefit_q.json").read_text(encoding="utf-8"))
+        return {str(name): float(value) for name, value in result.items()}
+
+
+def _run_upstream_smcpp_onepop_prefit_fixed_model_stats(
+    data: SmcData,
+    *,
+    model_vector: np.ndarray,
+    n_intervals: int,
+    mu: float,
+    recombination_rate: float,
+    regularization: float,
+    seed: int | None,
+) -> dict:
+    """Return upstream one-pop prefit-stage fixed-model stats."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    pids = data.uns.get("pids")
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-prefitstats-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_paths: list[str] = []
+        for i, record in enumerate(records):
+            record_path = tmpdir_path / f"record_{i}.smc"
+            _serialize_smcpp_record(record, record_path, n_undist, n_distinguished, pids)
+            input_paths.append(str(record_path))
+
+        payload = {
+            "mode": "onepop_prefit_fixed_model_stats",
+            "input_paths": input_paths,
+            "output_json": str(tmpdir_path / "smcpp_prefit_stats.json"),
+            "alpha": 1.0,
+            "mu": float(mu),
+            "recombination_rate": float(recombination_rate),
+            "n_intervals": int(n_intervals),
+            "regularization": float(regularization),
+            "max_iterations": 2,
+            "seed": None if seed is None else int(seed),
+            "model_vector": np.asarray(model_vector, dtype=float).tolist(),
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ prefit fixed-model stats failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        return json.loads((tmpdir_path / "smcpp_prefit_stats.json").read_text(encoding="utf-8"))
+
+
+def _native_fixed_stats_q_compare(
+    stats: SmcppExpectationStats,
+    *,
+    candidate_models: dict[str, np.ndarray],
+    n_undist: int,
+    t: np.ndarray,
+    theta: float,
+    rho_base: float,
+    regularization: float,
+    hidden_states: np.ndarray,
+    observation_scale: float,
+    polarization_error: float = 0.5,
+) -> dict[str, float]:
+    """Evaluate native fixed-stats Q for candidate models."""
+    out = {}
+    for name, log_eta in candidate_models.items():
+        out[str(name)] = float(
+            -_m_step_objective(
+                np.asarray(log_eta, dtype=np.float64),
+                stats,
+                n_undist,
+                t,
+                theta,
+                rho_base,
+                regularization,
+                n_distinguished=2,
+                hidden_states=hidden_states,
+                polarization_error=polarization_error,
+                observation_scale=observation_scale,
+            )
+        )
+    return out
+
+
 def _smcpp_native(
     data: SmcData,
     n_intervals: int = 32,
@@ -2728,9 +3306,9 @@ def _smcpp_native(
         Input data with results stored in ``data.results["smcpp"]``.
     """
     if seed is not None:
-        rng = np.random.default_rng(seed)
+        rng = np.random.RandomState(seed)
     else:
-        rng = np.random.default_rng()
+        rng = np.random.RandomState()
 
     records = data.uns["records"]
     n_undist = data.uns["n_undist"]
@@ -2762,7 +3340,13 @@ def _smcpp_native(
 
     t, native_hidden_states = _native_time_grid(K, max_t, alpha, n_distinguished, init_eta0=init_eta0)
     initial_hidden_states = None if native_hidden_states is None else native_hidden_states.copy()
+    prefit_t = t.copy()
     if n_distinguished == 2:
+        initial_hidden_states = _balanced_hidden_states_constant(2 * K_requested, eta0=init_eta0)
+        native_hidden_states = initial_hidden_states.copy()
+        t = _onepop_knots_from_hidden_states(native_hidden_states)
+        prefit_hidden_states = _balanced_hidden_states_constant(2 + K_requested, eta0=init_eta0)
+        prefit_t = _onepop_knots_from_hidden_states(prefit_hidden_states)
         K = len(t) - 1
 
     logger.info(
@@ -2772,16 +3356,16 @@ def _smcpp_native(
 
     log_eta_init = np.full(K, np.log(init_eta0), dtype=np.float64)
     init_jitter = 0.0001 if n_distinguished == 2 else 0.01
-    log_eta_init += rng.normal(0, init_jitter, K)
 
     if n_distinguished == 2 and K_requested >= 2:
-        t_prefit = t.copy()
+        log_eta_prefit_init = np.full(len(prefit_t) - 1, np.log(init_eta0), dtype=np.float64)
+        log_eta_prefit_init += rng.normal(0.0, init_jitter, len(log_eta_prefit_init))
         prefit_hidden_states = np.array([0.0, np.inf], dtype=np.float64)
         prefit_log_eta, _prefit_meta = _optimize_log_eta_em(
-            log_eta_init,
+            log_eta_prefit_init,
             records,
             n_undist,
-            t_prefit,
+            prefit_t,
             theta,
             rho_base,
             regularization,
@@ -2790,6 +3374,7 @@ def _smcpp_native(
             hidden_states=prefit_hidden_states,
             polarization_error=polarization_error,
             observation_scale=1.0,
+            single_coordinate=False,
         )
         mutation_window = max(int(2e-3 * n0_fixed / max(rho, 1e-300)), 1)
         native_hidden_states = _empirical_hidden_states_from_records(
@@ -2800,17 +3385,15 @@ def _smcpp_native(
         )
         if native_hidden_states is None:
             native_hidden_states = initial_hidden_states
-        t = np.r_[0.0, native_hidden_states[1:-1:2]]
+        t = _onepop_knots_from_hidden_states(native_hidden_states)
         K = len(t) - 1
-        old_mid = (t_prefit[:-1] + t_prefit[1:]) / 2.0
-        new_mid = (t[:-1] + t[1:]) / 2.0
-        log_eta_init = np.interp(
-            new_mid,
-            old_mid,
+        log_eta_init = _piecewise_log_eta_at_knots(
+            prefit_t[1:],
             prefit_log_eta,
-            left=prefit_log_eta[0],
-            right=prefit_log_eta[-1],
+            t[1:],
         )
+    else:
+        log_eta_init += rng.normal(0, init_jitter, K)
 
     fit_records = records
     if n_distinguished == 2:
@@ -3112,6 +3695,7 @@ def smcpp(
         implementation,
         upstream_available=method_upstream_available("smcpp"),
     )
+    warn_if_native_not_trusted("smcpp", implementation_used)
 
     if implementation_used == "upstream":
         return _smcpp_upstream(

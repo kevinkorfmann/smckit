@@ -39,7 +39,7 @@ from smckit.backends._numba_esmc2 import (
 )
 from smckit._core import SmcData
 from smckit.ext.ssm import PsmcSSM
-from smckit.io import read_msmc_im_output, read_psmc_output
+from smckit.io import read_msmc_im_output, read_psmc_output, read_smcpp_input
 from smckit.tl import asmc, dical2, esmc2, msmc_im, msmc2, psmc, smcpp
 
 from compare_dical2_oracle import EXAMPLES, _run_oracle, _run_smckit
@@ -52,7 +52,6 @@ from generate_method_gallery import (
     apply_style,
     savefig,
     simulate_zigzag_ts,
-    ts_to_smcpp_data,
 )
 
 os.environ.setdefault("SMCKIT_ESMC2_RSCRIPT", "/opt/homebrew/bin/Rscript")
@@ -345,24 +344,44 @@ def fig_msmc2_dual() -> None:
 
 
 def fig_smcpp_dual() -> None:
-    ts, _, _ = simulate_zigzag_ts(sequence_length=8_000_000)
+    tracked_fixture = ROOT / "tests" / "data" / "smcpp_onepop_larger.smc"
+    data = read_smcpp_input(tracked_fixture)
     params = {
-        "n_intervals": 8,
-        "max_iterations": 10,
-        "mu": MU,
-        "recombination_rate": R,
+        "n_intervals": 4,
+        "max_iterations": 2,
         "generation_time": 1.0,
-        "regularization": 5.0,
-        "seed": 7,
+        "regularization": 10.0,
+        "seed": 42,
     }
-    native = smcpp(ts_to_smcpp_data(ts, n_haplotypes=8), implementation="native", **params).results["smcpp"]
-    upstream = smcpp(ts_to_smcpp_data(ts, n_haplotypes=8), implementation="upstream", **params).results["smcpp"]
+    native = smcpp(copy.deepcopy(data), implementation="native", **params).results["smcpp"]
+    upstream = smcpp(copy.deepcopy(data), implementation="upstream", **params).results["smcpp"]
+    grid = np.geomspace(
+        max(
+            float(np.min(np.asarray(native["time"], dtype=float)[np.asarray(native["time"], dtype=float) > 0])),
+            float(np.min(np.asarray(upstream["time"], dtype=float)[np.asarray(upstream["time"], dtype=float) > 0])),
+        ),
+        min(float(np.max(native["time"])), float(np.max(upstream["time"]))),
+        200,
+    )
+
+    def _step_eval(times: np.ndarray, values: np.ndarray, query: np.ndarray) -> np.ndarray:
+        idx = np.searchsorted(times, query, side="right") - 1
+        idx = np.clip(idx, 0, len(values) - 1)
+        return values[idx]
+
+    native_ne_grid = _step_eval(np.asarray(native["time"], dtype=float), np.asarray(native["ne"], dtype=float), grid)
+    upstream_ne_grid = _step_eval(np.asarray(upstream["time"], dtype=float), np.asarray(upstream["ne"], dtype=float), grid)
+    log_corr = float(np.corrcoef(np.log(native_ne_grid), np.log(upstream_ne_grid))[0, 1])
+    scale_ratio = float(np.median(native_ne_grid) / np.median(upstream_ne_grid))
+    median_rel = float(
+        np.median(np.abs(native_ne_grid - upstream_ne_grid) / np.maximum(np.abs(upstream_ne_grid), 1e-12))
+    )
     xlim = _positive_limits(native["time_years"], upstream["time_years"])
     ylim = _positive_limits(native["ne"], upstream["ne"])
 
     _history_panel(
         output_name="smcpp_native.png",
-        title="SMC++ on the shared zigzag simulation",
+        title="SMC++ on the tracked larger one-pop fixture",
         x=np.asarray(native["time_years"]),
         y=np.asarray(native["ne"]),
         color=COLORS["smckit"],
@@ -370,11 +389,17 @@ def fig_smcpp_dual() -> None:
         xlim=xlim,
         ylim=ylim,
         xlabel="Generations before present",
-        stats=[f"theta={float(native['theta']):.3e}", f"rho={float(native['rho']):.3e}", f"loglik={float(native['log_likelihood']):.3f}"],
+        stats=[
+            f"theta={float(native['theta']):.3e}",
+            f"rho={float(native['rho']):.3e}",
+            f"log corr={log_corr:.6f}",
+            f"scale ratio={scale_ratio:.6f}",
+            f"median rel err={median_rel:.6f}",
+        ],
     )
     _history_panel(
         output_name="smcpp_upstream.png",
-        title="SMC++ on the shared zigzag simulation",
+        title="SMC++ on the tracked larger one-pop fixture",
         x=np.asarray(upstream["time_years"]),
         y=np.asarray(upstream["ne"]),
         color=COLORS["oracle"],
@@ -382,7 +407,13 @@ def fig_smcpp_dual() -> None:
         xlim=xlim,
         ylim=ylim,
         xlabel="Generations before present",
-        stats=[f"theta={float(upstream['theta']):.3e}", f"rho={float(upstream['rho']):.3e}", f"loglik={float(upstream['log_likelihood']):.3f}"],
+        stats=[
+            f"theta={float(upstream['theta']):.3e}",
+            f"rho={float(upstream['rho']):.3e}",
+            f"log corr={log_corr:.6f}",
+            f"scale ratio={scale_ratio:.6f}",
+            f"median rel err={median_rel:.6f}",
+        ],
     )
 
 

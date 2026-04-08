@@ -74,68 +74,18 @@ Check :doc:`guide/gallery` for the visual side-by-side evidence behind these
 status marks, especially where a method is marked unavailable, unstable, or
 not yet default-eligible.
 
-.. list-table::
-   :header-rows: 1
-
-   * - Method
-     - Upstream
-     - Native
-     - Native default eligible
-     - Tracked agreement
-     - Notes
-   * - PSMC
-     - ✓
-     - ✓
-     - ✓
-     - `0.9999223` lambda corr
-     - Public upstream bridge now runs the vendored binary; native port remains stable.
-   * - ASMC
-     - ✓
-     - ✓
-     - ✓
-     - `0.9984` MAP agreement
-     - Public upstream path uses the documented ASMC executable outputs.
-   * - MSMC2
-     - ✓
-     - ✓
-     - ✓
-     - `>= 0.999999865` lambda corr
-     - Public upstream bridge runs the vendored MSMC2 CLI.
-   * - MSMC-IM
-     - ✓
-     - ✓
-     - ✗
-     - `<= 3.36e-03` rel err on `N1/N2`
-     - Public upstream bridge runs the vendored Python fitter; the native path is working and closely tracked against it, with upstream still acting as the fidelity baseline.
-   * - eSMC2
-     - ✓
-     - ✓
-     - ✗
-     - `<= 0.3605%` max tracked `Xi` rel err
-     - Both paths exist; tracked fit parity is enforced for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped `pop_vect=[3,3]`, with upstream still preferred outside that matrix.
-   * - SMC++
-     - ✓
-     - ✓
-     - ✗
-     - tracked native-vs-upstream log-`N_e` corr
-     - Public upstream path exists; use the upstream path for docs and gallery output while the native presentation remains unstable.
-   * - diCal2
-     - ✓
-     - ✓
-     - ✗
-     - `2.27%` max rel loglik delta
-     - Public upstream Java bridge parses the EM-path stdout into structured results; the gallery currently keeps only the upstream panel.
-   * - SSM
-     - n/a
-     - ✓
-     - ✗
-     - —
-     - Novel in-repo extension framework rather than an upstream compatibility target.
+.. include:: _generated/method_status_matrix.rst
 
 .. class:: smckit-method-note
 
 Detailed fixture notes, caveats, and remaining parity gaps live on
 :doc:`developer/parity`.
+
+.. class:: smckit-method-note
+
+Methods marked `✗` in `Native default eligible` still run natively, but the
+package emits a warning telling users to prefer upstream plus the relevant
+`smckit[...]` install hint when that path matters.
 
 Choose A Method At A Glance
 ---------------------------
@@ -253,7 +203,7 @@ Quick Feature-to-Tool Table
      - many unphased genomes
      - `.smc` or `.smc.gz`
      - `N_e(t)`
-     - upstream-backed runs are the safest choice today; docs currently present the upstream gallery panel only
+     - tracked one-pop native/upstream parity now holds on both the strict small control and bundled larger `.smc` fixture
    * - :doc:`ASMC <methods/asmc>`
      - per-site pairwise ancestry or TMRCA on phased haplotypes
      - hap/map/samples plus decoding quantities
@@ -263,7 +213,7 @@ Quick Feature-to-Tool Table
      - explicit structured demographic model files
      - `.param`, `.demo`, `.config`, sequences
      - sizes, growth, and migration parameters
-     - best fit when the demographic specification already exists outside smckit, with the upstream path acting as the display baseline
+     - best fit when the demographic specification already exists outside smckit, with upstream still the fidelity baseline while native `exp` oracle-point and explicit-start agreement tighten
    * - :doc:`SSM Framework <methods/ssm>` / :doc:`PSMC-SSM <guide/psmc-ssm>`
      - method development, HMM inspection, and gradient fitting
      - `psmcfa`-style observations
@@ -338,8 +288,10 @@ Quickstarts
    developer/testing
    developer/parity
    developer/internals
+   developer/internals-dical2
    developer/internals-psmc
    developer/internals-smcpp
+   developer/smcpp-parity-closure
    developer/internals-esmc2
    developer/internals-msmc-im
 

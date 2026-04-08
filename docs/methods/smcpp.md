@@ -21,9 +21,14 @@ when PSMC is too sample-limited at recent times.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | Now defaults to the upstream-style one-pop interpretation and preprocessing path, but still falls short of promotion-level parity on larger fixtures. |
+| `implementation="native"` | Available | Defaults to the upstream-style one-pop interpretation and preprocessing path, and now clears the tracked one-pop parity matrix against upstream. |
 | `implementation="upstream"` | Available | Runs the vendored upstream source through the controlled side environment. |
 | `implementation="auto"` | Available | Currently prefers upstream when the side environment exists. |
+
+Install contract:
+
+- wheel install: native SMC++ quickstart is supported on the packaged tiny `.smc.gz` example
+- source checkout plus side environment: required for full upstream SMC++ workflow
 
 ## Input
 
@@ -34,9 +39,9 @@ That file stores long monomorphic stretches compactly rather than one genomic
 site per row. It is the right format when you have many unphased individuals
 and want SMC++ rather than a pairwise SMC method.
 
-The repository does not currently ship a small standalone `.smc.gz` fixture in
-`tests/data`, so the format explanation lives in the [I/O guide](../guide/io-formats.md)
-and the upstream-backed implementation remains the best reference behavior.
+smckit now ships a tiny packaged quickstart fixture:
+
+- `smckit.io.example_path("smcpp/example.smc.gz")`
 
 If the file does not contain an SMC++ header, smckit now defaults to the
 upstream one-pop assumption of two distinguished haplotypes rather than the
@@ -51,13 +56,15 @@ Upstream example directory:
 ```python
 import smckit
 
-data = smckit.io.read_smcpp_input("data.smc.gz")
+data = smckit.io.read_smcpp_input(smckit.io.example_path("smcpp/example.smc.gz"))
 data = smckit.tl.smcpp(
     data,
-    n_intervals=8,
+    n_intervals=4,
+    max_iterations=1,
+    regularization=10.0,
     mu=1.25e-8,
     generation_time=25.0,
-    implementation="auto",
+    implementation="native",
 )
 
 res = data.results["smcpp"]
@@ -72,11 +79,15 @@ smckit.pl.demographic_history(data, method="smcpp")
 - The default native path now uses upstream-style one-pop preprocessing,
   hidden-state construction, upstream observation scaling for binned data, and
   an EM/coordinate-update optimizer with the upstream-style global scale step.
-- On the tracked small one-pop fixture, the default native path now also
-  matches the upstream trajectory closely enough to clear the `0.99`
-  log-correlation gate.
-- Native and upstream paths still do not have promotion-level parity on larger
-  one-pop fixtures; use `implementation="upstream"` for fidelity-sensitive work.
+- The tracked one-pop parity matrix now includes both the strict small control
+  fixture and the bundled larger `.smc` fixture, and native clears both at
+  `log_corr >= 0.999` with near-unity scale ratio.
+- Fixed-model one-pop `gamma0`, `xisum`, and log-likelihood also now match the
+  upstream HMM on that same tracked matrix, so the native and upstream
+  one-pop paths are interchangeable for the enforced fixtures shown in docs.
+- Upstream remains the fidelity baseline for broader validation and for
+  untracked fixtures; the tracked matrix should not be read as a blanket claim
+  of parity for every possible future SMC++ input family.
 - The old one-distinguished native path still exists for explicit compatibility
   cases, but it is no longer the default interpretation of headerless input.
 - The method is more data-hungry and computationally heavier than PSMC.
@@ -86,3 +97,4 @@ smckit.pl.demographic_history(data, method="smcpp")
 - [Quickstart: SMC++](../get-started/quickstart-smcpp.md)
 - [Choosing a method](../guide/choosing-a-method.md)
 - [SMC++ internals](../developer/internals-smcpp.md)
+- [SMC++ parity closure notes](../developer/smcpp-parity-closure.md)

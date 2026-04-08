@@ -129,17 +129,21 @@ fixture matrix rather than across arbitrary runs.
 
    * - **Native**
 
-       Native panel intentionally left blank for now.
+       .. image:: ../gallery/smcpp_native.png
+          :alt: SMC++ native figure
 
-       The current generated native SMC++ gallery output is not reliable enough
-       to display here.
+       The tracked native one-pop path on the bundled larger `.smc`
+       parity fixture.
+       The panel includes the same shape and scale diagnostics enforced by the
+       tracked one-pop regression matrix.
 
      - **Upstream**
 
        .. image:: ../gallery/smcpp_upstream.png
           :alt: SMC++ upstream figure
 
-       A real computed run from the side Python environment on the same simulation.
+       A real computed run from the side Python environment on the same
+       tracked fixture and axis ranges.
 ```
 
 ## diCal2
@@ -150,17 +154,20 @@ fixture matrix rather than across arbitrary runs.
 
    * - **Native**
 
-       Native panel intentionally left blank for now.
+       .. image:: ../gallery/dical2_native.png
+          :alt: diCal2 native figure
 
-       The current generated native diCal2 gallery output is not reliable
-       enough to display here.
+       Current independent native run on the README `exp` bundle.
+       Oracle-point and explicit-start parity on this fixture are now close to
+       upstream, but the current full meta-start search still misses the
+       upstream best fit.
 
      - **Upstream**
 
        .. image:: ../gallery/dical2_upstream.png
           :alt: diCal2 upstream figure
 
-       Matching ``diCal2.jar`` run on the same README example bundle.
+       Matching `diCal2.jar` run on the same README `exp` bundle.
 ```
 
 ## SSM

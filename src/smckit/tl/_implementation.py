@@ -6,8 +6,13 @@ import warnings
 from typing import Any
 
 import smckit.upstream as upstream
+from smckit._method_status import method_status
 
 VALID_IMPLEMENTATIONS = {"auto", "native", "upstream"}
+
+
+class NativeTrustWarning(UserWarning):
+    """Warning emitted when a native method is runnable but not docs-trusted yet."""
 
 
 def normalize_implementation(
@@ -62,7 +67,8 @@ def require_upstream_available(method_name: str) -> None:
     if tool_status["public_upstream"]:
         raise RuntimeError(
             f"Upstream implementation for smckit.tl.{method_name} is not ready: {missing}. "
-            f"Run smckit.upstream.status('{tool_status['tool']}') for details."
+            f"Run smckit.upstream.status('{tool_status['tool']}') for details.\n"
+            f"{tool_status.get('install_help', '')}".rstrip()
         )
 
     raise NotImplementedError(
@@ -89,6 +95,26 @@ def annotate_result(
         else:
             result["upstream"] = upstream_metadata
     return result
+
+
+def warn_if_native_not_trusted(method_name: str, implementation_used: str) -> None:
+    """Warn when a runnable native path is not trusted for docs defaults."""
+    if implementation_used != "native":
+        return
+
+    status = method_status(method_name)
+    if status.get("native_trusted_for_docs", True):
+        return
+
+    message = str(status.get("native_warning", "")).strip()
+    tool_status = upstream.method_status(method_name)
+    if tool_status is not None:
+        install_text = str(tool_status.get("install_help", "")).strip()
+        if install_text:
+            message = f"{message}\n{install_text}" if message else install_text
+
+    if message:
+        warnings.warn(message, NativeTrustWarning, stacklevel=3)
 
 
 def method_upstream_available(method_name: str) -> bool:
