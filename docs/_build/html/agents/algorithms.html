@@ -166,6 +166,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#ecological-and-migration-parameters-need-extra-caution">Ecological and migration parameters need extra caution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
 </ul>
 </li>
@@ -235,8 +236,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/psmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/psmc.html#time-grid-and-fit-controls">Time-grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/psmc.html#biological-scaling-and-initialization">Biological scaling and initialization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#what-comes-back-in-data-results-psmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;psmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/psmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -245,7 +254,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/asmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/asmc.html#what-to-decode">What to decode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/asmc.html#decoding-behavior-and-output-size">Decoding behavior and output size</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#what-comes-back-in-data-results-asmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;asmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/asmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -254,7 +272,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc2.html#core-fit-controls">Core fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc2.html#scaling-and-rate-parameters">Scaling and rate parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc2.html#advanced-numerical-controls">Advanced numerical controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#what-comes-back-in-data-results-msmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc2.html#learn-more">Learn more</a></li>
 </ul>
@@ -263,8 +291,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc-im.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc-im.html#model-definition-and-scaling">Model definition and scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc-im.html#optimization-starting-points">Optimization starting points</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/msmc-im.html#regularization-and-optimizer-tolerances">Regularization and optimizer tolerances</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#what-comes-back-in-data-results-msmc-im">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc_im&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/msmc-im.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -272,15 +309,21 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#estimating-parameters">Estimating Parameters</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#what-can-be-estimated">What can be estimated</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#vendor-tutorial-mapping">Vendor Tutorial Mapping</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#common-estimation-patterns">Common Estimation Patterns</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#inspect-the-fitted-parameters">Inspect The Fitted Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#model-size-and-run-length">Model size and run length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#scaling-and-baseline-rates">Scaling and baseline rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#ecological-parameters">Ecological parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#recombination-fitting">Recombination fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/esmc2.html#advanced-grouping-and-search-bounds">Advanced grouping and search bounds</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-comes-back-in-data-results-esmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;esmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -288,7 +331,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/smcpp.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/smcpp.html#model-size-and-fit-duration">Model size and fit duration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/smcpp.html#time-grid-and-scaling-controls">Time-grid and scaling controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#practical-notes">Practical notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#learn-more">Learn more</a></li>
 </ul>
@@ -297,7 +350,18 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../methods/dical2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/dical2.html#core-demographic-grid-and-fit-controls">Core demographic grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/dical2.html#biological-scaling">Biological scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/dical2.html#start-point-and-meta-start-controls">Start-point and meta-start controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../methods/dical2.html#search-constraints-and-reproducibility">Search constraints and reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#what-comes-back-in-data-results-dical2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;dical2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#learn-more">Learn more</a></li>
 </ul>
@@ -305,8 +369,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../methods/ssm.html">SSM Framework</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#recommended-starting-workflow">Recommended starting workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#how-to-think-about-the-workflow">How to think about the workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#what-the-main-knobs-mean">What the main knobs mean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#what-to-inspect-after-fitting">What to inspect after fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/ssm.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -391,6 +458,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-improved">What improved</a></li>
@@ -700,9 +768,9 @@ upstream on that matrix.</p></li>
 <li><p>Purpose: extend pairwise SMC inference to dormancy and selfing.</p></li>
 <li><p>Input: pairwise sequence / <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code>-style data.</p></li>
 <li><p>Upstream status: vendored R package plus public bridge.</p></li>
-<li><p>Native status: available; tracked fit parity is enforced on the current
-oracle fixture matrix, with upstream still acting as the broader fidelity
-baseline.</p></li>
+<li><p>Native status: available; tracked fit parity now covers the public <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code>
+and <code class="docutils literal notranslate"><span class="pre">multihetsep</span></code> input families, with upstream still acting as the broader
+fidelity baseline for vendor-surface experiments outside that matrix.</p></li>
 <li><p>Main outputs: <code class="docutils literal notranslate"><span class="pre">Tc</span></code>, <code class="docutils literal notranslate"><span class="pre">Xi</span></code>, <code class="docutils literal notranslate"><span class="pre">ne</span></code>, <code class="docutils literal notranslate"><span class="pre">beta</span></code>, <code class="docutils literal notranslate"><span class="pre">sigma</span></code>, <code class="docutils literal notranslate"><span class="pre">rho</span></code>.</p></li>
 </ul>
 </section>

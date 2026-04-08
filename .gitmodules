@@ -4,6 +4,8 @@
 [submodule "vendor/eSMC2"]
 	path = vendor/eSMC2
 	url = https://github.com/TPPSellinger/eSMC2.git
+	ignore = untracked
 [submodule "vendor/MSMC-IM"]
 	path = vendor/MSMC-IM
 	url = https://github.com/wangke16/MSMC-IM.git
+	ignore = untracked

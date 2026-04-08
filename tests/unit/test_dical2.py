@@ -312,6 +312,42 @@ class TestReadDical2:
             ),
         )
 
+    def test_vcf_compacts_config_to_filtered_haplotype_order(self, tmp_path):
+        config_path = tmp_path / "pair.config"
+        config_path.write_text(
+            "\n".join(
+                [
+                    "20\t2\t2",
+                    "1\t0",
+                    "0\t0",
+                    "0\t1",
+                    "0\t0",
+                    "0\t0",
+                    "0\t0",
+                    "0\t0",
+                    "0\t0",
+                ]
+            )
+            + "\n"
+        )
+        data = read_dical2(
+            sequences="vendor/diCal2/examples/fromReadme/test.vcf",
+            param_file="vendor/diCal2/examples/fromReadme/test.param",
+            demo_file="vendor/diCal2/examples/fromReadme/IM.demo",
+            config_file=config_path,
+            reference_file="vendor/diCal2/examples/fromReadme/test.fa",
+            filter_pass_string=".",
+        )
+        config = data.uns["config"]
+        assert data.sequences.shape == (2, 2)
+        assert config.haplotype_populations == [0, 1]
+        assert config.haplotypes_to_include == [True, True]
+        np.testing.assert_array_equal(
+            config.haplotype_multiplicities,
+            np.array([[1, 0], [0, 1]], dtype=np.int64),
+        )
+        np.testing.assert_array_equal(config.sample_sizes, np.array([1, 1], dtype=np.int64))
+
 
 # ---------------------------------------------------------------------------
 # Linear algebra building blocks
@@ -530,6 +566,57 @@ class TestEigenCore:
             observed_present_deme=0,
             mutation_matrix=mut_mat,
             theta=0.001,
+            rho=0.0005,
+        )
+        assert core_type == "ode"
+        assert isinstance(core_obj, ODECore)
+
+    def test_native_core_selector_uses_ode_for_structured_multi_deme(self):
+        demo = DiCal2Demo(
+            epoch_boundaries=np.array([0.0, 0.5, DICAL2_T_INF], dtype=np.float64),
+            epochs=[
+                DiCal2Epoch(
+                    start=0.0,
+                    end=0.5,
+                    partition=[[0], [1]],
+                    pop_sizes=np.array([1.0, 1.0]),
+                    migration_matrix=np.array([[-0.2, 0.2], [0.2, -0.2]], dtype=np.float64),
+                    pulse_migration=None,
+                    growth_rates=np.array([0.0, 0.0]),
+                ),
+                DiCal2Epoch(
+                    start=0.5,
+                    end=DICAL2_T_INF,
+                    partition=[[0, 1]],
+                    pop_sizes=np.array([1.0]),
+                    migration_matrix=np.array([[0.0]], dtype=np.float64),
+                    pulse_migration=None,
+                    growth_rates=np.array([0.0]),
+                ),
+            ],
+            n_present_demes=2,
+        )
+        config = DiCal2Config(
+            seq_length=20,
+            n_alleles=2,
+            n_populations=2,
+            haplotype_populations=[0, 0, 1, 1],
+            haplotypes_to_include=[True, True, True, True],
+            haplotype_multiplicities=np.array(
+                [[1, 0], [1, 0], [0, 1], [0, 1]],
+                dtype=np.int64,
+            ),
+            sample_sizes=np.array([2, 2], dtype=np.int64),
+        )
+        refined = refine_demography(demo, demo.epoch_boundaries)
+        trunk = SimpleTrunk(config=config, additional_hap_idx=0)
+        mut_mat = np.array([[0.0, 1.0], [1.0, 0.0]])
+        core_obj, core_type = _build_native_core(
+            refined=refined,
+            trunk=trunk,
+            observed_present_deme=0,
+            mutation_matrix=mut_mat,
+            theta=0.0005,
             rho=0.0005,
         )
         assert core_type == "ode"

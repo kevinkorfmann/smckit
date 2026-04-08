@@ -85,6 +85,14 @@ The repository exposes `smckit.upstream.status()` and `smckit.upstream.bootstrap
 
 smckit is early-stage software. The priority is preserving access to upstream methods, making readiness explicit, and validating native implementations against upstream behavior before claiming equivalence.
 
+Recent parity progress:
+
+- eSMC2 native/upstream interchangeability is now tracked across the public
+  `.psmcfa` and `multihetsep` input families, including missing-site,
+  multi-record, multi-pair, multi-file, and `skip_ambiguous=True` cases.
+- The docs landing page and gallery summarize which methods have fixture-only
+  validation and which now have broader public-surface parity gates.
+
 ## Repository Guide
 
 - Method docs: `docs/agents/algorithms.md`

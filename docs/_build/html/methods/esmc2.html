@@ -166,6 +166,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#ecological-and-migration-parameters-need-extra-caution">Ecological and migration parameters need extra caution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
 </ul>
 </li>
@@ -308,6 +309,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -456,6 +458,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-improved">What improved</a></li>
@@ -742,7 +745,7 @@ important and you need more than a plain PSMC history.</p>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">implementation=&quot;native&quot;</span></code></p></td>
 <td><p>Available</p></td>
-<td><p>In-repo Python/Numba implementation with tracked fit parity on the current oracle fixture matrix.</p></td>
+<td><p>In-repo Python/Numba implementation with tracked fit parity across the public <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code> and <code class="docutils literal notranslate"><span class="pre">multihetsep</span></code> eSMC2 input families.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">implementation=&quot;upstream&quot;</span></code></p></td>
 <td><p>Available</p></td>
@@ -774,6 +777,22 @@ important and you need more than a plain PSMC history.</p>
 </ul>
 <p>If you are not sure what a <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code> file represents, start with the
 <a class="reference internal" href="../guide/io-formats.html"><span class="std std-doc">I/O formats guide</span></a>.</p>
+</section>
+<section id="public-parity-matrix">
+<h2>Public parity matrix<a class="headerlink" href="#public-parity-matrix" title="Link to this heading"></a></h2>
+<p>The tracked native/upstream gate now covers the public eSMC2 input surface
+rather than only one clean fixture.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code>: one clean record, one record with missing sites, and multi-record inputs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">multihetsep</span></code>: one pair, multiple pairs from one file, multiple files / chromosomes, and <code class="docutils literal notranslate"><span class="pre">skip_ambiguous=True</span></code> runs where ambiguous sites become missing</p></li>
+<li><p>grouped <code class="docutils literal notranslate"><span class="pre">pop_vect</span></code> fitting on a non-default multi-record <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code> case</p></li>
+</ul>
+<p>The upstream bridge records which public family ran in
+<code class="docutils literal notranslate"><span class="pre">data.results[&quot;esmc2&quot;][&quot;upstream&quot;]</span></code>, together with <code class="docutils literal notranslate"><span class="pre">n_sequences</span></code>,
+<code class="docutils literal notranslate"><span class="pre">sequence_lengths</span></code>, and <code class="docutils literal notranslate"><span class="pre">used_sequence_indices</span></code>. That provenance is important
+because the vendored eSMC2 wrapper still drops very poor pairwise sequences
+before fitting; smckit now records exactly which sequences survived that
+vendor-side filter.</p>
 </section>
 <section id="recommended-starting-call">
 <h2>Recommended starting call<a class="headerlink" href="#recommended-starting-call" title="Link to this heading"></a></h2>
@@ -1025,6 +1044,7 @@ signals, so unstable ecological estimates are common on weak inputs.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">ne</span></code>: absolute effective population size curve</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">time</span></code> and <code class="docutils literal notranslate"><span class="pre">time_years</span></code>: time grid in model units and calendar units</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rounds</span></code>: per-iteration diagnostics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upstream</span></code>: raw upstream metadata and provenance when the vendored path ran</p></li>
 </ul>
 <p>The quickest sanity check is usually:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;esmc2&quot;</span><span class="p">]</span>
@@ -1057,11 +1077,12 @@ fitted model parameter whose interpretation depends on the eSMC2 model.</p></li>
 <code class="docutils literal notranslate"><span class="pre">beta</span></code> is ignored completely.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mu_b</span></code>, <code class="docutils literal notranslate"><span class="pre">box_*</span></code>, <code class="docutils literal notranslate"><span class="pre">rp</span></code>, and <code class="docutils literal notranslate"><span class="pre">rho_penalty</span></code> are advanced controls. Most users
 should not touch them on a first pass.</p></li>
-<li><p>Native/upstream fit parity is enforced on the current oracle fixture matrix
-for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped
-<code class="docutils literal notranslate"><span class="pre">pop_vect=[3,3]</span></code> runs.</p></li>
-<li><p>Upstream remains the safer choice outside that tracked matrix, especially for
-multi-sequence inputs and broader grouped-<code class="docutils literal notranslate"><span class="pre">Xi</span></code> layouts.</p></li>
+<li><p>Native/upstream fit parity is enforced across the public <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code> and
+<code class="docutils literal notranslate"><span class="pre">multihetsep</span></code> input families, plus the tracked fixed-rho, rho-redo, beta,
+sigma, beta+sigma, and grouped-state validation cases.</p></li>
+<li><p>The vendored path is still the fidelity baseline for broader vendor-surface
+experiments, especially unusual grouped-<code class="docutils literal notranslate"><span class="pre">Xi</span></code> layouts that are not yet in the
+tracked gate matrix.</p></li>
 </ul>
 </section>
 <section id="learn-more">

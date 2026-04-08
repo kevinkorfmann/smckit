@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "smckit"
-version = "0.0.1b1"
+version = "0.0.1b2"
 description = "Unified framework for Sequentially Markovian Coalescent methods"
 readme = "README.md"
 license = { file = "LICENSE" }

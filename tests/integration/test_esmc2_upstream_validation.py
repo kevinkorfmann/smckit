@@ -11,6 +11,7 @@ import pytest
 
 from smckit._core import SmcData
 from smckit.backends._numba_esmc2 import esmc2_build_hmm
+from smckit.io import read_multihetsep, read_psmcfa
 from smckit.tl._esmc2 import _expectation_step, _sequences_from_smcdata, esmc2
 
 
@@ -40,6 +41,170 @@ def clean_pairwise_data() -> SmcData:
             "sum_n": int((seq == 1).sum()),
         }
     )
+
+
+def _dense_sequence(
+    length: int,
+    *,
+    het_positions: list[int],
+    missing_ranges: list[tuple[int, int]] | None = None,
+) -> np.ndarray:
+    seq = np.zeros(length, dtype=np.int8)
+    seq[np.asarray(het_positions, dtype=np.int64)] = 1
+    for start, end in missing_ranges or []:
+        seq[start:end] = 2
+    return seq
+
+
+def _write_psmcfa(path: Path, records: list[np.ndarray]) -> Path:
+    mapping = {0: "A", 1: "K", 2: "N"}
+    with path.open("w", encoding="utf-8") as handle:
+        for idx, record in enumerate(records, start=1):
+            chars = "".join(mapping[int(code)] for code in np.asarray(record, dtype=np.int8))
+            handle.write(f">seq{idx}\n")
+            handle.write(f"{chars}\n")
+    return path
+
+
+def _pair_alleles(code: int) -> str:
+    if code == 0:
+        return "AA"
+    if code == 1:
+        return "AT"
+    if code == 2:
+        return "?A"
+    raise ValueError(f"Unexpected pairwise code: {code}")
+
+
+def _pair4_alleles(code_a: int, code_b: int) -> str:
+    pair_a = {
+        0: ("A", "A"),
+        1: ("A", "T"),
+        2: ("?", "A"),
+    }[int(code_a)]
+    pair_b = {
+        0: ("C", "C"),
+        1: ("C", "G"),
+        2: ("?", "C"),
+    }[int(code_b)]
+    return "".join(pair_a + pair_b)
+
+
+def _write_multihetsep_pair(
+    path: Path,
+    seq: np.ndarray,
+    *,
+    chrom: str = "chr1",
+    ambiguous_positions: set[int] | None = None,
+) -> Path:
+    ambiguous_positions = ambiguous_positions or set()
+    with path.open("w", encoding="utf-8") as handle:
+        for pos, code in enumerate(np.asarray(seq, dtype=np.int8), start=1):
+            allele = "AA,AT" if (pos - 1) in ambiguous_positions else _pair_alleles(int(code))
+            handle.write(f"{chrom}\t{pos}\t1\t{allele}\n")
+    return path
+
+
+def _write_multihetsep_multi_pair(
+    path: Path,
+    seq_a: np.ndarray,
+    seq_b: np.ndarray,
+    *,
+    chrom: str = "chr1",
+) -> Path:
+    if len(seq_a) != len(seq_b):
+        raise ValueError("Multi-pair sequences must share the same length.")
+    with path.open("w", encoding="utf-8") as handle:
+        for pos, (code_a, code_b) in enumerate(
+            zip(np.asarray(seq_a, dtype=np.int8), np.asarray(seq_b, dtype=np.int8)),
+            start=1,
+        ):
+            allele = _pair4_alleles(int(code_a), int(code_b))
+            handle.write(f"{chrom}\t{pos}\t1\t{allele}\n")
+    return path
+
+
+def _build_public_family_data(name: str, tmp_path: Path) -> SmcData:
+    if name == "psmcfa_clean":
+        record = _dense_sequence(
+            420,
+            het_positions=[19, 44, 78, 120, 166, 210, 255, 310, 360, 401],
+        )
+        return read_psmcfa(_write_psmcfa(tmp_path / "clean.psmcfa", [record]))
+    if name == "psmcfa_missing":
+        record = _dense_sequence(
+            420,
+            het_positions=[19, 44, 78, 120, 166, 210, 255, 310, 360, 401],
+            missing_ranges=[(0, 12), (90, 103), (250, 266)],
+        )
+        return read_psmcfa(_write_psmcfa(tmp_path / "missing.psmcfa", [record]))
+    if name == "psmcfa_multi_record":
+        record_a = _dense_sequence(
+            420,
+            het_positions=[19, 44, 78, 120, 166, 210, 255, 310, 360, 401],
+            missing_ranges=[(30, 40), (280, 288)],
+        )
+        record_b = _dense_sequence(
+            510,
+            het_positions=[25, 60, 101, 144, 188, 230, 272, 315, 360, 405, 451, 489],
+            missing_ranges=[(0, 8), (200, 215), (420, 430)],
+        )
+        return read_psmcfa(_write_psmcfa(tmp_path / "multi.psmcfa", [record_a, record_b]))
+    if name == "multihetsep_single_pair":
+        seq = _dense_sequence(
+            430,
+            het_positions=[17, 51, 83, 126, 171, 214, 259, 301, 347, 390],
+            missing_ranges=[(100, 111), (280, 292)],
+        )
+        return read_multihetsep(
+            _write_multihetsep_pair(tmp_path / "single.multihetsep", seq),
+            pair_indices=[(0, 1)],
+        )
+    if name == "multihetsep_multi_pair":
+        seq_a = _dense_sequence(
+            430,
+            het_positions=[17, 51, 83, 126, 171, 214, 259, 301, 347, 390],
+            missing_ranges=[(100, 111), (280, 292)],
+        )
+        seq_b = _dense_sequence(
+            430,
+            het_positions=[11, 48, 90, 132, 176, 218, 262, 306, 351, 399],
+            missing_ranges=[(40, 47), (320, 333)],
+        )
+        return read_multihetsep(
+            _write_multihetsep_multi_pair(tmp_path / "pairs.multihetsep", seq_a, seq_b),
+            pair_indices=[(0, 1), (2, 3)],
+        )
+    if name == "multihetsep_multi_file":
+        seq_a = _dense_sequence(
+            260,
+            het_positions=[15, 44, 73, 102, 141, 180, 219, 244],
+            missing_ranges=[(0, 6), (120, 128)],
+        )
+        seq_b = _dense_sequence(
+            310,
+            het_positions=[18, 57, 96, 135, 174, 213, 252, 291],
+            missing_ranges=[(60, 69), (220, 231)],
+        )
+        chr_a = _write_multihetsep_pair(tmp_path / "chrA.multihetsep", seq_a, chrom="chrA")
+        chr_b = _write_multihetsep_pair(tmp_path / "chrB.multihetsep", seq_b, chrom="chrB")
+        return read_multihetsep([chr_a, chr_b], pair_indices=[(0, 1)])
+    if name == "multihetsep_skip_ambiguous":
+        seq = _dense_sequence(
+            410,
+            het_positions=[14, 52, 91, 129, 168, 206, 245, 283, 322, 360, 398],
+            missing_ranges=[(200, 210)],
+        )
+        return read_multihetsep(
+            _write_multihetsep_pair(
+                tmp_path / "ambiguous.multihetsep",
+                seq,
+                ambiguous_positions={33, 155, 275},
+            ),
+            pair_indices=[(0, 1)],
+            skip_ambiguous=True,
+        )
+    raise ValueError(f"Unknown public family fixture: {name}")
 
 
 def _max_rel_error(left: np.ndarray, right: np.ndarray) -> float:
@@ -211,6 +376,103 @@ def test_esmc2_native_final_sufficient_statistics_match_upstream(
     )
     assert native_ll == pytest.approx(float(oracle["log_likelihood"]), rel=1e-12, abs=1e-12)
     assert native_ll == pytest.approx(float(result["log_likelihood"]), rel=1e-12, abs=1e-12)
+
+
+@pytest.mark.parametrize(
+    "family_name",
+    [
+        "psmcfa_clean",
+        "psmcfa_missing",
+        "psmcfa_multi_record",
+        "multihetsep_single_pair",
+        "multihetsep_multi_pair",
+        "multihetsep_multi_file",
+        "multihetsep_skip_ambiguous",
+    ],
+)
+def test_esmc2_native_matches_upstream_across_public_input_families(
+    tmp_path: Path,
+    family_name: str,
+    upstream_env: None,
+) -> None:
+    data = _build_public_family_data(family_name, tmp_path)
+    expected_sequences = _sequences_from_smcdata(copy.deepcopy(data))
+    kwargs = {
+        "n_states": 6,
+        "n_iterations": 1,
+        "estimate_rho": False,
+        "mu": 1e-8,
+        "generation_time": 1.0,
+    }
+    native = esmc2(
+        copy.deepcopy(data),
+        implementation="native",
+        **kwargs,
+    ).results["esmc2"]
+    upstream = esmc2(
+        copy.deepcopy(data),
+        implementation="upstream",
+        upstream_options={"capture_final_sufficient_statistics": True},
+        **kwargs,
+    ).results["esmc2"]
+
+    _assert_fit_parity(
+        native,
+        upstream,
+        tc_rel_tol=5e-3,
+        xi_rel_tol=2e-2,
+        beta_abs_tol=1e-12,
+        sigma_abs_tol=1e-12,
+        final_ll_abs_tol=5e-3,
+    )
+
+    provenance = upstream["upstream"]
+    assert provenance["input_family"] == (
+        "psmcfa" if family_name.startswith("psmcfa") else "multihetsep"
+    )
+    assert provenance["n_sequences"] == len(expected_sequences)
+    assert provenance["sequence_lengths"] == [len(seq) for seq in expected_sequences]
+    assert provenance["used_sequence_indices"] == list(range(len(expected_sequences)))
+
+
+def test_esmc2_native_matches_upstream_on_grouped_beta_fit_for_multi_record_psmcfa(
+    tmp_path: Path,
+    upstream_env: None,
+) -> None:
+    data = _build_public_family_data("psmcfa_multi_record", tmp_path)
+    kwargs = {
+        "n_states": 6,
+        "n_iterations": 1,
+        "estimate_beta": True,
+        "estimate_sigma": False,
+        "estimate_rho": False,
+        "beta": 0.3,
+        "sigma": 0.0,
+        "pop_vect": [3, 3],
+        "mu": 1e-8,
+        "generation_time": 1.0,
+    }
+    native = esmc2(
+        copy.deepcopy(data),
+        implementation="native",
+        **kwargs,
+    ).results["esmc2"]
+    upstream = esmc2(
+        copy.deepcopy(data),
+        implementation="upstream",
+        upstream_options={"capture_final_sufficient_statistics": True},
+        **kwargs,
+    ).results["esmc2"]
+
+    _assert_fit_parity(
+        native,
+        upstream,
+        tc_rel_tol=5e-3,
+        xi_rel_tol=2e-2,
+        beta_abs_tol=5e-4,
+        sigma_abs_tol=1e-12,
+        final_ll_abs_tol=5e-3,
+    )
 
 
 @pytest.mark.parametrize(

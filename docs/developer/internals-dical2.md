@@ -122,6 +122,48 @@ same RNG path. After switching to Java-style bounded `nextInt()` for the
 coordinatewise shuffle, the full native README `IM` run also reached the same
 best-fit parameter vector as upstream.
 
+### 9. VCF-backed native configs needed to be compacted after filtering
+
+The VCF reader already filtered the returned sequence matrix down to the
+haplotypes selected by the `.config` file. However, the stored native
+`DiCal2Config` still kept the original unfiltered haplotype row indexing.
+
+That was harmless on the packaged README fixtures because their included rows
+happened to be a prefix of the config, but it broke reduced pairwise debug
+configs immediately. The fix was to compact the native `DiCal2Config` after VCF
+filtering so `config.haplotype_populations`, `haplotype_multiplicities`, and
+`sample_sizes` line up with the filtered sequence rows.
+
+Why this mattered: once the config and sequence matrix shared the same compact
+indexing, reduced two-haplotype and three-haplotype native/upstream probes
+became valid tools for localizing the remaining `IM` evaluator mismatch.
+
+### 10. The remaining `IM` mismatch is concentrated in cross-pop PCL cases
+
+After the VCF config compaction fix, reduced README `IM` probes could be run on
+small temporary configs while still using the same vendored VCF/demo/param
+bundle.
+
+What those probes showed:
+
+- two-haplotype cross-pop configs such as `(0, 2)` and `(0, 3)` now run cleanly
+  and show native-minus-upstream fixed-point log-likelihood deltas of about
+  `-1.07e-2`
+- three-haplotype mixed-pop configs such as `(0, 1, 2)` and `(0, 2, 3)` show
+  deltas around `-2.1e-2`
+- same-pop tiny configs on this VCF often collapse to no segregating sites, so
+  they do not provide a useful upstream oracle on this bundle
+
+Interpretation:
+
+- the remaining README `IM` evaluator gap is not a general optimizer problem
+- it is not primarily caused by the old config-index mismatch
+- it is concentrated in the cross-pop PCL evaluator path
+- varying the migration parameter alone on the two-haplotype cross-pop probe
+  does not materially change the delta, so the remaining bug is more likely a
+  fixed normalization/emission/state-space issue than a simple “wrong migration
+  rate” bug
+
 ## What improved
 
 On the README `exp` fixture:
@@ -137,15 +179,38 @@ On the README `exp` fixture:
 On the README `IM` fixture:
 
 - the native fixed-point likelihood at the upstream best-fit parameters is now
-  within about `3.15e-2`
+  within about `1.63e-3`
 - the full independent meta-start search now reaches the same best-fit
   parameters as upstream
 - the earlier large apparent `IM` gap turned out to be partly diagnostic noise:
   the old oracle comparison script was reporting the last stdout row instead of
   the best one, while the upstream bridge was already selecting the best fit
+- reduced VCF-backed `IM` probes now work even when the included haplotypes are
+  not a prefix of the original config rows
 
 Those two results are the reason the current docs now describe `exp`
 oracle-point, explicit-start, and full-search parameter parity as strong.
+
+### 11. Structured no-growth native runs needed `ODECore`, not `EigenCore`
+
+The reduced two-haplotype cross-pop README `IM` probes eventually isolated the
+remaining evaluator gap to the emission side of the no-growth structured core.
+
+The decisive checks were:
+
+- the reduced cross-pop fixed-point delta stayed at about `-1.07e-2` even when
+  `rho = 0`, which ruled recombination transitions out as the main blocker
+- under `rho = 0`, that same delta grew rapidly with `theta`, which pointed to
+  the emission path rather than the initial-state marginal
+- swapping the reduced and full README `IM` fixed-point evaluations from the
+  no-growth structured `EigenCore` to `ODECore` collapsed the gap by more than
+  an order of magnitude
+
+Why this mattered: the issue was not in grouped-locus pair counting itself. It
+was in the exact no-growth structured emission path used by `EigenCore`.
+Routing structured multi-deme native runs through `ODECore` preserved the
+already-correct search path while bringing the README `IM` fixed-point value
+much closer to the vendored oracle.
 
 ## What still does not match
 
@@ -158,7 +223,7 @@ same points:
   - native log-likelihood at the same best-fit point: about `-15.87632006`
 - README `IM`
   - upstream log-likelihood: about `-70.16830865`
-  - native log-likelihood at the same best-fit point: about `-70.19983301`
+  - native log-likelihood at the same best-fit point: about `-70.16668205`
 
 Interpretation:
 
@@ -172,7 +237,9 @@ Interpretation:
 
 - close the remaining fixed-point `exp` likelihood delta now that the search
   winner is aligned
-- bring `IM` fixed-point likelihood parity down from `3.15e-2` to the same
+- bring `IM` fixed-point likelihood parity down from `1.63e-3` to the same
   tighter standard
+- focus `IM` debugging on the cross-pop PCL evaluator path first, because the
+  reduced probes now show that is where most of the remaining gap lives
 - only then tighten the integration gate back to true native/upstream
   interchangeability

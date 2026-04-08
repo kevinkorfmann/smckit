@@ -1186,6 +1186,25 @@ def _refined_has_pulse(refined: RefinedDemography) -> bool:
     return False
 
 
+def _refined_is_structured(refined: RefinedDemography) -> bool:
+    if refined.demo.n_present_demes > 1:
+        return True
+    for epoch in refined.demo.epochs:
+        if len(epoch.partition) > 1:
+            return True
+        if epoch.migration_matrix is not None:
+            migration = np.asarray(epoch.migration_matrix, dtype=np.float64)
+            off_diag = migration.copy()
+            np.fill_diagonal(off_diag, 0.0)
+            if np.any(np.abs(off_diag) > EPS):
+                return True
+        if epoch.pulse_migration is not None:
+            pulse = np.asarray(epoch.pulse_migration, dtype=np.float64)
+            if pulse.size > 1 and not np.allclose(pulse, np.eye(pulse.shape[0]), atol=EPS):
+                return True
+    return False
+
+
 def _absorption_rates_at_time(
     base_absorption_rates: np.ndarray,
     epoch: DiCal2Epoch,
@@ -3014,11 +3033,12 @@ def _build_native_core(
     rho: float,
 ) -> tuple[EigenCore | ODECore, str]:
     has_growth = _refined_has_growth(refined)
+    use_ode = has_growth or _refined_is_structured(refined)
     if has_growth and _refined_has_pulse(refined):
         raise NotImplementedError(
             "Native diCal2 does not support combining pulse migration with ODECore."
         )
-    if has_growth:
+    if use_ode:
         return (
             ODECore(
                 refined=refined,

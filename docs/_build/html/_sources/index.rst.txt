@@ -188,7 +188,7 @@ Quick Feature-to-Tool Table
      - one diploid genome with dormancy or selfing
      - `.psmcfa` or pairwise sequence input
      - `N_e(t)`, `beta`, `sigma`
-     - native and upstream paths exist; safest when the R-backed upstream bridge is ready
+     - native and upstream paths exist; tracked parity now covers the public `.psmcfa` and `multihetsep` input families, with the R-backed upstream bridge still the fidelity baseline outside that matrix
    * - :doc:`MSMC2 <methods/msmc2>`
      - two to eight phased haplotypes
      - `.multihetsep`

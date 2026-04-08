@@ -49,10 +49,13 @@ print(res["ne"][:5])
 ```
 
 For a fuller explanation of `beta`, `sigma`, `mu_b`, `pop_vect`, and the
-advanced tuning knobs, see the [eSMC2 method page](../methods/esmc2.md).
+advanced tuning knobs, see the [eSMC2 method page](../methods/esmc2.md). That
+page also summarizes the tracked public input-family parity gate for `.psmcfa`
+and `multihetsep`.
 
 ## Next steps
 
 - [eSMC2 method page](../methods/esmc2.md)
+- [Gallery](../guide/gallery.md)
 - [I/O formats](../guide/io-formats.md)
 - [eSMC2 internals](../developer/internals-esmc2.md)

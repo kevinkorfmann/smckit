@@ -83,6 +83,32 @@ class DiCal2Config:
 # ---------------------------------------------------------------------------
 
 
+def _compact_dical2_config(config: DiCal2Config) -> DiCal2Config:
+    """Drop excluded haplotypes so config rows match filtered sequence rows."""
+    include_mask = np.asarray(config.haplotypes_to_include, dtype=bool)
+    multiplicities = np.asarray(config.haplotype_multiplicities, dtype=np.int64)
+    compact_multiplicities = multiplicities[include_mask].copy()
+    compact_populations = [
+        int(pop)
+        for pop, include in zip(config.haplotype_populations, include_mask, strict=False)
+        if include
+    ]
+    compact_sample_sizes = (
+        compact_multiplicities.sum(axis=0)
+        if len(compact_multiplicities)
+        else np.zeros(config.n_populations, dtype=np.int64)
+    )
+    return DiCal2Config(
+        seq_length=int(config.seq_length),
+        n_alleles=int(config.n_alleles),
+        n_populations=int(config.n_populations),
+        haplotype_populations=compact_populations,
+        haplotypes_to_include=[True] * len(compact_populations),
+        haplotype_multiplicities=compact_multiplicities,
+        sample_sizes=np.asarray(compact_sample_sizes, dtype=np.int64),
+    )
+
+
 def read_dical2_param(path: str | Path) -> DiCal2Params:
     """Read a diCal2 ``.param`` file.
 
@@ -755,6 +781,13 @@ def read_dical2(
             haplotype_multiplicities=np.ones((n_hap, 1), dtype=np.int64),
             sample_sizes=np.array([n_hap], dtype=np.int64),
         )
+    elif len(config.haplotype_populations) != n_hap:
+        include_count = int(np.sum(np.asarray(config.haplotypes_to_include, dtype=bool)))
+        if include_count != n_hap:
+            raise ValueError(
+                "diCal2 config and sequences disagree on haplotype count after filtering."
+            )
+        config = _compact_dical2_config(config)
 
     data = SmcData(
         sequences=seqs,

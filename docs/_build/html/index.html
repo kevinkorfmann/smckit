@@ -308,6 +308,7 @@
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -456,9 +457,15 @@
 <li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#what-improved">What improved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
@@ -834,8 +841,8 @@ not yet default-eligible.</p>
 <td><p>✓</p></td>
 <td><p>✓</p></td>
 <td><p>✗</p></td>
-<td><p><cite>README exp fixed-point dloglik=7.45e-4; explicit starts &lt;=2.21e-4; full search dloglik=9.73e-2</cite></p></td>
-<td><p>Public upstream Java bridge parses the EM-path stdout into structured results; docs now show both README exp panels, but the current full native search still misses the upstream fit and IM parity is still open.</p></td>
+<td><p><cite>README exp search matches best params; fixed-point dloglik=7.45e-4. README IM search matches best params; fixed-point dloglik=3.15e-2.</cite></p></td>
+<td><p>Public upstream Java bridge parses the EM-path stdout into structured results. Native README exp and IM searches now reach the upstream best-fit parameter vectors; the remaining gap is the native fixed-point likelihood value at those shared points.</p></td>
 </tr>
 <tr class="row-odd"><td><p>SSM</p></td>
 <td><p>n/a</p></td>
@@ -996,7 +1003,7 @@ decision path first, then use the table to pick the concrete method page.</p>
 <td><p>one diploid genome with dormancy or selfing</p></td>
 <td><p><cite>.psmcfa</cite> or pairwise sequence input</p></td>
 <td><p><cite>N_e(t)</cite>, <cite>beta</cite>, <cite>sigma</cite></p></td>
-<td><p>native and upstream paths exist; safest when the R-backed upstream bridge is ready</p></td>
+<td><p>native and upstream paths exist; tracked parity now covers the public <cite>.psmcfa</cite> and <cite>multihetsep</cite> input families, with the R-backed upstream bridge still the fidelity baseline outside that matrix</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="methods/msmc2.html"><span class="doc">MSMC2</span></a></p></td>
 <td><p>two to eight phased haplotypes</p></td>

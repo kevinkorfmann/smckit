@@ -309,6 +309,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -457,6 +458,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-improved">What improved</a></li>
@@ -760,12 +764,15 @@ trusted species-specific value by itself.</p>
 </pre></div>
 </div>
 <p>For a fuller explanation of <code class="docutils literal notranslate"><span class="pre">beta</span></code>, <code class="docutils literal notranslate"><span class="pre">sigma</span></code>, <code class="docutils literal notranslate"><span class="pre">mu_b</span></code>, <code class="docutils literal notranslate"><span class="pre">pop_vect</span></code>, and the
-advanced tuning knobs, see the <a class="reference internal" href="../methods/esmc2.html"><span class="std std-doc">eSMC2 method page</span></a>.</p>
+advanced tuning knobs, see the <a class="reference internal" href="../methods/esmc2.html"><span class="std std-doc">eSMC2 method page</span></a>. That
+page also summarizes the tracked public input-family parity gate for <code class="docutils literal notranslate"><span class="pre">.psmcfa</span></code>
+and <code class="docutils literal notranslate"><span class="pre">multihetsep</span></code>.</p>
 </section>
 <section id="next-steps">
 <h2>Next steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../methods/esmc2.html"><span class="std std-doc">eSMC2 method page</span></a></p></li>
+<li><p><a class="reference internal" href="../guide/gallery.html"><span class="std std-doc">Gallery</span></a></p></li>
 <li><p><a class="reference internal" href="../guide/io-formats.html"><span class="std std-doc">I/O formats</span></a></p></li>
 <li><p><a class="reference internal" href="../developer/internals-esmc2.html"><span class="std std-doc">eSMC2 internals</span></a></p></li>
 </ul>

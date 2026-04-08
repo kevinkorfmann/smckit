@@ -332,6 +332,8 @@ def test_dical2_native_im_matches_upstream_demography_at_oracle_params() -> None
     ).results["dical2"]
 
     assert np.asarray(native["best_params"]) == pytest.approx(np.asarray(upstream["best_params"]))
+    assert native["core_type"] == "ode"
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=2e-3)
     np.testing.assert_allclose(np.asarray(native["time"]), np.asarray(upstream["time"]))
     np.testing.assert_allclose(np.asarray(native["ordered_params"]), np.asarray(upstream["ordered_params"]))
     assert len(native["structured_ne"]) == len(upstream["structured_ne"])

@@ -306,6 +306,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -454,6 +455,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a></li>
@@ -1077,6 +1079,88 @@
     <span class="k">return</span> <span class="n">n_real</span><span class="p">,</span> <span class="n">m_real</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">q_post</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_select_vendor_usable_sequences</span><span class="p">(</span>
+    <span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mirror upstream eSMC2&#39;s sequence-quality filtering before fitting.&quot;&quot;&quot;</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">_theta_w_terms_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+    <span class="n">keep_indices</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">theta_term</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">theta_terms</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">theta_term</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">2.0</span>
+    <span class="p">]</span>
+    <span class="n">kept_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">keep_indices</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">kept_sequences</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Upstream eSMC2 backend rejected the input as too poor after applying &quot;</span>
+            <span class="s2">&quot;the vendor&#39;s theta_W &gt;= 2 sequence filter.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">kept_theta_terms</span> <span class="o">=</span> <span class="n">theta_terms</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">keep_indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)]</span>
+    <span class="n">kept_lengths</span> <span class="o">=</span> <span class="n">_sequence_lengths</span><span class="p">(</span><span class="n">kept_sequences</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">kept_sequences</span><span class="p">,</span> <span class="n">kept_theta_terms</span><span class="p">,</span> <span class="n">kept_lengths</span><span class="p">,</span> <span class="n">keep_indices</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_local_hmm_builder_payload</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">Xi</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">rho_per_sequence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mu_scaled</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mu_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">reference_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize final HMM builder state around the fitted upstream parameters.&quot;&quot;&quot;</span>
+    <span class="n">Q</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">Tc</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">esmc2_build_hmm</span><span class="p">(</span>
+        <span class="n">n</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">sigma</span><span class="p">),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">rho_per_sequence</span><span class="p">),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">mu_scaled</span><span class="p">),</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">mu_b</span><span class="p">),</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">reference_length</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;Q&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Tc</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_local_final_sufficient_statistics</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">Xi</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">rho_per_sequence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mu_scaled</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mu_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">reference_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute normalized final sufficient statistics for the fitted parameters.&quot;&quot;&quot;</span>
+    <span class="n">stats</span><span class="p">,</span> <span class="n">log_likelihood</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_expectation_step</span><span class="p">(</span>
+        <span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span>
+        <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+        <span class="n">Xi</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">beta</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">sigma</span><span class="p">),</span>
+        <span class="n">rho</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">rho_per_sequence</span><span class="p">),</span>
+        <span class="n">mu</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mu_scaled</span><span class="p">),</span>
+        <span class="n">mu_b</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mu_b</span><span class="p">),</span>
+        <span class="n">L</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">reference_length</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;q_post&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">log_likelihood</span><span class="p">),</span>
+    <span class="p">}</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_upstream_esmc2</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span>
@@ -1112,18 +1196,18 @@
             <span class="s2">&quot;Upstream eSMC2 backend is unavailable. Set SMCKIT_ESMC2_RSCRIPT &quot;</span>
             <span class="s2">&quot;to an Rscript executable with the vendored eSMC2 package installed.&quot;</span>
         <span class="p">)</span>
-    <span class="n">sequences</span> <span class="o">=</span> <span class="n">_sequences_from_smcdata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;Upstream eSMC2 backend currently supports exactly one clean pairwise sequence.&quot;</span>
-        <span class="p">)</span>
-    <span class="n">o_matrix</span> <span class="o">=</span> <span class="n">_sequence_to_upstream_matrix</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">sequences_all</span> <span class="o">=</span> <span class="n">_sequences_from_smcdata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">input_metadata</span> <span class="o">=</span> <span class="n">_input_family_metadata</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sequences_all</span><span class="p">)</span>
+    <span class="n">sequences</span><span class="p">,</span> <span class="n">theta_terms</span><span class="p">,</span> <span class="n">sequence_lengths</span><span class="p">,</span> <span class="n">used_sequence_indices</span> <span class="o">=</span> <span class="n">_select_vendor_usable_sequences</span><span class="p">(</span>
+        <span class="n">sequences_all</span>
+    <span class="p">)</span>
+    <span class="n">reference_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sequence_lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
     <span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
     <span class="n">local_r_lib</span> <span class="o">=</span> <span class="n">repo_root</span> <span class="o">/</span> <span class="s2">&quot;.r-lib&quot;</span>
     <span class="n">r_expr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">args &lt;- commandArgs(trailingOnly = TRUE)</span>
-<span class="s2">o_path &lt;- args[[1]]</span>
+<span class="s2">seq_dir &lt;- args[[1]]</span>
 <span class="s2">out_dir &lt;- args[[2]]</span>
 <span class="s2">n_states &lt;- as.integer(args[[3]])</span>
 <span class="s2">rho_over_theta &lt;- as.numeric(args[[4]])</span>
@@ -1141,193 +1225,199 @@
 <span class="s2">rp &lt;- c(as.numeric(args[[20]]), as.numeric(args[[21]]))</span>
 <span class="s2">pop_vect_raw &lt;- args[[22]]</span>
 <span class="s2">r_lib &lt;- args[[23]]</span>
-<span class="s2">capture_final_sufficient_statistics &lt;- as.logical(as.integer(args[[24]]))</span>
+<span class="s2">n_inputs &lt;- as.integer(args[[24]])</span>
+<span class="s2">capture_sufficient_statistics &lt;- as.logical(as.integer(args[[25]]))</span>
 <span class="s2">if (nchar(r_lib) &gt; 0) {</span>
 <span class="s2">  .libPaths(c(r_lib, .libPaths()))</span>
 <span class="s2">}</span>
 <span class="s2">suppressPackageStartupMessages(library(eSMC2))</span>
-<span class="s2">O &lt;- as.matrix(read.table(o_path, header = FALSE))</span>
 <span class="s2">if (pop_vect_raw == &quot;&quot;) {</span>
 <span class="s2">  pop_vect &lt;- NA</span>
 <span class="s2">} else {</span>
 <span class="s2">  pop_vect &lt;- as.integer(strsplit(pop_vect_raw, &quot;,&quot;, fixed = TRUE)[[1]])</span>
 <span class="s2">}</span>
-<span class="s2">compute_final_sufficient_statistics &lt;- function(</span>
-<span class="s2">  O,</span>
-<span class="s2">  n_states,</span>
-<span class="s2">  rho_internal,</span>
-<span class="s2">  beta_final,</span>
-<span class="s2">  sigma_final,</span>
-<span class="s2">  Xi_final,</span>
-<span class="s2">  mu_scaled,</span>
-<span class="s2">  mu_b</span>
-<span class="s2">) {</span>
-<span class="s2">  M_rows &lt;- dim(O)[1] - 2</span>
-<span class="s2">  L &lt;- as.numeric(O[(M_rows + 2), dim(O)[2]])</span>
-<span class="s2">  seq_obj &lt;- eSMC2:::seqSNP2_MH(O[c(1, 2, (M_rows + 1), (M_rows + 2)), ], L, NA)</span>
-<span class="s2">  Mat_symbol &lt;- eSMC2:::Mat_symbol_ID()</span>
-<span class="s2">  zipped &lt;- eSMC2:::Zip_seq(seq_obj$seq, Mat_symbol)</span>
-<span class="s2">  zipped &lt;- eSMC2:::symbol2Num(zipped[[1]], zipped[[2]])</span>
-
-<span class="s2">  builder &lt;- eSMC2:::build_HMM_matrix(</span>
-<span class="s2">    n = n_states,</span>
-<span class="s2">    rho = rho_internal,</span>
-<span class="s2">    beta = beta_final,</span>
-<span class="s2">    L = L,</span>
-<span class="s2">    Pop = FALSE,</span>
-<span class="s2">    Xi = Xi_final,</span>
-<span class="s2">    Beta = beta_final,</span>
-<span class="s2">    scale = c(1, 0),</span>
-<span class="s2">    sigma = sigma_final,</span>
-<span class="s2">    Sigma = sigma_final,</span>
-<span class="s2">    Big_Window = FALSE,</span>
-<span class="s2">    npair = 2</span>
+<span class="s2">seq_paths &lt;- vapply(</span>
+<span class="s2">  seq_len(n_inputs),</span>
+<span class="s2">  function(i) file.path(seq_dir, paste0(&quot;seq_&quot;, i, &quot;.txt&quot;)),</span>
+<span class="s2">  character(1)</span>
+<span class="s2">)</span>
+<span class="s2">seq_list &lt;- lapply(</span>
+<span class="s2">  seq_paths,</span>
+<span class="s2">  function(path) as.integer(scan(path, what = integer(), quiet = TRUE))</span>
+<span class="s2">)</span>
+<span class="s2">theta_terms &lt;- vapply(</span>
+<span class="s2">  seq_list,</span>
+<span class="s2">  function(seq) {</span>
+<span class="s2">    callable &lt;- sum(seq &lt; 2)</span>
+<span class="s2">    if (callable == 0) {</span>
+<span class="s2">      return(0)</span>
+<span class="s2">    }</span>
+<span class="s2">    sum(seq == 1) / (callable / length(seq))</span>
+<span class="s2">  },</span>
+<span class="s2">  numeric(1)</span>
+<span class="s2">)</span>
+<span class="s2">keep &lt;- which(theta_terms &gt;= 2)</span>
+<span class="s2">if (length(keep) == 0) {</span>
+<span class="s2">  stop(&quot;data too poor&quot;)</span>
+<span class="s2">}</span>
+<span class="s2">seq_list &lt;- seq_list[keep]</span>
+<span class="s2">theta_terms &lt;- as.numeric(theta_terms[keep])</span>
+<span class="s2">L &lt;- as.numeric(vapply(seq_list, length, numeric(1)))</span>
+<span class="s2">Mat_symbol &lt;- eSMC2:::Mat_symbol_ID()</span>
+<span class="s2">build_zip &lt;- function(seq) {</span>
+<span class="s2">  zipped &lt;- eSMC2:::Zip_seq(seq, Mat_symbol)</span>
+<span class="s2">  eSMC2:::symbol2Num(zipped[[1]], zipped[[2]])</span>
+<span class="s2">}</span>
+<span class="s2">if (length(seq_list) == 1) {</span>
+<span class="s2">  Os &lt;- list(build_zip(seq_list[[1]]))</span>
+<span class="s2">  theta_W &lt;- as.numeric(theta_terms[[1]])</span>
+<span class="s2">  L_use &lt;- as.numeric(L[[1]])</span>
+<span class="s2">  NC_use &lt;- 1L</span>
+<span class="s2">} else {</span>
+<span class="s2">  Os &lt;- lapply(seq_list, function(seq) list(build_zip(seq)))</span>
+<span class="s2">  theta_W &lt;- as.numeric(theta_terms)</span>
+<span class="s2">  L_use &lt;- as.numeric(L)</span>
+<span class="s2">  NC_use &lt;- as.integer(length(seq_list))</span>
+<span class="s2">}</span>
+<span class="s2">compute_initial_theta &lt;- function(beta_value, sigma_value) {</span>
+<span class="s2">  theta_W * (beta_value * beta_value) * 2 / (</span>
+<span class="s2">    (2 - sigma_value) * (beta_value + ((1 - beta_value) * mu_b))</span>
 <span class="s2">  )</span>
-<span class="s2">  Q &lt;- builder[[1]]</span>
-<span class="s2">  nu &lt;- builder[[2]]</span>
-<span class="s2">  t_vals &lt;- builder[[3]]</span>
-<span class="s2">  g &lt;- matrix(0, nrow = length(t_vals), ncol = 3)</span>
-<span class="s2">  mu_eff &lt;- beta_final + ((1 - beta_final) * mu_b)</span>
-<span class="s2">  g[, 2] &lt;- 1 - exp(-mu_scaled * mu_eff * 2 * t_vals)</span>
-<span class="s2">  g[, 1] &lt;- exp(-mu_scaled * mu_eff * 2 * t_vals)</span>
-<span class="s2">  g[, 3] &lt;- 1</span>
-
-<span class="s2">  test &lt;- eSMC2:::Build_zip_Matrix_mailund(Q, g, zipped[[2]], nu)</span>
-<span class="s2">  fo &lt;- eSMC2:::forward_zip_mailund(as.numeric(zipped[[1]]), g, nu, test[[1]])</span>
-<span class="s2">  c &lt;- exp(fo[[2]])</span>
-<span class="s2">  ll &lt;- sum(fo[[2]])</span>
-<span class="s2">  ba &lt;- eSMC2:::Backward_zip_mailund(as.numeric(zipped[[1]]), test[[3]], length(t_vals), c)</span>
-
-<span class="s2">  W_P &lt;- list()</span>
-<span class="s2">  W_P_ &lt;- list()</span>
-<span class="s2">  count_oo &lt;- 0</span>
-<span class="s2">  for (oo in c(1, 3)) {</span>
-<span class="s2">    count_oo &lt;- count_oo + 1</span>
-<span class="s2">    int &lt;- eigen(t(Q) </span><span class="si">%*%</span><span class="s2"> diag(g[, oo]))</span>
-<span class="s2">    W_P[[count_oo]] &lt;- int$vectors</span>
-<span class="s2">    W_P_[[count_oo]] &lt;- solve(W_P[[count_oo]])</span>
-<span class="s2">  }</span>
-
-<span class="s2">  N &lt;- matrix(0, length(t_vals), length(t_vals))</span>
-<span class="s2">  M_counts &lt;- matrix(0, nrow = length(t_vals), ncol = 3)</span>
-<span class="s2">  q_ &lt;- rep(0, length(t_vals))</span>
-<span class="s2">  symbol &lt;- c(0:2, 10:40)</span>
-<span class="s2">  ob &lt;- 1</span>
-<span class="s2">  truc_M &lt;- matrix(0, nrow = length(t_vals), ncol = 3)</span>
-<span class="s2">  if (as.numeric(zipped[[1]][(ob + 1)]) &lt;= 2) {</span>
-<span class="s2">    truc_N &lt;- fo[[1]][, ob] </span><span class="si">%*%</span><span class="s2"> t(</span>
-<span class="s2">      ba[, (ob + 1)] * g[, (as.numeric(zipped[[1]][(ob + 1)]) + 1)] / c[(ob + 1)]</span>
-<span class="s2">    )</span>
-<span class="s2">    truc_M[, (as.numeric(zipped[[1]][(ob + 1)]) + 1)] &lt;- fo[[1]][, ob] * (</span>
-<span class="s2">      test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]) + 1)]] </span><span class="si">%*%</span><span class="s2"> (ba[, (ob + 1)] / c[(ob + 1)])</span>
-<span class="s2">    )</span>
-<span class="s2">  } else if (as.numeric(zipped[[1]][(ob + 1)]) &lt; 30) {</span>
-<span class="s2">    truc_N &lt;- t(W_P_[[1]]) </span><span class="si">%*%</span><span class="s2"> (</span>
-<span class="s2">      t(W_P[[1]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, ob] </span><span class="si">%*%</span><span class="s2"> t(ba[, (ob + 1)] / c[(ob + 1)]) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[1]]) *</span>
-<span class="s2">      test[[4]][[(as.numeric(zipped[[1]][(ob + 1)]))]]</span>
-<span class="s2">    ) </span><span class="si">%*%</span><span class="s2"> t(W_P[[1]]) </span><span class="si">%*%</span><span class="s2"> diag(g[, 1])</span>
-<span class="s2">    truc_M[, 1] &lt;- diag(</span>
-<span class="s2">      t(W_P_[[1]]) </span><span class="si">%*%</span><span class="s2"> (</span>
-<span class="s2">        t(W_P[[1]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, ob] </span><span class="si">%*%</span><span class="s2"> t(ba[, (ob + 1)] / c[(ob + 1)]) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[1]])</span>
-<span class="s2">      ) * test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]))]] </span><span class="si">%*%</span><span class="s2"> t(W_P[[1]])</span>
-<span class="s2">    )</span>
-<span class="s2">  } else {</span>
-<span class="s2">    truc_N &lt;- t(W_P_[[2]]) </span><span class="si">%*%</span><span class="s2"> (</span>
-<span class="s2">      t(W_P[[2]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, ob] </span><span class="si">%*%</span><span class="s2"> t(ba[, (ob + 1)] / c[(ob + 1)]) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[2]]) *</span>
-<span class="s2">      test[[4]][[(as.numeric(zipped[[1]][(ob + 1)]))]]</span>
-<span class="s2">    ) </span><span class="si">%*%</span><span class="s2"> t(W_P[[2]]) </span><span class="si">%*%</span><span class="s2"> diag(g[, 3])</span>
-<span class="s2">    truc_M[, 3] &lt;- diag(</span>
-<span class="s2">      t(W_P_[[2]]) </span><span class="si">%*%</span><span class="s2"> (</span>
-<span class="s2">        t(W_P[[2]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, ob] </span><span class="si">%*%</span><span class="s2"> t(ba[, (ob + 1)] / c[(ob + 1)]) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[2]])</span>
-<span class="s2">      ) * test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]))]] </span><span class="si">%*%</span><span class="s2"> t(W_P[[2]])</span>
-<span class="s2">    )</span>
-<span class="s2">  }</span>
-<span class="s2">  N &lt;- N + truc_N</span>
-<span class="s2">  M_counts &lt;- M_counts + truc_M</span>
-
-<span class="s2">  for (sym in sort(symbol)) {</span>
-<span class="s2">    ob &lt;- as.numeric(sym)</span>
-<span class="s2">    pos &lt;- which(as.numeric(zipped[[1]][-c(1, length(zipped[[1]]))]) == ob)</span>
-<span class="s2">    if (length(pos) == 0) {</span>
-<span class="s2">      next</span>
-<span class="s2">    }</span>
-<span class="s2">    pos &lt;- pos + 1</span>
-<span class="s2">    if (ob &lt; 3) {</span>
-<span class="s2">      ba_t &lt;- t(t(ba[, pos]) / c[pos])</span>
-<span class="s2">      truc &lt;- c(rowSums(fo[[1]][, (pos - 1)] * (test[[1]][[(ob + 1)]] </span><span class="si">%*%</span><span class="s2"> ba_t)))</span>
-<span class="s2">      truc &lt;- (truc / sum(truc)) * length(pos)</span>
-<span class="s2">      M_counts[, (ob + 1)] &lt;- M_counts[, (ob + 1)] + truc</span>
-<span class="s2">      N &lt;- N + (fo[[1]][, (pos - 1)] </span><span class="si">%*%</span><span class="s2"> t(diag(g[, (ob + 1)]) </span><span class="si">%*%</span><span class="s2"> ba_t))</span>
-<span class="s2">    } else if (ob &lt; 30) {</span>
-<span class="s2">      A &lt;- t(W_P[[1]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, (pos - 1)] </span><span class="si">%*%</span><span class="s2"> t(t(t(ba[, pos]) / c[pos])) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[1]])</span>
-<span class="s2">      A_ &lt;- A * test[[2]][[(ob)]]</span>
-<span class="s2">      A_ &lt;- t(W_P_[[1]]) </span><span class="si">%*%</span><span class="s2"> A_ </span><span class="si">%*%</span><span class="s2"> t(W_P[[1]])</span>
-<span class="s2">      M_counts[, 1] &lt;- M_counts[, 1] + diag(A_)</span>
-<span class="s2">      A_ &lt;- A * test[[4]][[(ob)]]</span>
-<span class="s2">      A_ &lt;- t(W_P_[[1]]) </span><span class="si">%*%</span><span class="s2"> A_ </span><span class="si">%*%</span><span class="s2"> t(W_P[[1]])</span>
-<span class="s2">      N &lt;- N + (A_ </span><span class="si">%*%</span><span class="s2"> diag(g[, 1]))</span>
-<span class="s2">    } else {</span>
-<span class="s2">      A &lt;- t(W_P[[2]]) </span><span class="si">%*%</span><span class="s2"> fo[[1]][, (pos - 1)] </span><span class="si">%*%</span><span class="s2"> t(t(t(ba[, pos]) / c[pos])) </span><span class="si">%*%</span><span class="s2"> t(W_P_[[2]])</span>
-<span class="s2">      A_ &lt;- A * test[[2]][[(ob)]]</span>
-<span class="s2">      A_ &lt;- t(W_P_[[2]]) </span><span class="si">%*%</span><span class="s2"> A_ </span><span class="si">%*%</span><span class="s2"> t(W_P[[2]])</span>
-<span class="s2">      M_counts[, 3] &lt;- M_counts[, 3] + diag(A_)</span>
-<span class="s2">      A_ &lt;- A * test[[4]][[(ob)]]</span>
-<span class="s2">      A_ &lt;- t(W_P_[[2]]) </span><span class="si">%*%</span><span class="s2"> A_ </span><span class="si">%*%</span><span class="s2"> t(W_P[[2]])</span>
-<span class="s2">      N &lt;- N + (A_ </span><span class="si">%*%</span><span class="s2"> diag(g[, 3]))</span>
-<span class="s2">    }</span>
-<span class="s2">  }</span>
-
-<span class="s2">  last_symbol &lt;- as.numeric(zipped[[1]][length(zipped[[1]])])</span>
-<span class="s2">  if (last_symbol &lt;= 3) {</span>
-<span class="s2">    M_counts[, (last_symbol + 1)] &lt;- M_counts[, (last_symbol + 1)] +</span>
-<span class="s2">      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])</span>
-<span class="s2">  } else if (last_symbol &lt; 30) {</span>
-<span class="s2">    M_counts[, 1] &lt;- M_counts[, 1] + (</span>
-<span class="s2">      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])]) /</span>
-<span class="s2">      sum(fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])</span>
-<span class="s2">    )</span>
-<span class="s2">  } else {</span>
-<span class="s2">    M_counts[, 3] &lt;- M_counts[, 3] + (</span>
-<span class="s2">      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])]) /</span>
-<span class="s2">      sum(fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])</span>
-<span class="s2">    )</span>
-<span class="s2">  }</span>
-<span class="s2">  q_ &lt;- q_ + ((fo[[1]][, 1] * ba[, 1]) / sum(fo[[1]][, 1] * ba[, 1]))</span>
-<span class="s2">  N &lt;- N * t(Q)</span>
-<span class="s2">  if (is.complex(N)) {</span>
-<span class="s2">    N &lt;- Re(N)</span>
-<span class="s2">  }</span>
-<span class="s2">  if (is.complex(M_counts)) {</span>
-<span class="s2">    M_counts &lt;- Re(M_counts)</span>
-<span class="s2">  }</span>
-<span class="s2">  N &lt;- N * ((L - 1) / sum(N))</span>
-<span class="s2">  M_counts &lt;- M_counts * (L / sum(M_counts))</span>
-<span class="s2">  q_ &lt;- q_ / sum(q_)</span>
-<span class="s2">  list(N = N, M = t(M_counts), q = q_, log_likelihood = ll)</span>
+<span class="s2">}</span>
+<span class="s2">compute_bawe2_theta &lt;- function(beta_value, sigma_value) {</span>
+<span class="s2">  theta_W * (beta_value * beta_value) * 2 / (2 - sigma_value)</span>
+<span class="s2">}</span>
+<span class="s2">run_baum_welch &lt;- function(</span>
+<span class="s2">  rho_init,</span>
+<span class="s2">  mu_init,</span>
+<span class="s2">  theta_W_init,</span>
+<span class="s2">  beta_init,</span>
+<span class="s2">  sigma_init,</span>
+<span class="s2">  sb_flag,</span>
+<span class="s2">  sf_flag,</span>
+<span class="s2">  rho_flag,</span>
+<span class="s2">  popfix_flag,</span>
+<span class="s2">  redo_r_flag</span>
+<span class="s2">) {</span>
+<span class="s2">  eSMC2:::Baum_Welch_algo(</span>
+<span class="s2">    Os = Os,</span>
+<span class="s2">    maxIt = maxit,</span>
+<span class="s2">    L = L_use,</span>
+<span class="s2">    mu = mu_init,</span>
+<span class="s2">    theta_W = theta_W_init,</span>
+<span class="s2">    Rho = rho_init,</span>
+<span class="s2">    beta = beta_init,</span>
+<span class="s2">    sigma = sigma_init,</span>
+<span class="s2">    Popfix = popfix_flag,</span>
+<span class="s2">    SB = sb_flag,</span>
+<span class="s2">    SF = sf_flag,</span>
+<span class="s2">    k = n_states,</span>
+<span class="s2">    BoxB = box_b,</span>
+<span class="s2">    BoxP = box_p,</span>
+<span class="s2">    Boxr = box_r,</span>
+<span class="s2">    Boxs = box_s,</span>
+<span class="s2">    maxBit = 1,</span>
+<span class="s2">    pop_vect = pop_vect,</span>
+<span class="s2">    ER = rho_flag,</span>
+<span class="s2">    NC = NC_use,</span>
+<span class="s2">    BW = FALSE,</span>
+<span class="s2">    redo_R = redo_r_flag,</span>
+<span class="s2">    mu_b = mu_b,</span>
+<span class="s2">    SCALED = FALSE,</span>
+<span class="s2">    Big_Window = FALSE,</span>
+<span class="s2">    window_scaling = c(1, 0),</span>
+<span class="s2">    Share_r = TRUE,</span>
+<span class="s2">    rp = rp,</span>
+<span class="s2">    LH_opt = FALSE,</span>
+<span class="s2">    FAST = TRUE</span>
+<span class="s2">  )</span>
 <span class="s2">}</span>
 <span class="s2">dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)</span>
 <span class="s2">sink(file.path(out_dir, &quot;stdout.log&quot;))</span>
-<span class="s2">res &lt;- eSMC2::eSMC2(</span>
-<span class="s2">  n = n_states,</span>
-<span class="s2">  rho = rho_over_theta,</span>
-<span class="s2">  O = O,</span>
-<span class="s2">  maxit = maxit,</span>
-<span class="s2">  BoxB = box_b,</span>
-<span class="s2">  BoxP = box_p,</span>
-<span class="s2">  Boxr = box_r,</span>
-<span class="s2">  Boxs = box_s,</span>
-<span class="s2">  pop = FALSE,</span>
-<span class="s2">  SB = estimate_beta,</span>
-<span class="s2">  SF = estimate_sigma,</span>
-<span class="s2">  Rho = estimate_rho,</span>
-<span class="s2">  BW = FALSE,</span>
-<span class="s2">  NC = 1,</span>
-<span class="s2">  pop_vect = pop_vect,</span>
-<span class="s2">  mu_b = mu_b,</span>
-<span class="s2">  sigma = sigma,</span>
-<span class="s2">  beta = beta,</span>
-<span class="s2">  rp = rp</span>
-<span class="s2">)</span>
+<span class="s2">gamma &lt;- rho_over_theta</span>
+<span class="s2">sigma &lt;- max(box_s[1], sigma)</span>
+<span class="s2">sigma &lt;- min(box_s[2], sigma)</span>
+<span class="s2">beta &lt;- min(box_b[2], beta)</span>
+<span class="s2">beta &lt;- max(box_b[1], beta)</span>
+<span class="s2">if (estimate_beta || estimate_sigma) {</span>
+<span class="s2">  theta_init &lt;- compute_initial_theta(beta, sigma)</span>
+<span class="s2">  mu_init &lt;- theta_init / (2 * L_use)</span>
+<span class="s2">  rho_init &lt;- theta_init</span>
+<span class="s2">  res &lt;- run_baum_welch(</span>
+<span class="s2">    rho_init = rho_init,</span>
+<span class="s2">    mu_init = mu_init,</span>
+<span class="s2">    theta_W_init = theta_W,</span>
+<span class="s2">    beta_init = beta,</span>
+<span class="s2">    sigma_init = sigma,</span>
+<span class="s2">    sb_flag = FALSE,</span>
+<span class="s2">    sf_flag = FALSE,</span>
+<span class="s2">    rho_flag = TRUE,</span>
+<span class="s2">    popfix_flag = TRUE,</span>
+<span class="s2">    redo_r_flag = FALSE</span>
+<span class="s2">  )</span>
+<span class="s2">  r &lt;- as.numeric(res$rho)[1:NC_use]</span>
+<span class="s2">  mu_ &lt;- as.numeric(res$mu)</span>
+<span class="s2">  gamma_ &lt;- (r * (beta * 2 * (1 - sigma) / (2 - sigma))) / mu_</span>
+<span class="s2">  effect &lt;- mean(gamma_ / gamma)</span>
+<span class="s2">  if (estimate_sigma &amp;&amp; !estimate_beta) {</span>
+<span class="s2">    sigma &lt;- (1 - effect) / (1 - (effect / 2))</span>
+<span class="s2">    sigma &lt;- max(box_s[1], sigma)</span>
+<span class="s2">    sigma &lt;- min(box_s[2], sigma)</span>
+<span class="s2">  }</span>
+<span class="s2">  if (estimate_beta &amp;&amp; !estimate_sigma) {</span>
+<span class="s2">    beta &lt;- effect</span>
+<span class="s2">    beta &lt;- min(box_b[2], beta)</span>
+<span class="s2">    beta &lt;- max(box_b[1], beta)</span>
+<span class="s2">  }</span>
+<span class="s2">  if (estimate_beta &amp;&amp; estimate_sigma) {</span>
+<span class="s2">    if (min(box_b) &gt; (1 - max(box_s))) {</span>
+<span class="s2">      sigma &lt;- (1 - (effect / beta)) / (1 - (effect / (2 * beta)))</span>
+<span class="s2">      sigma &lt;- max(box_s[1], sigma)</span>
+<span class="s2">      sigma &lt;- min(box_s[2], sigma)</span>
+<span class="s2">      beta &lt;- effect * (2 - sigma) / (2 * (1 - sigma))</span>
+<span class="s2">      beta &lt;- max(box_b[1], beta)</span>
+<span class="s2">      beta &lt;- min(box_b[2], beta)</span>
+<span class="s2">    } else {</span>
+<span class="s2">      beta &lt;- effect * (2 - sigma) / (2 * (1 - sigma))</span>
+<span class="s2">      beta &lt;- max(box_b[1], beta)</span>
+<span class="s2">      beta &lt;- min(box_b[2], beta)</span>
+<span class="s2">      sigma &lt;- (1 - (effect / beta)) / (1 - (effect / (2 * beta)))</span>
+<span class="s2">      sigma &lt;- max(box_s[1], sigma)</span>
+<span class="s2">      sigma &lt;- min(box_s[2], sigma)</span>
+<span class="s2">    }</span>
+<span class="s2">  }</span>
+<span class="s2">  theta_main &lt;- compute_bawe2_theta(beta, sigma)</span>
+<span class="s2">  mu_main &lt;- theta_main / (2 * L_use)</span>
+<span class="s2">  rho_main &lt;- gamma * theta_main</span>
+<span class="s2">  res &lt;- run_baum_welch(</span>
+<span class="s2">    rho_init = rho_main,</span>
+<span class="s2">    mu_init = mu_main,</span>
+<span class="s2">    theta_W_init = theta_W,</span>
+<span class="s2">    beta_init = beta,</span>
+<span class="s2">    sigma_init = sigma,</span>
+<span class="s2">    sb_flag = estimate_beta,</span>
+<span class="s2">    sf_flag = estimate_sigma,</span>
+<span class="s2">    rho_flag = estimate_rho,</span>
+<span class="s2">    popfix_flag = FALSE,</span>
+<span class="s2">    redo_r_flag = FALSE</span>
+<span class="s2">  )</span>
+<span class="s2">} else {</span>
+<span class="s2">  theta_init &lt;- compute_initial_theta(beta, sigma)</span>
+<span class="s2">  mu_init &lt;- theta_init / (2 * L_use)</span>
+<span class="s2">  rho_init &lt;- gamma * theta_init</span>
+<span class="s2">  res &lt;- run_baum_welch(</span>
+<span class="s2">    rho_init = rho_init,</span>
+<span class="s2">    mu_init = mu_init,</span>
+<span class="s2">    theta_W_init = theta_W,</span>
+<span class="s2">    beta_init = beta,</span>
+<span class="s2">    sigma_init = sigma,</span>
+<span class="s2">    sb_flag = estimate_beta,</span>
+<span class="s2">    sf_flag = estimate_sigma,</span>
+<span class="s2">    rho_flag = estimate_rho,</span>
+<span class="s2">    popfix_flag = FALSE,</span>
+<span class="s2">    redo_r_flag = estimate_rho</span>
+<span class="s2">  )</span>
+<span class="s2">}</span>
 <span class="s2">sink()</span>
 <span class="s2">write.table(res$Tc, file=file.path(out_dir, &quot;Tc.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
 <span class="s2">write.table(res$Xi, file=file.path(out_dir, &quot;Xi.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
@@ -1336,111 +1426,25 @@
 <span class="s2">write.table(res$sigma, file=file.path(out_dir, &quot;sigma.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
 <span class="s2">write.table(res$mu, file=file.path(out_dir, &quot;mu.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
 <span class="s2">write.table(res$LH, file=file.path(out_dir, &quot;LH.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
-<span class="s2">builder &lt;- eSMC2:::build_HMM_matrix(</span>
-<span class="s2">  n = n_states,</span>
-<span class="s2">  rho = as.numeric(res$rho) * 2 * as.numeric(res$L),</span>
-<span class="s2">  beta = as.numeric(res$beta),</span>
-<span class="s2">  L = as.numeric(res$L),</span>
-<span class="s2">  Pop = FALSE,</span>
-<span class="s2">  Xi = as.numeric(res$Xi),</span>
-<span class="s2">  Beta = as.numeric(res$beta),</span>
-<span class="s2">  scale = c(1, 0),</span>
-<span class="s2">  sigma = as.numeric(res$sigma),</span>
-<span class="s2">  Sigma = as.numeric(res$sigma),</span>
-<span class="s2">  Big_Window = FALSE,</span>
-<span class="s2">  npair = 2</span>
-<span class="s2">)</span>
-<span class="s2">Q_builder &lt;- builder[[1]]</span>
-<span class="s2">nu_builder &lt;- builder[[2]]</span>
-<span class="s2">t_builder &lt;- builder[[3]]</span>
-<span class="s2">Tc_builder &lt;- builder[[4]]</span>
-<span class="s2">g_builder &lt;- matrix(0, nrow=length(t_builder), ncol=3)</span>
-<span class="s2">mu_eff &lt;- as.numeric(res$beta) + ((1 - as.numeric(res$beta)) * mu_b)</span>
-<span class="s2">g_builder[,2] &lt;- 1 - exp(-as.numeric(res$mu) * mu_eff * 2 * t_builder)</span>
-<span class="s2">g_builder[,1] &lt;- exp(-as.numeric(res$mu) * mu_eff * 2 * t_builder)</span>
-<span class="s2">g_builder[,3] &lt;- 1</span>
-<span class="s2">write.table(</span>
-<span class="s2">  Q_builder,</span>
-<span class="s2">  file=file.path(out_dir, &quot;Q_builder.txt&quot;),</span>
-<span class="s2">  row.names=FALSE,</span>
-<span class="s2">  col.names=FALSE</span>
-<span class="s2">)</span>
-<span class="s2">write.table(</span>
-<span class="s2">  nu_builder,</span>
-<span class="s2">  file=file.path(out_dir, &quot;nu_builder.txt&quot;),</span>
-<span class="s2">  row.names=FALSE,</span>
-<span class="s2">  col.names=FALSE</span>
-<span class="s2">)</span>
-<span class="s2">write.table(</span>
-<span class="s2">  t_builder,</span>
-<span class="s2">  file=file.path(out_dir, &quot;t_builder.txt&quot;),</span>
-<span class="s2">  row.names=FALSE,</span>
-<span class="s2">  col.names=FALSE</span>
-<span class="s2">)</span>
-<span class="s2">write.table(</span>
-<span class="s2">  Tc_builder,</span>
-<span class="s2">  file=file.path(out_dir, &quot;Tc_builder.txt&quot;),</span>
-<span class="s2">  row.names=FALSE,</span>
-<span class="s2">  col.names=FALSE</span>
-<span class="s2">)</span>
-<span class="s2">write.table(</span>
-<span class="s2">  g_builder,</span>
-<span class="s2">  file=file.path(out_dir, &quot;g_builder.txt&quot;),</span>
-<span class="s2">  row.names=FALSE,</span>
-<span class="s2">  col.names=FALSE</span>
-<span class="s2">)</span>
-<span class="s2">if (!is.null(res$N)) {</span>
+<span class="s2">write.table(res$L, file=file.path(out_dir, &quot;L.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
+<span class="s2">if (capture_sufficient_statistics &amp;&amp; !is.null(res$N)) {</span>
 <span class="s2">  write.table(as.matrix(res$N), file=file.path(out_dir, &quot;N.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
 <span class="s2">}</span>
-<span class="s2">if (!is.null(res$M)) {</span>
+<span class="s2">if (capture_sufficient_statistics &amp;&amp; !is.null(res$M)) {</span>
 <span class="s2">  write.table(as.matrix(res$M), file=file.path(out_dir, &quot;M.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
 <span class="s2">}</span>
-<span class="s2">if (!is.null(res$q_)) {</span>
+<span class="s2">if (capture_sufficient_statistics &amp;&amp; !is.null(res$q_)) {</span>
 <span class="s2">  write.table(res$q_, file=file.path(out_dir, &quot;q.txt&quot;), row.names=FALSE, col.names=FALSE)</span>
-<span class="s2">}</span>
-<span class="s2">if (capture_final_sufficient_statistics) {</span>
-<span class="s2">  final_stats &lt;- compute_final_sufficient_statistics(</span>
-<span class="s2">    O = O,</span>
-<span class="s2">    n_states = n_states,</span>
-<span class="s2">    rho_internal = as.numeric(res$rho) * 2 * as.numeric(res$L),</span>
-<span class="s2">    beta_final = as.numeric(res$beta),</span>
-<span class="s2">    sigma_final = as.numeric(res$sigma),</span>
-<span class="s2">    Xi_final = as.numeric(res$Xi),</span>
-<span class="s2">    mu_scaled = as.numeric(res$mu),</span>
-<span class="s2">    mu_b = mu_b</span>
-<span class="s2">  )</span>
-<span class="s2">  write.table(</span>
-<span class="s2">    as.matrix(final_stats$N),</span>
-<span class="s2">    file=file.path(out_dir, &quot;final_N.txt&quot;),</span>
-<span class="s2">    row.names=FALSE,</span>
-<span class="s2">    col.names=FALSE</span>
-<span class="s2">  )</span>
-<span class="s2">  write.table(</span>
-<span class="s2">    as.matrix(final_stats$M),</span>
-<span class="s2">    file=file.path(out_dir, &quot;final_M.txt&quot;),</span>
-<span class="s2">    row.names=FALSE,</span>
-<span class="s2">    col.names=FALSE</span>
-<span class="s2">  )</span>
-<span class="s2">  write.table(</span>
-<span class="s2">    final_stats$q,</span>
-<span class="s2">    file=file.path(out_dir, &quot;final_q.txt&quot;),</span>
-<span class="s2">    row.names=FALSE,</span>
-<span class="s2">    col.names=FALSE</span>
-<span class="s2">  )</span>
-<span class="s2">  write.table(</span>
-<span class="s2">    final_stats$log_likelihood,</span>
-<span class="s2">    file=file.path(out_dir, &quot;final_ll.txt&quot;),</span>
-<span class="s2">    row.names=FALSE,</span>
-<span class="s2">    col.names=FALSE</span>
-<span class="s2">  )</span>
 <span class="s2">}</span>
 <span class="s2">&quot;&quot;&quot;</span>
 
     <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;smckit-esmc2-&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
         <span class="n">tmpdir_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span>
-        <span class="n">o_path</span> <span class="o">=</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;O.txt&quot;</span>
+        <span class="n">seq_dir</span> <span class="o">=</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;seqs&quot;</span>
         <span class="n">script_path</span> <span class="o">=</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;run_esmc2.R&quot;</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">o_path</span><span class="p">,</span> <span class="n">o_matrix</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">seq_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">seq_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;seq_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">),</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">script_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">r_expr</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="n">out_dir</span> <span class="o">=</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;out&quot;</span>
 
@@ -1448,7 +1452,7 @@
             <span class="p">[</span>
                 <span class="n">rscript</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">script_path</span><span class="p">),</span>
-                <span class="nb">str</span><span class="p">(</span><span class="n">o_path</span><span class="p">),</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">seq_dir</span><span class="p">),</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">out_dir</span><span class="p">),</span>
                 <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_states</span><span class="p">)),</span>
                 <span class="nb">repr</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rho_over_theta</span><span class="p">)),</span>
@@ -1471,7 +1475,8 @@
                 <span class="nb">repr</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rp</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
                 <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">pop_vect</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pop_vect</span><span class="p">),</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">local_r_lib</span> <span class="k">if</span> <span class="n">local_r_lib</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="n">capture_final_sufficient_statistics</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+                <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">))),</span>
+                <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="n">capture_sufficient_statistics</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
             <span class="p">],</span>
             <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -1487,49 +1492,34 @@
 
         <span class="n">Tc_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Tc.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
         <span class="n">Xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Xi.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-        <span class="n">rho_public</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;rho.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+        <span class="n">rho_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;rho.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">rho_public</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">beta_final</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;beta.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
         <span class="n">sigma_final</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;sigma.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
-        <span class="n">mu_scaled</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;mu.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+        <span class="n">mu_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;mu.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">mu_scaled</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mu_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">log_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;LH.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+        <span class="n">L_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;L.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">Tc_raw</span><span class="p">))</span>
         <span class="n">Xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="n">Tc_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Tc_raw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">q_builder</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;nu_builder.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">rho_per_sequence</span> <span class="o">=</span> <span class="n">_sequence_rho_from_public_rho</span><span class="p">(</span><span class="n">rho_public</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">)</span>
+        <span class="n">builder_payload</span> <span class="o">=</span> <span class="n">_local_hmm_builder_payload</span><span class="p">(</span>
+            <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">Xi</span><span class="o">=</span><span class="n">Xi</span><span class="p">,</span>
+            <span class="n">beta</span><span class="o">=</span><span class="n">beta_final</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_final</span><span class="p">,</span>
+            <span class="n">rho_per_sequence</span><span class="o">=</span><span class="n">rho_per_sequence</span><span class="p">,</span>
+            <span class="n">mu_scaled</span><span class="o">=</span><span class="n">mu_scaled</span><span class="p">,</span>
+            <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+            <span class="n">reference_length</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">t_builder</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;t_builder.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">Tc_builder</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Tc_builder.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">g_builder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;g_builder.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-        <span class="n">rho_per_sequence</span> <span class="o">=</span> <span class="n">_sequence_rho_from_public_rho</span><span class="p">(</span><span class="n">rho_public</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">Tc_check</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">esmc2_build_hmm</span><span class="p">(</span>
-            <span class="n">n</span><span class="p">,</span>
-            <span class="n">Xi</span><span class="p">,</span>
-            <span class="n">beta_final</span><span class="p">,</span>
-            <span class="n">sigma_final</span><span class="p">,</span>
-            <span class="n">rho_per_sequence</span><span class="p">,</span>
-            <span class="n">mu_scaled</span><span class="p">,</span>
-            <span class="n">mu_b</span><span class="p">,</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">Tc_check</span><span class="p">,</span> <span class="n">Tc_builder</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;Upstream eSMC2 returned time boundaries inconsistent with local HMM builder.&quot;</span>
-            <span class="p">)</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">mu_scaled</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">t_builder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">builder_payload</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">Tc_builder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">builder_payload</span><span class="p">[</span><span class="s2">&quot;Tc&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">mu_scaled</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">)</span>
         <span class="n">ne0</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">mu</span><span class="p">)</span>
         <span class="n">ne</span> <span class="o">=</span> <span class="n">Xi</span> <span class="o">*</span> <span class="n">ne0</span>
-        <span class="n">time_years</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">ne0</span> <span class="o">*</span> <span class="n">generation_time</span>
+        <span class="n">time_years</span> <span class="o">=</span> <span class="n">t_builder</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">ne0</span> <span class="o">*</span> <span class="n">generation_time</span>
         <span class="n">stdout_log</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;stdout.log&quot;</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">Tc_builder</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
@@ -1547,16 +1537,23 @@
             <span class="s2">&quot;n_iterations&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">),</span>
             <span class="s2">&quot;rounds&quot;</span><span class="p">:</span> <span class="p">[],</span>
             <span class="s2">&quot;upstream&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sequence_length&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
+                <span class="o">**</span><span class="n">input_metadata</span><span class="p">,</span>
+                <span class="s2">&quot;sequence_length&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">reference_length</span><span class="p">),</span>
+                <span class="s2">&quot;sequence_lengths&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="k">for</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">sequence_lengths</span><span class="o">.</span><span class="n">tolist</span><span class="p">()],</span>
+                <span class="s2">&quot;used_sequence_indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">used_sequence_indices</span><span class="p">],</span>
+                <span class="s2">&quot;n_sequences&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)),</span>
                 <span class="s2">&quot;rscript&quot;</span><span class="p">:</span> <span class="n">rscript</span><span class="p">,</span>
                 <span class="s2">&quot;Tc_returned&quot;</span><span class="p">:</span> <span class="n">Tc_raw</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">&quot;rho_returned&quot;</span><span class="p">:</span> <span class="n">rho_raw</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">&quot;mu_returned&quot;</span><span class="p">:</span> <span class="n">mu_raw</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">&quot;L_returned&quot;</span><span class="p">:</span> <span class="n">L_raw</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                 <span class="s2">&quot;stdout_log&quot;</span><span class="p">:</span> <span class="p">(</span>
                     <span class="n">stdout_log</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">stdout_log</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
                 <span class="p">),</span>
             <span class="p">},</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">capture_sufficient_statistics</span><span class="p">:</span>
-            <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">n_path</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;N.txt&quot;</span>
             <span class="k">if</span> <span class="n">n_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">n_path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1580,51 +1577,32 @@
                     <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
                     <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">stats</span><span class="p">:</span>
+                <span class="n">stats</span> <span class="o">=</span> <span class="n">_local_final_sufficient_statistics</span><span class="p">(</span>
+                    <span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span>
+                    <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                    <span class="n">Xi</span><span class="o">=</span><span class="n">Xi</span><span class="p">,</span>
+                    <span class="n">beta</span><span class="o">=</span><span class="n">beta_final</span><span class="p">,</span>
+                    <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_final</span><span class="p">,</span>
+                    <span class="n">rho_per_sequence</span><span class="o">=</span><span class="n">rho_per_sequence</span><span class="p">,</span>
+                    <span class="n">mu_scaled</span><span class="o">=</span><span class="n">mu_scaled</span><span class="p">,</span>
+                    <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+                    <span class="n">reference_length</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;sufficient_statistics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span>
         <span class="k">if</span> <span class="n">capture_final_sufficient_statistics</span><span class="p">:</span>
-            <span class="n">final_stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;final_N.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="p">),</span>
-                <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;final_M.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="p">),</span>
-                <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;final_q.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="p">),</span>
-                <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;final_ll.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-                        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">),</span>
-            <span class="p">}</span>
-            <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;final_sufficient_statistics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_stats</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;final_sufficient_statistics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_local_final_sufficient_statistics</span><span class="p">(</span>
+                <span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span>
+                <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                <span class="n">Xi</span><span class="o">=</span><span class="n">Xi</span><span class="p">,</span>
+                <span class="n">beta</span><span class="o">=</span><span class="n">beta_final</span><span class="p">,</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_final</span><span class="p">,</span>
+                <span class="n">rho_per_sequence</span><span class="o">=</span><span class="n">rho_per_sequence</span><span class="p">,</span>
+                <span class="n">mu_scaled</span><span class="o">=</span><span class="n">mu_scaled</span><span class="p">,</span>
+                <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+                <span class="n">reference_length</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">capture_hmm_builder</span><span class="p">:</span>
-            <span class="n">builder_payload</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Q&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Q_builder.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
-                <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">q_builder</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_builder</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">Tc_builder</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="n">g_builder</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-            <span class="p">}</span>
             <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;hmm_builder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">builder_payload</span>
         <span class="k">return</span> <span class="n">payload</span>
 
@@ -1737,7 +1715,7 @@
                 <span class="k">if</span> <span class="n">o</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># heterozygous</span>
                     <span class="k">if</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">L</span><span class="p">:</span>
                         <span class="n">seq</span><span class="p">[</span><span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">elif</span> <span class="n">o</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># missing</span>
+                <span class="k">elif</span> <span class="n">o</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># missing, including skip_ambiguous sentinels (-1)</span>
                     <span class="k">if</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">L</span><span class="p">:</span>
                         <span class="n">seq</span><span class="p">[</span><span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
 
@@ -1852,20 +1830,120 @@
     <span class="k">return</span> <span class="n">theta_W</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_sequence_theta_w_term</span><span class="p">(</span><span class="n">seq</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the upstream theta_W contribution for one dense sequence.&quot;&quot;&quot;</span>
+    <span class="n">seq_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">callable_sites</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">seq_arr</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">callable_sites</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="n">het_sites</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">seq_arr</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">het_sites</span> <span class="o">/</span> <span class="p">(</span><span class="n">callable_sites</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq_arr</span><span class="p">))))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_theta_w_terms_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return upstream theta_W terms for each dense sequence.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sequences</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No callable sites in input data.&quot;</span><span class="p">)</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">_sequence_theta_w_term</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">theta_terms</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No callable sites in input data.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">theta_terms</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_theta_w_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Reproduce upstream theta_W aggregation on dense sequences.&quot;&quot;&quot;</span>
-    <span class="n">theta_terms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
-        <span class="n">seq_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
-        <span class="n">callable_sites</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">seq_arr</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">callable_sites</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">het_sites</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">seq_arr</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">theta_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">het_sites</span> <span class="o">/</span> <span class="p">(</span><span class="n">callable_sites</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq_arr</span><span class="p">))))</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">_theta_w_terms_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">theta_terms</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">theta_terms</span><span class="p">[</span><span class="n">keep</span><span class="p">]))</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">theta_terms</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No callable sites in input data.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">theta_terms</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shared_mu_from_theta_terms</span><span class="p">(</span>
+    <span class="n">theta_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">lengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mu_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reproduce upstream Share_r averaging for mu across sequences.&quot;&quot;&quot;</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta_terms</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">theta_terms</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;theta_terms and lengths must have the same shape.&quot;</span><span class="p">)</span>
+    <span class="n">theta_vals</span> <span class="o">=</span> <span class="n">theta_terms</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_b</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">mu_vals</span> <span class="o">=</span> <span class="n">theta_vals</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">lengths</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mu_vals</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shared_mu_from_theta_terms_bawe2_main</span><span class="p">(</span>
+    <span class="n">theta_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">lengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reproduce upstream Share_r averaging after the BaWe==2 warm-start reset.&quot;&quot;&quot;</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta_terms</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">theta_terms</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;theta_terms and lengths must have the same shape.&quot;</span><span class="p">)</span>
+    <span class="n">theta_vals</span> <span class="o">=</span> <span class="n">theta_terms</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">mu_vals</span> <span class="o">=</span> <span class="n">theta_vals</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">lengths</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mu_vals</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sequence_lengths</span><span class="p">(</span><span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return per-sequence lengths as int64.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_infer_input_family</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Describe which public smckit input family produced the sequences.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;records&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;psmcfa&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;segments&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;multihetsep&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_input_family_metadata</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span> <span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Capture provenance describing the public input family used by eSMC2.&quot;&quot;&quot;</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;input_family&quot;</span><span class="p">:</span> <span class="n">_infer_input_family</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+        <span class="s2">&quot;n_sequences_input&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)),</span>
+        <span class="s2">&quot;sequence_lengths_input&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">],</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="s2">&quot;records&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;records&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;n_records&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rec</span><span class="p">[</span><span class="s2">&quot;codes&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">records</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">source_path</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_path&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">source_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;source_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">source_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;segments&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;segments&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;n_segments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;n_pairs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pairs&quot;</span><span class="p">,</span> <span class="p">[])))</span>
+        <span class="n">source_paths</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_paths&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">source_paths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;source_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">source_paths</span><span class="p">]</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;n_source_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source_paths</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_skip_ambiguous_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">segments</span>
+                <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">seg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">metadata</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">rho_per_sequence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -2321,6 +2399,7 @@
     <span class="n">sigma_hidden</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the upstream-equivalent zipped E-step for a parameter set.&quot;&quot;&quot;</span>
+    <span class="n">sequence_lengths</span> <span class="o">=</span> <span class="n">_sequence_lengths</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
     <span class="n">Q</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">Tc</span><span class="p">,</span> <span class="n">e</span> <span class="o">=</span> <span class="n">esmc2_build_hmm</span><span class="p">(</span>
         <span class="n">n</span><span class="p">,</span>
         <span class="n">Xi</span><span class="p">,</span>
@@ -2362,12 +2441,14 @@
 
     <span class="n">accum_N</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
+    <span class="n">total_length</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sequence_lengths</span><span class="p">))</span>
+    <span class="n">total_transitions</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sequence_lengths</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
     <span class="n">n_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">accum_N</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">n_total</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="n">accum_N</span> <span class="o">*=</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_total</span>
+    <span class="k">if</span> <span class="n">n_total</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">total_transitions</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">accum_N</span> <span class="o">*=</span> <span class="n">total_transitions</span> <span class="o">/</span> <span class="n">n_total</span>
     <span class="n">m_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">accum_M</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">m_total</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="n">accum_M</span> <span class="o">*=</span> <span class="n">L</span> <span class="o">/</span> <span class="n">m_total</span>
+    <span class="k">if</span> <span class="n">m_total</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">total_length</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">accum_M</span> <span class="o">*=</span> <span class="n">total_length</span> <span class="o">/</span> <span class="n">m_total</span>
     <span class="n">q_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">accum_q_post</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">q_total</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
         <span class="n">accum_q_post</span> <span class="o">/=</span> <span class="n">q_total</span>
@@ -2539,9 +2620,10 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">reference_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">theta_W</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">theta_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">sequence_lengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">mu_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -2549,9 +2631,14 @@
     <span class="n">rho_penalty</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the constant-population rho-only BaWe==2 prepass.&quot;&quot;&quot;</span>
-    <span class="n">theta_run</span> <span class="o">=</span> <span class="n">_theta_from_beta_sigma</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mu_b</span><span class="p">,</span> <span class="n">theta_W</span><span class="p">)</span>
-    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">theta_run</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
-    <span class="n">current_rho</span> <span class="o">=</span> <span class="n">theta_run</span>
+    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">_shared_mu_from_theta_terms</span><span class="p">(</span>
+        <span class="n">theta_terms</span><span class="p">,</span>
+        <span class="n">sequence_lengths</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+        <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">current_rho</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">)</span>
     <span class="n">old_likelihood</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">saved_rho</span> <span class="o">=</span> <span class="n">current_rho</span>
     <span class="n">inner_it</span> <span class="o">=</span> <span class="mi">0</span>
@@ -2567,7 +2654,7 @@
             <span class="n">rho</span><span class="o">=</span><span class="n">current_rho</span><span class="p">,</span>
             <span class="n">mu</span><span class="o">=</span><span class="n">mu_run</span><span class="p">,</span>
             <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
-            <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+            <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">inner_it</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span>
@@ -2583,7 +2670,7 @@
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">current_rho</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_optimize_baum_welch</span><span class="p">(</span>
             <span class="n">stats</span><span class="o">=</span><span class="n">stats</span><span class="p">,</span>
             <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-            <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+            <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
             <span class="n">mu</span><span class="o">=</span><span class="n">mu_run</span><span class="p">,</span>
             <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
             <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
@@ -2596,7 +2683,7 @@
             <span class="n">box_r</span><span class="o">=</span><span class="n">box_r</span><span class="p">,</span>
             <span class="n">box_p</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
             <span class="n">rp</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-            <span class="n">rho_base</span><span class="o">=</span><span class="n">theta_run</span><span class="p">,</span>
+            <span class="n">rho_base</span><span class="o">=</span><span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">),</span>
             <span class="n">rho_penalty</span><span class="o">=</span><span class="n">rho_penalty</span><span class="p">,</span>
             <span class="n">estimate_beta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">estimate_sigma</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -2611,9 +2698,10 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">sequences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">L</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">reference_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">theta_W</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">theta_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">sequence_lengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">rho_over_theta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">mu_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">estimate_beta</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -2629,9 +2717,10 @@
     <span class="n">prepass_rho</span><span class="p">,</span> <span class="n">prepass_mu</span> <span class="o">=</span> <span class="n">_run_bawe2_prepass</span><span class="p">(</span>
         <span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span>
         <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-        <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
+        <span class="n">reference_length</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
         <span class="n">n_iterations</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span>
-        <span class="n">theta_W</span><span class="o">=</span><span class="n">theta_W</span><span class="p">,</span>
+        <span class="n">theta_terms</span><span class="o">=</span><span class="n">theta_terms</span><span class="p">,</span>
+        <span class="n">sequence_lengths</span><span class="o">=</span><span class="n">sequence_lengths</span><span class="p">,</span>
         <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
         <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
         <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
@@ -2639,7 +2728,7 @@
         <span class="n">rho_penalty</span><span class="o">=</span><span class="n">rho_penalty</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">gamma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_over_theta</span><span class="p">)</span>
-    <span class="n">prepass_rho_public</span> <span class="o">=</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">prepass_rho</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+    <span class="n">prepass_rho_public</span> <span class="o">=</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">prepass_rho</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">)</span>
     <span class="n">effect</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">prepass_rho_public</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">))</span> <span class="o">/</span> <span class="n">prepass_mu</span>
         <span class="k">if</span> <span class="n">prepass_mu</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
@@ -2667,9 +2756,13 @@
             <span class="n">sigma_warm</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">effect</span> <span class="o">/</span> <span class="n">beta_warm</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">effect</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">beta_warm</span><span class="p">)))</span>
             <span class="n">sigma_warm</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">box_s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">max</span><span class="p">(</span><span class="n">box_s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sigma_warm</span><span class="p">))</span>
 
-    <span class="n">theta_run</span> <span class="o">=</span> <span class="n">_theta_from_beta_sigma_bawe2_main</span><span class="p">(</span><span class="n">beta_warm</span><span class="p">,</span> <span class="n">sigma_warm</span><span class="p">,</span> <span class="n">theta_W</span><span class="p">)</span>
-    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">theta_run</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span>
-    <span class="n">rho_run</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_over_theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">theta_run</span>
+    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">_shared_mu_from_theta_terms_bawe2_main</span><span class="p">(</span>
+        <span class="n">theta_terms</span><span class="p">,</span>
+        <span class="n">sequence_lengths</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="n">beta_warm</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_warm</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">rho_run</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_over_theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">beta_warm</span><span class="p">,</span> <span class="n">sigma_warm</span><span class="p">,</span> <span class="n">rho_run</span><span class="p">,</span> <span class="n">mu_run</span>
 
 
@@ -2753,20 +2846,27 @@
 
     <span class="c1"># --- Prepare sequences ---</span>
     <span class="n">sequences</span> <span class="o">=</span> <span class="n">_sequences_from_smcdata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">sequence_lengths</span> <span class="o">=</span> <span class="n">_sequence_lengths</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+    <span class="n">reference_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sequence_lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">total_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sequence_lengths</span><span class="p">))</span>
+    <span class="n">theta_terms</span> <span class="o">=</span> <span class="n">_theta_w_terms_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
 
     <span class="c1"># --- Compute initial theta from data ---</span>
-    <span class="n">theta_W</span> <span class="o">=</span> <span class="n">_theta_w_from_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
-    <span class="c1"># Per-sequence Watterson&#39;s theta</span>
-    <span class="n">L_total</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">)</span>
-
-    <span class="c1"># theta_W corrected for β and σ: θ = θ_W * β² * 2 / ((2-σ) * (β + (1-β)*μ_b))</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">theta_W</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">((</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_b</span><span class="p">))</span>
-    <span class="n">rho_scaled</span> <span class="o">=</span> <span class="n">rho_over_theta</span> <span class="o">*</span> <span class="n">theta</span>  <span class="c1"># recombination rate per sequence</span>
+    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">_shared_mu_from_theta_terms</span><span class="p">(</span>
+        <span class="n">theta_terms</span><span class="p">,</span>
+        <span class="n">sequence_lengths</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+        <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">)</span>
+    <span class="n">rho_scaled</span> <span class="o">=</span> <span class="n">rho_over_theta</span> <span class="o">*</span> <span class="n">theta</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;eSMC2: n=</span><span class="si">%d</span><span class="s2">, L=</span><span class="si">%d</span><span class="s2">, theta=</span><span class="si">%.4f</span><span class="s2">, rho=</span><span class="si">%.4f</span><span class="s2">, beta=</span><span class="si">%.4f</span><span class="s2">, sigma=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;eSMC2: n=</span><span class="si">%d</span><span class="s2">, L_ref=</span><span class="si">%d</span><span class="s2">, L_total=</span><span class="si">%d</span><span class="s2">, theta=</span><span class="si">%.4f</span><span class="s2">, rho=</span><span class="si">%.4f</span><span class="s2">, beta=</span><span class="si">%.4f</span><span class="s2">, sigma=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="n">n</span><span class="p">,</span>
-        <span class="n">L_total</span><span class="p">,</span>
+        <span class="n">reference_length</span><span class="p">,</span>
+        <span class="n">total_length</span><span class="p">,</span>
         <span class="n">theta</span><span class="p">,</span>
         <span class="n">rho_scaled</span><span class="p">,</span>
         <span class="n">beta</span><span class="p">,</span>
@@ -2787,8 +2887,6 @@
     <span class="n">gamma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_over_theta</span><span class="p">)</span>
     <span class="n">max_bits</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">bit</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">theta_run</span> <span class="o">=</span> <span class="n">_theta_from_beta_sigma</span><span class="p">(</span><span class="n">current_beta</span><span class="p">,</span> <span class="n">current_sigma</span><span class="p">,</span> <span class="n">mu_b</span><span class="p">,</span> <span class="n">theta_W</span><span class="p">)</span>
-    <span class="n">mu_run</span> <span class="o">=</span> <span class="n">theta_run</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">L_total</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">use_bawe2_wrapper</span><span class="p">:</span>
         <span class="p">(</span>
             <span class="n">current_beta</span><span class="p">,</span>
@@ -2798,9 +2896,10 @@
         <span class="p">)</span> <span class="o">=</span> <span class="n">_apply_bawe2_warm_start</span><span class="p">(</span>
             <span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span>
             <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-            <span class="n">L</span><span class="o">=</span><span class="n">L_total</span><span class="p">,</span>
+            <span class="n">reference_length</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
             <span class="n">n_iterations</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span>
-            <span class="n">theta_W</span><span class="o">=</span><span class="n">theta_W</span><span class="p">,</span>
+            <span class="n">theta_terms</span><span class="o">=</span><span class="n">theta_terms</span><span class="p">,</span>
+            <span class="n">sequence_lengths</span><span class="o">=</span><span class="n">sequence_lengths</span><span class="p">,</span>
             <span class="n">rho_over_theta</span><span class="o">=</span><span class="n">rho_over_theta</span><span class="p">,</span>
             <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
             <span class="n">estimate_beta</span><span class="o">=</span><span class="n">estimate_beta</span><span class="p">,</span>
@@ -2812,15 +2911,20 @@
             <span class="n">box_r</span><span class="o">=</span><span class="n">box_r</span><span class="p">,</span>
             <span class="n">rho_penalty</span><span class="o">=</span><span class="n">rho_penalty</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">theta_run</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">L_total</span>
     <span class="n">allow_redo_rho</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">estimate_rho</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_bawe2_wrapper</span><span class="p">)</span>
 
     <span class="k">while</span> <span class="n">bit</span> <span class="o">&lt;</span> <span class="n">max_bits</span><span class="p">:</span>
         <span class="n">bit</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">inner_maxit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">use_bawe2_wrapper</span> <span class="ow">or</span> <span class="n">bit</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">theta_run</span> <span class="o">=</span> <span class="n">_theta_from_beta_sigma</span><span class="p">(</span><span class="n">current_beta</span><span class="p">,</span> <span class="n">current_sigma</span><span class="p">,</span> <span class="n">mu_b</span><span class="p">,</span> <span class="n">theta_W</span><span class="p">)</span>
-            <span class="n">mu_run</span> <span class="o">=</span> <span class="n">theta_run</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">L_total</span><span class="p">)</span>
+            <span class="n">mu_run</span> <span class="o">=</span> <span class="n">_shared_mu_from_theta_terms</span><span class="p">(</span>
+                <span class="n">theta_terms</span><span class="p">,</span>
+                <span class="n">sequence_lengths</span><span class="p">,</span>
+                <span class="n">beta</span><span class="o">=</span><span class="n">current_beta</span><span class="p">,</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="n">current_sigma</span><span class="p">,</span>
+                <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">theta_run</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">reference_length</span><span class="p">)</span>
         <span class="n">rho_base</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">theta_run</span> <span class="k">if</span> <span class="n">estimate_rho</span> <span class="k">else</span> <span class="n">current_rho</span>
         <span class="n">beta_hidden</span> <span class="o">=</span> <span class="n">current_beta</span>
         <span class="n">sigma_hidden</span> <span class="o">=</span> <span class="n">current_sigma</span>
@@ -2864,7 +2968,7 @@
                 <span class="n">rho</span><span class="o">=</span><span class="n">current_rho</span><span class="p">,</span>
                 <span class="n">mu</span><span class="o">=</span><span class="n">mu_run</span><span class="p">,</span>
                 <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
-                <span class="n">L</span><span class="o">=</span><span class="n">L_total</span><span class="p">,</span>
+                <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
                 <span class="n">beta_hidden</span><span class="o">=</span><span class="n">beta_hidden</span><span class="p">,</span>
                 <span class="n">sigma_hidden</span><span class="o">=</span><span class="n">sigma_hidden</span><span class="p">,</span>
             <span class="p">)</span>
@@ -2898,7 +3002,7 @@
                 <span class="p">)</span> <span class="o">=</span> <span class="n">_optimize_baum_welch</span><span class="p">(</span>
                     <span class="n">stats</span><span class="o">=</span><span class="n">stats</span><span class="p">,</span>
                     <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-                    <span class="n">L</span><span class="o">=</span><span class="n">L_total</span><span class="p">,</span>
+                    <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
                     <span class="n">mu</span><span class="o">=</span><span class="n">mu_run</span><span class="p">,</span>
                     <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
                     <span class="n">beta</span><span class="o">=</span><span class="n">current_beta</span><span class="p">,</span>
@@ -2932,7 +3036,7 @@
                 <span class="n">rho</span><span class="o">=</span><span class="n">current_rho</span><span class="p">,</span>
                 <span class="n">mu</span><span class="o">=</span><span class="n">mu_run</span><span class="p">,</span>
                 <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
-                <span class="n">L</span><span class="o">=</span><span class="n">L_total</span><span class="p">,</span>
+                <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
                 <span class="n">beta_hidden</span><span class="o">=</span><span class="n">beta_hidden</span><span class="p">,</span>
                 <span class="n">sigma_hidden</span><span class="o">=</span><span class="n">sigma_hidden</span><span class="p">,</span>
             <span class="p">)</span>
@@ -2944,10 +3048,10 @@
                 <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">ll_round</span><span class="p">,</span>
                 <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">current_beta</span><span class="p">,</span>
                 <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">current_sigma</span><span class="p">,</span>
-                <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">L_total</span><span class="p">),</span>
+                <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">),</span>
                 <span class="s2">&quot;rho_per_sequence&quot;</span><span class="p">:</span> <span class="n">current_rho</span><span class="p">,</span>
                 <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu_run</span><span class="p">,</span>
-                <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">L_total</span><span class="p">,</span>
+                <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">reference_length</span><span class="p">,</span>
                 <span class="s2">&quot;Xi&quot;</span><span class="p">:</span> <span class="n">Xi_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">Tc_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
@@ -2967,7 +3071,7 @@
             <span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma_next</span>
 
     <span class="c1"># --- Final results ---</span>
-    <span class="n">theta_final</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">L_total</span>
+    <span class="n">theta_final</span> <span class="o">=</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">reference_length</span>
     <span class="n">mu_final</span> <span class="o">=</span> <span class="n">mu_run</span>
 
     <span class="n">Xi_final</span> <span class="o">=</span> <span class="n">_xi_from_free_params</span><span class="p">(</span><span class="n">current_xi_free</span><span class="p">,</span> <span class="n">pv</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
@@ -2979,7 +3083,7 @@
         <span class="n">current_rho</span><span class="p">,</span>
         <span class="n">mu_final</span><span class="p">,</span>
         <span class="n">mu_b</span><span class="p">,</span>
-        <span class="n">L_total</span><span class="p">,</span>
+        <span class="n">reference_length</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Ne = Xi * Ne0, where Ne0 = theta / (4 * mu_per_gen)</span>
@@ -2991,7 +3095,7 @@
     <span class="c1"># Time in years: t_final is in units of 2*Ne0 generations</span>
     <span class="c1"># (from the coalescent scaling: time boundaries are in 2Ne units)</span>
     <span class="n">time_years</span> <span class="o">=</span> <span class="n">t_final</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">ne0</span> <span class="o">*</span> <span class="n">generation_time</span>
-    <span class="n">rho_public</span> <span class="o">=</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">L_total</span><span class="p">)</span>
+    <span class="n">rho_public</span> <span class="o">=</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">)</span>
 
     <span class="n">result_obj</span> <span class="o">=</span> <span class="n">Esmc2Result</span><span class="p">(</span>
         <span class="n">Tc</span><span class="o">=</span><span class="n">Tc_final</span><span class="p">,</span>
@@ -3015,7 +3119,7 @@
                 <span class="n">rho</span><span class="o">=</span><span class="n">current_rho</span><span class="p">,</span>
                 <span class="n">mu</span><span class="o">=</span><span class="n">mu_final</span><span class="p">,</span>
                 <span class="n">mu_b</span><span class="o">=</span><span class="n">mu_b</span><span class="p">,</span>
-                <span class="n">L</span><span class="o">=</span><span class="n">L_total</span><span class="p">,</span>
+                <span class="n">L</span><span class="o">=</span><span class="n">reference_length</span><span class="p">,</span>
             <span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="p">),</span>
         <span class="n">n_iterations</span><span class="o">=</span><span class="n">n_iterations</span><span class="p">,</span>

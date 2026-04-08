@@ -11,5 +11,12 @@ build/
 *.egg
 .venv/
 env/
+.r-lib/
+.r-makevars
+.smckit-cache/
+.x.iter0.json
+x.final.json
+docs/_build/html/.doctrees/
+docs/_build/html/.buildinfo.bak
 vendor/psmc/
 vendor/msmc2/

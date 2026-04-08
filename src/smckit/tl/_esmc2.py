@@ -365,6 +365,88 @@ def _zip_expected_counts(
     return n_real, m_real.T, q_post
 
 
+def _select_vendor_usable_sequences(
+    sequences: list[np.ndarray],
+) -> tuple[list[np.ndarray], np.ndarray, np.ndarray, list[int]]:
+    """Mirror upstream eSMC2's sequence-quality filtering before fitting."""
+    theta_terms = _theta_w_terms_from_sequences(sequences)
+    keep_indices = [
+        idx for idx, theta_term in enumerate(theta_terms.tolist()) if float(theta_term) >= 2.0
+    ]
+    kept_sequences = [np.asarray(sequences[idx], dtype=np.int8) for idx in keep_indices]
+    if not kept_sequences:
+        raise RuntimeError(
+            "Upstream eSMC2 backend rejected the input as too poor after applying "
+            "the vendor's theta_W >= 2 sequence filter."
+        )
+    kept_theta_terms = theta_terms[np.asarray(keep_indices, dtype=np.int64)]
+    kept_lengths = _sequence_lengths(kept_sequences)
+    return kept_sequences, kept_theta_terms, kept_lengths, keep_indices
+
+
+def _local_hmm_builder_payload(
+    *,
+    n: int,
+    Xi: np.ndarray,
+    beta: float,
+    sigma: float,
+    rho_per_sequence: float,
+    mu_scaled: float,
+    mu_b: float,
+    reference_length: int,
+) -> dict[str, list]:
+    """Normalize final HMM builder state around the fitted upstream parameters."""
+    Q, q, t, Tc, g = esmc2_build_hmm(
+        n,
+        np.asarray(Xi, dtype=np.float64),
+        float(beta),
+        float(sigma),
+        float(rho_per_sequence),
+        float(mu_scaled),
+        float(mu_b),
+        int(reference_length),
+    )
+    return {
+        "Q": np.asarray(Q, dtype=np.float64).tolist(),
+        "q": np.asarray(q, dtype=np.float64).tolist(),
+        "t": np.asarray(t, dtype=np.float64).tolist(),
+        "Tc": np.asarray(Tc, dtype=np.float64).tolist(),
+        "g": np.asarray(g, dtype=np.float64).tolist(),
+    }
+
+
+def _local_final_sufficient_statistics(
+    *,
+    sequences: list[np.ndarray],
+    n: int,
+    Xi: np.ndarray,
+    beta: float,
+    sigma: float,
+    rho_per_sequence: float,
+    mu_scaled: float,
+    mu_b: float,
+    reference_length: int,
+) -> dict[str, object]:
+    """Compute normalized final sufficient statistics for the fitted parameters."""
+    stats, log_likelihood, _, _ = _expectation_step(
+        sequences=sequences,
+        n=n,
+        Xi=np.asarray(Xi, dtype=np.float64),
+        beta=float(beta),
+        sigma=float(sigma),
+        rho=float(rho_per_sequence),
+        mu=float(mu_scaled),
+        mu_b=float(mu_b),
+        L=int(reference_length),
+    )
+    return {
+        "N": np.asarray(stats["N"], dtype=np.float64).tolist(),
+        "M": np.asarray(stats["M"], dtype=np.float64).tolist(),
+        "q": np.asarray(stats["q_post"], dtype=np.float64).tolist(),
+        "log_likelihood": float(log_likelihood),
+    }
+
+
 def _run_upstream_esmc2(
     *,
     data: SmcData,
@@ -400,18 +482,18 @@ def _run_upstream_esmc2(
             "Upstream eSMC2 backend is unavailable. Set SMCKIT_ESMC2_RSCRIPT "
             "to an Rscript executable with the vendored eSMC2 package installed."
         )
-    sequences = _sequences_from_smcdata(data)
-    if len(sequences) != 1:
-        raise RuntimeError(
-            "Upstream eSMC2 backend currently supports exactly one clean pairwise sequence."
-        )
-    o_matrix = _sequence_to_upstream_matrix(sequences[0])
+    sequences_all = _sequences_from_smcdata(data)
+    input_metadata = _input_family_metadata(data, sequences_all)
+    sequences, theta_terms, sequence_lengths, used_sequence_indices = _select_vendor_usable_sequences(
+        sequences_all
+    )
+    reference_length = int(sequence_lengths[0])
 
     repo_root = Path(__file__).resolve().parents[3]
     local_r_lib = repo_root / ".r-lib"
     r_expr = """
 args <- commandArgs(trailingOnly = TRUE)
-o_path <- args[[1]]
+seq_dir <- args[[1]]
 out_dir <- args[[2]]
 n_states <- as.integer(args[[3]])
 rho_over_theta <- as.numeric(args[[4]])
@@ -429,193 +511,199 @@ box_r <- c(as.numeric(args[[18]]), as.numeric(args[[19]]))
 rp <- c(as.numeric(args[[20]]), as.numeric(args[[21]]))
 pop_vect_raw <- args[[22]]
 r_lib <- args[[23]]
-capture_final_sufficient_statistics <- as.logical(as.integer(args[[24]]))
+n_inputs <- as.integer(args[[24]])
+capture_sufficient_statistics <- as.logical(as.integer(args[[25]]))
 if (nchar(r_lib) > 0) {
   .libPaths(c(r_lib, .libPaths()))
 }
 suppressPackageStartupMessages(library(eSMC2))
-O <- as.matrix(read.table(o_path, header = FALSE))
 if (pop_vect_raw == "") {
   pop_vect <- NA
 } else {
   pop_vect <- as.integer(strsplit(pop_vect_raw, ",", fixed = TRUE)[[1]])
 }
-compute_final_sufficient_statistics <- function(
-  O,
-  n_states,
-  rho_internal,
-  beta_final,
-  sigma_final,
-  Xi_final,
-  mu_scaled,
-  mu_b
-) {
-  M_rows <- dim(O)[1] - 2
-  L <- as.numeric(O[(M_rows + 2), dim(O)[2]])
-  seq_obj <- eSMC2:::seqSNP2_MH(O[c(1, 2, (M_rows + 1), (M_rows + 2)), ], L, NA)
-  Mat_symbol <- eSMC2:::Mat_symbol_ID()
-  zipped <- eSMC2:::Zip_seq(seq_obj$seq, Mat_symbol)
-  zipped <- eSMC2:::symbol2Num(zipped[[1]], zipped[[2]])
-
-  builder <- eSMC2:::build_HMM_matrix(
-    n = n_states,
-    rho = rho_internal,
-    beta = beta_final,
-    L = L,
-    Pop = FALSE,
-    Xi = Xi_final,
-    Beta = beta_final,
-    scale = c(1, 0),
-    sigma = sigma_final,
-    Sigma = sigma_final,
-    Big_Window = FALSE,
-    npair = 2
+seq_paths <- vapply(
+  seq_len(n_inputs),
+  function(i) file.path(seq_dir, paste0("seq_", i, ".txt")),
+  character(1)
+)
+seq_list <- lapply(
+  seq_paths,
+  function(path) as.integer(scan(path, what = integer(), quiet = TRUE))
+)
+theta_terms <- vapply(
+  seq_list,
+  function(seq) {
+    callable <- sum(seq < 2)
+    if (callable == 0) {
+      return(0)
+    }
+    sum(seq == 1) / (callable / length(seq))
+  },
+  numeric(1)
+)
+keep <- which(theta_terms >= 2)
+if (length(keep) == 0) {
+  stop("data too poor")
+}
+seq_list <- seq_list[keep]
+theta_terms <- as.numeric(theta_terms[keep])
+L <- as.numeric(vapply(seq_list, length, numeric(1)))
+Mat_symbol <- eSMC2:::Mat_symbol_ID()
+build_zip <- function(seq) {
+  zipped <- eSMC2:::Zip_seq(seq, Mat_symbol)
+  eSMC2:::symbol2Num(zipped[[1]], zipped[[2]])
+}
+if (length(seq_list) == 1) {
+  Os <- list(build_zip(seq_list[[1]]))
+  theta_W <- as.numeric(theta_terms[[1]])
+  L_use <- as.numeric(L[[1]])
+  NC_use <- 1L
+} else {
+  Os <- lapply(seq_list, function(seq) list(build_zip(seq)))
+  theta_W <- as.numeric(theta_terms)
+  L_use <- as.numeric(L)
+  NC_use <- as.integer(length(seq_list))
+}
+compute_initial_theta <- function(beta_value, sigma_value) {
+  theta_W * (beta_value * beta_value) * 2 / (
+    (2 - sigma_value) * (beta_value + ((1 - beta_value) * mu_b))
   )
-  Q <- builder[[1]]
-  nu <- builder[[2]]
-  t_vals <- builder[[3]]
-  g <- matrix(0, nrow = length(t_vals), ncol = 3)
-  mu_eff <- beta_final + ((1 - beta_final) * mu_b)
-  g[, 2] <- 1 - exp(-mu_scaled * mu_eff * 2 * t_vals)
-  g[, 1] <- exp(-mu_scaled * mu_eff * 2 * t_vals)
-  g[, 3] <- 1
-
-  test <- eSMC2:::Build_zip_Matrix_mailund(Q, g, zipped[[2]], nu)
-  fo <- eSMC2:::forward_zip_mailund(as.numeric(zipped[[1]]), g, nu, test[[1]])
-  c <- exp(fo[[2]])
-  ll <- sum(fo[[2]])
-  ba <- eSMC2:::Backward_zip_mailund(as.numeric(zipped[[1]]), test[[3]], length(t_vals), c)
-
-  W_P <- list()
-  W_P_ <- list()
-  count_oo <- 0
-  for (oo in c(1, 3)) {
-    count_oo <- count_oo + 1
-    int <- eigen(t(Q) %*% diag(g[, oo]))
-    W_P[[count_oo]] <- int$vectors
-    W_P_[[count_oo]] <- solve(W_P[[count_oo]])
-  }
-
-  N <- matrix(0, length(t_vals), length(t_vals))
-  M_counts <- matrix(0, nrow = length(t_vals), ncol = 3)
-  q_ <- rep(0, length(t_vals))
-  symbol <- c(0:2, 10:40)
-  ob <- 1
-  truc_M <- matrix(0, nrow = length(t_vals), ncol = 3)
-  if (as.numeric(zipped[[1]][(ob + 1)]) <= 2) {
-    truc_N <- fo[[1]][, ob] %*% t(
-      ba[, (ob + 1)] * g[, (as.numeric(zipped[[1]][(ob + 1)]) + 1)] / c[(ob + 1)]
-    )
-    truc_M[, (as.numeric(zipped[[1]][(ob + 1)]) + 1)] <- fo[[1]][, ob] * (
-      test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]) + 1)]] %*% (ba[, (ob + 1)] / c[(ob + 1)])
-    )
-  } else if (as.numeric(zipped[[1]][(ob + 1)]) < 30) {
-    truc_N <- t(W_P_[[1]]) %*% (
-      t(W_P[[1]]) %*% fo[[1]][, ob] %*% t(ba[, (ob + 1)] / c[(ob + 1)]) %*% t(W_P_[[1]]) *
-      test[[4]][[(as.numeric(zipped[[1]][(ob + 1)]))]]
-    ) %*% t(W_P[[1]]) %*% diag(g[, 1])
-    truc_M[, 1] <- diag(
-      t(W_P_[[1]]) %*% (
-        t(W_P[[1]]) %*% fo[[1]][, ob] %*% t(ba[, (ob + 1)] / c[(ob + 1)]) %*% t(W_P_[[1]])
-      ) * test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]))]] %*% t(W_P[[1]])
-    )
-  } else {
-    truc_N <- t(W_P_[[2]]) %*% (
-      t(W_P[[2]]) %*% fo[[1]][, ob] %*% t(ba[, (ob + 1)] / c[(ob + 1)]) %*% t(W_P_[[2]]) *
-      test[[4]][[(as.numeric(zipped[[1]][(ob + 1)]))]]
-    ) %*% t(W_P[[2]]) %*% diag(g[, 3])
-    truc_M[, 3] <- diag(
-      t(W_P_[[2]]) %*% (
-        t(W_P[[2]]) %*% fo[[1]][, ob] %*% t(ba[, (ob + 1)] / c[(ob + 1)]) %*% t(W_P_[[2]])
-      ) * test[[2]][[(as.numeric(zipped[[1]][(ob + 1)]))]] %*% t(W_P[[2]])
-    )
-  }
-  N <- N + truc_N
-  M_counts <- M_counts + truc_M
-
-  for (sym in sort(symbol)) {
-    ob <- as.numeric(sym)
-    pos <- which(as.numeric(zipped[[1]][-c(1, length(zipped[[1]]))]) == ob)
-    if (length(pos) == 0) {
-      next
-    }
-    pos <- pos + 1
-    if (ob < 3) {
-      ba_t <- t(t(ba[, pos]) / c[pos])
-      truc <- c(rowSums(fo[[1]][, (pos - 1)] * (test[[1]][[(ob + 1)]] %*% ba_t)))
-      truc <- (truc / sum(truc)) * length(pos)
-      M_counts[, (ob + 1)] <- M_counts[, (ob + 1)] + truc
-      N <- N + (fo[[1]][, (pos - 1)] %*% t(diag(g[, (ob + 1)]) %*% ba_t))
-    } else if (ob < 30) {
-      A <- t(W_P[[1]]) %*% fo[[1]][, (pos - 1)] %*% t(t(t(ba[, pos]) / c[pos])) %*% t(W_P_[[1]])
-      A_ <- A * test[[2]][[(ob)]]
-      A_ <- t(W_P_[[1]]) %*% A_ %*% t(W_P[[1]])
-      M_counts[, 1] <- M_counts[, 1] + diag(A_)
-      A_ <- A * test[[4]][[(ob)]]
-      A_ <- t(W_P_[[1]]) %*% A_ %*% t(W_P[[1]])
-      N <- N + (A_ %*% diag(g[, 1]))
-    } else {
-      A <- t(W_P[[2]]) %*% fo[[1]][, (pos - 1)] %*% t(t(t(ba[, pos]) / c[pos])) %*% t(W_P_[[2]])
-      A_ <- A * test[[2]][[(ob)]]
-      A_ <- t(W_P_[[2]]) %*% A_ %*% t(W_P[[2]])
-      M_counts[, 3] <- M_counts[, 3] + diag(A_)
-      A_ <- A * test[[4]][[(ob)]]
-      A_ <- t(W_P_[[2]]) %*% A_ %*% t(W_P[[2]])
-      N <- N + (A_ %*% diag(g[, 3]))
-    }
-  }
-
-  last_symbol <- as.numeric(zipped[[1]][length(zipped[[1]])])
-  if (last_symbol <= 3) {
-    M_counts[, (last_symbol + 1)] <- M_counts[, (last_symbol + 1)] +
-      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])
-  } else if (last_symbol < 30) {
-    M_counts[, 1] <- M_counts[, 1] + (
-      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])]) /
-      sum(fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])
-    )
-  } else {
-    M_counts[, 3] <- M_counts[, 3] + (
-      (fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])]) /
-      sum(fo[[1]][, length(zipped[[1]])] * ba[, length(zipped[[1]])])
-    )
-  }
-  q_ <- q_ + ((fo[[1]][, 1] * ba[, 1]) / sum(fo[[1]][, 1] * ba[, 1]))
-  N <- N * t(Q)
-  if (is.complex(N)) {
-    N <- Re(N)
-  }
-  if (is.complex(M_counts)) {
-    M_counts <- Re(M_counts)
-  }
-  N <- N * ((L - 1) / sum(N))
-  M_counts <- M_counts * (L / sum(M_counts))
-  q_ <- q_ / sum(q_)
-  list(N = N, M = t(M_counts), q = q_, log_likelihood = ll)
+}
+compute_bawe2_theta <- function(beta_value, sigma_value) {
+  theta_W * (beta_value * beta_value) * 2 / (2 - sigma_value)
+}
+run_baum_welch <- function(
+  rho_init,
+  mu_init,
+  theta_W_init,
+  beta_init,
+  sigma_init,
+  sb_flag,
+  sf_flag,
+  rho_flag,
+  popfix_flag,
+  redo_r_flag
+) {
+  eSMC2:::Baum_Welch_algo(
+    Os = Os,
+    maxIt = maxit,
+    L = L_use,
+    mu = mu_init,
+    theta_W = theta_W_init,
+    Rho = rho_init,
+    beta = beta_init,
+    sigma = sigma_init,
+    Popfix = popfix_flag,
+    SB = sb_flag,
+    SF = sf_flag,
+    k = n_states,
+    BoxB = box_b,
+    BoxP = box_p,
+    Boxr = box_r,
+    Boxs = box_s,
+    maxBit = 1,
+    pop_vect = pop_vect,
+    ER = rho_flag,
+    NC = NC_use,
+    BW = FALSE,
+    redo_R = redo_r_flag,
+    mu_b = mu_b,
+    SCALED = FALSE,
+    Big_Window = FALSE,
+    window_scaling = c(1, 0),
+    Share_r = TRUE,
+    rp = rp,
+    LH_opt = FALSE,
+    FAST = TRUE
+  )
 }
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 sink(file.path(out_dir, "stdout.log"))
-res <- eSMC2::eSMC2(
-  n = n_states,
-  rho = rho_over_theta,
-  O = O,
-  maxit = maxit,
-  BoxB = box_b,
-  BoxP = box_p,
-  Boxr = box_r,
-  Boxs = box_s,
-  pop = FALSE,
-  SB = estimate_beta,
-  SF = estimate_sigma,
-  Rho = estimate_rho,
-  BW = FALSE,
-  NC = 1,
-  pop_vect = pop_vect,
-  mu_b = mu_b,
-  sigma = sigma,
-  beta = beta,
-  rp = rp
-)
+gamma <- rho_over_theta
+sigma <- max(box_s[1], sigma)
+sigma <- min(box_s[2], sigma)
+beta <- min(box_b[2], beta)
+beta <- max(box_b[1], beta)
+if (estimate_beta || estimate_sigma) {
+  theta_init <- compute_initial_theta(beta, sigma)
+  mu_init <- theta_init / (2 * L_use)
+  rho_init <- theta_init
+  res <- run_baum_welch(
+    rho_init = rho_init,
+    mu_init = mu_init,
+    theta_W_init = theta_W,
+    beta_init = beta,
+    sigma_init = sigma,
+    sb_flag = FALSE,
+    sf_flag = FALSE,
+    rho_flag = TRUE,
+    popfix_flag = TRUE,
+    redo_r_flag = FALSE
+  )
+  r <- as.numeric(res$rho)[1:NC_use]
+  mu_ <- as.numeric(res$mu)
+  gamma_ <- (r * (beta * 2 * (1 - sigma) / (2 - sigma))) / mu_
+  effect <- mean(gamma_ / gamma)
+  if (estimate_sigma && !estimate_beta) {
+    sigma <- (1 - effect) / (1 - (effect / 2))
+    sigma <- max(box_s[1], sigma)
+    sigma <- min(box_s[2], sigma)
+  }
+  if (estimate_beta && !estimate_sigma) {
+    beta <- effect
+    beta <- min(box_b[2], beta)
+    beta <- max(box_b[1], beta)
+  }
+  if (estimate_beta && estimate_sigma) {
+    if (min(box_b) > (1 - max(box_s))) {
+      sigma <- (1 - (effect / beta)) / (1 - (effect / (2 * beta)))
+      sigma <- max(box_s[1], sigma)
+      sigma <- min(box_s[2], sigma)
+      beta <- effect * (2 - sigma) / (2 * (1 - sigma))
+      beta <- max(box_b[1], beta)
+      beta <- min(box_b[2], beta)
+    } else {
+      beta <- effect * (2 - sigma) / (2 * (1 - sigma))
+      beta <- max(box_b[1], beta)
+      beta <- min(box_b[2], beta)
+      sigma <- (1 - (effect / beta)) / (1 - (effect / (2 * beta)))
+      sigma <- max(box_s[1], sigma)
+      sigma <- min(box_s[2], sigma)
+    }
+  }
+  theta_main <- compute_bawe2_theta(beta, sigma)
+  mu_main <- theta_main / (2 * L_use)
+  rho_main <- gamma * theta_main
+  res <- run_baum_welch(
+    rho_init = rho_main,
+    mu_init = mu_main,
+    theta_W_init = theta_W,
+    beta_init = beta,
+    sigma_init = sigma,
+    sb_flag = estimate_beta,
+    sf_flag = estimate_sigma,
+    rho_flag = estimate_rho,
+    popfix_flag = FALSE,
+    redo_r_flag = FALSE
+  )
+} else {
+  theta_init <- compute_initial_theta(beta, sigma)
+  mu_init <- theta_init / (2 * L_use)
+  rho_init <- gamma * theta_init
+  res <- run_baum_welch(
+    rho_init = rho_init,
+    mu_init = mu_init,
+    theta_W_init = theta_W,
+    beta_init = beta,
+    sigma_init = sigma,
+    sb_flag = estimate_beta,
+    sf_flag = estimate_sigma,
+    rho_flag = estimate_rho,
+    popfix_flag = FALSE,
+    redo_r_flag = estimate_rho
+  )
+}
 sink()
 write.table(res$Tc, file=file.path(out_dir, "Tc.txt"), row.names=FALSE, col.names=FALSE)
 write.table(res$Xi, file=file.path(out_dir, "Xi.txt"), row.names=FALSE, col.names=FALSE)
@@ -624,111 +712,25 @@ write.table(res$beta, file=file.path(out_dir, "beta.txt"), row.names=FALSE, col.
 write.table(res$sigma, file=file.path(out_dir, "sigma.txt"), row.names=FALSE, col.names=FALSE)
 write.table(res$mu, file=file.path(out_dir, "mu.txt"), row.names=FALSE, col.names=FALSE)
 write.table(res$LH, file=file.path(out_dir, "LH.txt"), row.names=FALSE, col.names=FALSE)
-builder <- eSMC2:::build_HMM_matrix(
-  n = n_states,
-  rho = as.numeric(res$rho) * 2 * as.numeric(res$L),
-  beta = as.numeric(res$beta),
-  L = as.numeric(res$L),
-  Pop = FALSE,
-  Xi = as.numeric(res$Xi),
-  Beta = as.numeric(res$beta),
-  scale = c(1, 0),
-  sigma = as.numeric(res$sigma),
-  Sigma = as.numeric(res$sigma),
-  Big_Window = FALSE,
-  npair = 2
-)
-Q_builder <- builder[[1]]
-nu_builder <- builder[[2]]
-t_builder <- builder[[3]]
-Tc_builder <- builder[[4]]
-g_builder <- matrix(0, nrow=length(t_builder), ncol=3)
-mu_eff <- as.numeric(res$beta) + ((1 - as.numeric(res$beta)) * mu_b)
-g_builder[,2] <- 1 - exp(-as.numeric(res$mu) * mu_eff * 2 * t_builder)
-g_builder[,1] <- exp(-as.numeric(res$mu) * mu_eff * 2 * t_builder)
-g_builder[,3] <- 1
-write.table(
-  Q_builder,
-  file=file.path(out_dir, "Q_builder.txt"),
-  row.names=FALSE,
-  col.names=FALSE
-)
-write.table(
-  nu_builder,
-  file=file.path(out_dir, "nu_builder.txt"),
-  row.names=FALSE,
-  col.names=FALSE
-)
-write.table(
-  t_builder,
-  file=file.path(out_dir, "t_builder.txt"),
-  row.names=FALSE,
-  col.names=FALSE
-)
-write.table(
-  Tc_builder,
-  file=file.path(out_dir, "Tc_builder.txt"),
-  row.names=FALSE,
-  col.names=FALSE
-)
-write.table(
-  g_builder,
-  file=file.path(out_dir, "g_builder.txt"),
-  row.names=FALSE,
-  col.names=FALSE
-)
-if (!is.null(res$N)) {
+write.table(res$L, file=file.path(out_dir, "L.txt"), row.names=FALSE, col.names=FALSE)
+if (capture_sufficient_statistics && !is.null(res$N)) {
   write.table(as.matrix(res$N), file=file.path(out_dir, "N.txt"), row.names=FALSE, col.names=FALSE)
 }
-if (!is.null(res$M)) {
+if (capture_sufficient_statistics && !is.null(res$M)) {
   write.table(as.matrix(res$M), file=file.path(out_dir, "M.txt"), row.names=FALSE, col.names=FALSE)
 }
-if (!is.null(res$q_)) {
+if (capture_sufficient_statistics && !is.null(res$q_)) {
   write.table(res$q_, file=file.path(out_dir, "q.txt"), row.names=FALSE, col.names=FALSE)
-}
-if (capture_final_sufficient_statistics) {
-  final_stats <- compute_final_sufficient_statistics(
-    O = O,
-    n_states = n_states,
-    rho_internal = as.numeric(res$rho) * 2 * as.numeric(res$L),
-    beta_final = as.numeric(res$beta),
-    sigma_final = as.numeric(res$sigma),
-    Xi_final = as.numeric(res$Xi),
-    mu_scaled = as.numeric(res$mu),
-    mu_b = mu_b
-  )
-  write.table(
-    as.matrix(final_stats$N),
-    file=file.path(out_dir, "final_N.txt"),
-    row.names=FALSE,
-    col.names=FALSE
-  )
-  write.table(
-    as.matrix(final_stats$M),
-    file=file.path(out_dir, "final_M.txt"),
-    row.names=FALSE,
-    col.names=FALSE
-  )
-  write.table(
-    final_stats$q,
-    file=file.path(out_dir, "final_q.txt"),
-    row.names=FALSE,
-    col.names=FALSE
-  )
-  write.table(
-    final_stats$log_likelihood,
-    file=file.path(out_dir, "final_ll.txt"),
-    row.names=FALSE,
-    col.names=FALSE
-  )
 }
 """
 
     with tempfile.TemporaryDirectory(prefix="smckit-esmc2-") as tmpdir:
         tmpdir_path = Path(tmpdir)
-        o_path = tmpdir_path / "O.txt"
+        seq_dir = tmpdir_path / "seqs"
         script_path = tmpdir_path / "run_esmc2.R"
-        np.savetxt(o_path, o_matrix, fmt="%d")
+        seq_dir.mkdir(parents=True, exist_ok=True)
+        for idx, seq in enumerate(sequences, start=1):
+            np.savetxt(seq_dir / f"seq_{idx}.txt", np.asarray(seq, dtype=np.int8), fmt="%d")
         script_path.write_text(r_expr, encoding="utf-8")
         out_dir = tmpdir_path / "out"
 
@@ -736,7 +738,7 @@ if (capture_final_sufficient_statistics) {
             [
                 rscript,
                 str(script_path),
-                str(o_path),
+                str(seq_dir),
                 str(out_dir),
                 str(int(n_states)),
                 repr(float(rho_over_theta)),
@@ -759,7 +761,8 @@ if (capture_final_sufficient_statistics) {
                 repr(float(rp[1])),
                 "" if pop_vect is None else ",".join(str(int(v)) for v in pop_vect),
                 str(local_r_lib if local_r_lib.exists() else ""),
-                "1" if capture_final_sufficient_statistics else "0",
+                str(int(len(sequences))),
+                "1" if capture_sufficient_statistics else "0",
             ],
             check=False,
             capture_output=True,
@@ -775,49 +778,34 @@ if (capture_final_sufficient_statistics) {
 
         Tc_raw = np.loadtxt(out_dir / "Tc.txt", dtype=np.float64)
         Xi = np.loadtxt(out_dir / "Xi.txt", dtype=np.float64)
-        rho_public = float(np.loadtxt(out_dir / "rho.txt", dtype=np.float64))
+        rho_raw = np.atleast_1d(np.loadtxt(out_dir / "rho.txt", dtype=np.float64)).astype(np.float64)
+        rho_public = float(rho_raw[0])
         beta_final = float(np.loadtxt(out_dir / "beta.txt", dtype=np.float64))
         sigma_final = float(np.loadtxt(out_dir / "sigma.txt", dtype=np.float64))
-        mu_scaled = float(np.loadtxt(out_dir / "mu.txt", dtype=np.float64))
+        mu_raw = np.atleast_1d(np.loadtxt(out_dir / "mu.txt", dtype=np.float64)).astype(np.float64)
+        mu_scaled = float(mu_raw[0])
         log_likelihood = float(np.loadtxt(out_dir / "LH.txt", dtype=np.float64))
+        L_raw = np.atleast_1d(np.loadtxt(out_dir / "L.txt", dtype=np.float64)).astype(np.float64)
         n = int(np.size(Tc_raw))
         Xi = np.asarray(Xi, dtype=np.float64).reshape(n)
         Tc_raw = np.asarray(Tc_raw, dtype=np.float64).reshape(n)
-        q_builder = (
-            np.asarray(np.loadtxt(out_dir / "nu_builder.txt", dtype=np.float64), dtype=np.float64)
-            .reshape(n)
+        rho_per_sequence = _sequence_rho_from_public_rho(rho_public, reference_length)
+        builder_payload = _local_hmm_builder_payload(
+            n=n,
+            Xi=Xi,
+            beta=beta_final,
+            sigma=sigma_final,
+            rho_per_sequence=rho_per_sequence,
+            mu_scaled=mu_scaled,
+            mu_b=mu_b,
+            reference_length=reference_length,
         )
-        t_builder = (
-            np.asarray(np.loadtxt(out_dir / "t_builder.txt", dtype=np.float64), dtype=np.float64)
-            .reshape(n)
-        )
-        Tc_builder = (
-            np.asarray(np.loadtxt(out_dir / "Tc_builder.txt", dtype=np.float64), dtype=np.float64)
-            .reshape(n)
-        )
-        g_builder = np.asarray(
-            np.loadtxt(out_dir / "g_builder.txt", dtype=np.float64),
-            dtype=np.float64,
-        ).reshape(n, 3)
-        rho_per_sequence = _sequence_rho_from_public_rho(rho_public, len(sequences[0]))
-        _, _, t, Tc_check, _ = esmc2_build_hmm(
-            n,
-            Xi,
-            beta_final,
-            sigma_final,
-            rho_per_sequence,
-            mu_scaled,
-            mu_b,
-            len(sequences[0]),
-        )
-        if not np.allclose(Tc_check, Tc_builder, rtol=1e-10, atol=1e-12):
-            raise RuntimeError(
-                "Upstream eSMC2 returned time boundaries inconsistent with local HMM builder."
-            )
-        theta = mu_scaled * 2.0 * len(sequences[0])
+        t_builder = np.asarray(builder_payload["t"], dtype=np.float64).reshape(n)
+        Tc_builder = np.asarray(builder_payload["Tc"], dtype=np.float64).reshape(n)
+        theta = mu_scaled * 2.0 * float(reference_length)
         ne0 = theta / (4.0 * mu)
         ne = Xi * ne0
-        time_years = t * 2.0 * ne0 * generation_time
+        time_years = t_builder * 2.0 * ne0 * generation_time
         stdout_log = out_dir / "stdout.log"
         payload = {
             "Tc": Tc_builder.tolist(),
@@ -835,16 +823,23 @@ if (capture_final_sufficient_statistics) {
             "n_iterations": int(n_iterations),
             "rounds": [],
             "upstream": {
-                "sequence_length": int(len(sequences[0])),
+                **input_metadata,
+                "sequence_length": int(reference_length),
+                "sequence_lengths": [int(length) for length in sequence_lengths.tolist()],
+                "used_sequence_indices": [int(idx) for idx in used_sequence_indices],
+                "n_sequences": int(len(sequences)),
                 "rscript": rscript,
                 "Tc_returned": Tc_raw.tolist(),
+                "rho_returned": rho_raw.tolist(),
+                "mu_returned": mu_raw.tolist(),
+                "L_returned": L_raw.tolist(),
                 "stdout_log": (
                     stdout_log.read_text(encoding="utf-8") if stdout_log.exists() else ""
                 ),
             },
         }
         if capture_sufficient_statistics:
-            stats: dict[str, list] = {}
+            stats: dict[str, object] = {}
             n_path = out_dir / "N.txt"
             if n_path.exists():
                 stats["N"] = np.loadtxt(n_path, dtype=np.float64).reshape(n, n).tolist()
@@ -868,51 +863,32 @@ if (capture_final_sufficient_statistics) {
                     .reshape(n)
                     .tolist()
                 )
+            if not stats:
+                stats = _local_final_sufficient_statistics(
+                    sequences=sequences,
+                    n=n,
+                    Xi=Xi,
+                    beta=beta_final,
+                    sigma=sigma_final,
+                    rho_per_sequence=rho_per_sequence,
+                    mu_scaled=mu_scaled,
+                    mu_b=mu_b,
+                    reference_length=reference_length,
+                )
             payload["sufficient_statistics"] = stats
         if capture_final_sufficient_statistics:
-            final_stats: dict[str, list] = {
-                "N": (
-                    np.asarray(
-                        np.loadtxt(out_dir / "final_N.txt", dtype=np.float64),
-                        dtype=np.float64,
-                    )
-                    .reshape(n, n)
-                    .tolist()
-                ),
-                "M": (
-                    np.asarray(
-                        np.loadtxt(out_dir / "final_M.txt", dtype=np.float64),
-                        dtype=np.float64,
-                    )
-                    .reshape(3, n)
-                    .tolist()
-                ),
-                "q": (
-                    np.asarray(
-                        np.loadtxt(out_dir / "final_q.txt", dtype=np.float64),
-                        dtype=np.float64,
-                    )
-                    .reshape(n)
-                    .tolist()
-                ),
-                "log_likelihood": float(
-                    np.asarray(
-                        np.loadtxt(out_dir / "final_ll.txt", dtype=np.float64),
-                        dtype=np.float64,
-                    )
-                ),
-            }
-            payload["final_sufficient_statistics"] = final_stats
+            payload["final_sufficient_statistics"] = _local_final_sufficient_statistics(
+                sequences=sequences,
+                n=n,
+                Xi=Xi,
+                beta=beta_final,
+                sigma=sigma_final,
+                rho_per_sequence=rho_per_sequence,
+                mu_scaled=mu_scaled,
+                mu_b=mu_b,
+                reference_length=reference_length,
+            )
         if capture_hmm_builder:
-            builder_payload = {
-                "Q": np.asarray(np.loadtxt(out_dir / "Q_builder.txt", dtype=np.float64))
-                .reshape(n, n)
-                .tolist(),
-                "q": q_builder.tolist(),
-                "t": t_builder.tolist(),
-                "Tc": Tc_builder.tolist(),
-                "g": g_builder.T.tolist(),
-            }
             payload["hmm_builder"] = builder_payload
         return payload
 
@@ -1025,7 +1001,7 @@ def _segments_to_sequences(
                 if o == 2:  # heterozygous
                     if pos - 1 < L:
                         seq[pos - 1] = 1
-                elif o == 0:  # missing
+                elif o <= 0:  # missing, including skip_ambiguous sentinels (-1)
                     if pos - 1 < L:
                         seq[pos - 1] = 2
 
@@ -1140,20 +1116,120 @@ def _theta_from_beta_sigma_bawe2_main(beta: float, sigma: float, theta_W: float)
     return theta_W * (beta**2) * 2.0 / (2.0 - sigma)
 
 
+def _sequence_theta_w_term(seq: np.ndarray) -> float:
+    """Return the upstream theta_W contribution for one dense sequence."""
+    seq_arr = np.asarray(seq, dtype=np.int8)
+    callable_sites = int(np.sum(seq_arr < 2))
+    if callable_sites == 0:
+        return 0.0
+    het_sites = int(np.sum(seq_arr == 1))
+    return float(het_sites / (callable_sites / float(len(seq_arr))))
+
+
+def _theta_w_terms_from_sequences(sequences: list[np.ndarray]) -> np.ndarray:
+    """Return upstream theta_W terms for each dense sequence."""
+    if not sequences:
+        raise ValueError("No callable sites in input data.")
+    theta_terms = np.asarray(
+        [_sequence_theta_w_term(seq) for seq in sequences],
+        dtype=np.float64,
+    )
+    if not np.any(theta_terms > 0.0):
+        raise ValueError("No callable sites in input data.")
+    return theta_terms
+
+
 def _theta_w_from_sequences(sequences: list[np.ndarray]) -> float:
     """Reproduce upstream theta_W aggregation on dense sequences."""
-    theta_terms: list[float] = []
-    for seq in sequences:
-        seq_arr = np.asarray(seq, dtype=np.int8)
-        callable_sites = int(np.sum(seq_arr < 2))
-        if callable_sites == 0:
-            continue
-        het_sites = int(np.sum(seq_arr == 1))
-        theta_terms.append(het_sites / (callable_sites / float(len(seq_arr))))
+    theta_terms = _theta_w_terms_from_sequences(sequences)
+    keep = theta_terms > 0.0
+    return float(np.mean(theta_terms[keep]))
 
-    if not theta_terms:
-        raise ValueError("No callable sites in input data.")
-    return float(np.mean(theta_terms))
+
+def _shared_mu_from_theta_terms(
+    theta_terms: np.ndarray,
+    lengths: np.ndarray,
+    *,
+    beta: float,
+    sigma: float,
+    mu_b: float,
+) -> float:
+    """Reproduce upstream Share_r averaging for mu across sequences."""
+    theta_terms = np.asarray(theta_terms, dtype=np.float64)
+    lengths = np.asarray(lengths, dtype=np.float64)
+    if theta_terms.shape != lengths.shape:
+        raise ValueError("theta_terms and lengths must have the same shape.")
+    theta_vals = theta_terms * (beta**2) * 2.0 / (
+        (2.0 - sigma) * (beta + (1.0 - beta) * mu_b)
+    )
+    mu_vals = theta_vals / (2.0 * lengths)
+    return float(np.mean(mu_vals))
+
+
+def _shared_mu_from_theta_terms_bawe2_main(
+    theta_terms: np.ndarray,
+    lengths: np.ndarray,
+    *,
+    beta: float,
+    sigma: float,
+) -> float:
+    """Reproduce upstream Share_r averaging after the BaWe==2 warm-start reset."""
+    theta_terms = np.asarray(theta_terms, dtype=np.float64)
+    lengths = np.asarray(lengths, dtype=np.float64)
+    if theta_terms.shape != lengths.shape:
+        raise ValueError("theta_terms and lengths must have the same shape.")
+    theta_vals = theta_terms * (beta**2) * 2.0 / (2.0 - sigma)
+    mu_vals = theta_vals / (2.0 * lengths)
+    return float(np.mean(mu_vals))
+
+
+def _sequence_lengths(sequences: list[np.ndarray]) -> np.ndarray:
+    """Return per-sequence lengths as int64."""
+    return np.asarray([len(seq) for seq in sequences], dtype=np.int64)
+
+
+def _infer_input_family(data: SmcData) -> str:
+    """Describe which public smckit input family produced the sequences."""
+    if "records" in data.uns:
+        return "psmcfa"
+    if "segments" in data.uns:
+        return "multihetsep"
+    return "unknown"
+
+
+def _input_family_metadata(data: SmcData, sequences: list[np.ndarray]) -> dict[str, object]:
+    """Capture provenance describing the public input family used by eSMC2."""
+    metadata: dict[str, object] = {
+        "input_family": _infer_input_family(data),
+        "n_sequences_input": int(len(sequences)),
+        "sequence_lengths_input": [int(len(seq)) for seq in sequences],
+    }
+    if "records" in data.uns:
+        records = data.uns.get("records", [])
+        metadata["n_records"] = int(len(records))
+        metadata["has_missing"] = bool(
+            any(np.any(np.asarray(rec["codes"], dtype=np.int8) == 2) for rec in records)
+        )
+        source_path = data.uns.get("source_path")
+        if source_path is not None:
+            metadata["source_path"] = str(source_path)
+    if "segments" in data.uns:
+        segments = data.uns.get("segments", [])
+        metadata["n_segments"] = int(len(segments))
+        metadata["n_pairs"] = int(len(data.uns.get("pairs", [])))
+        source_paths = data.uns.get("source_paths")
+        if source_paths is not None:
+            metadata["source_paths"] = [str(path) for path in source_paths]
+            metadata["n_source_paths"] = int(len(source_paths))
+        metadata["has_missing"] = bool(any(np.any(np.asarray(seq, dtype=np.int8) == 2) for seq in sequences))
+        metadata["has_skip_ambiguous_missing"] = bool(
+            any(
+                np.any(np.asarray(obs, dtype=np.float64) < 0.0)
+                for seg in segments
+                for obs in seg.get("obs", {}).values()
+            )
+        )
+    return metadata
 
 
 def _public_rho_from_sequence_rho(rho_per_sequence: float, L: int) -> float:
@@ -1609,6 +1685,7 @@ def _expectation_step(
     sigma_hidden: float | None = None,
 ) -> tuple[dict, float, np.ndarray, np.ndarray]:
     """Run the upstream-equivalent zipped E-step for a parameter set."""
+    sequence_lengths = _sequence_lengths(sequences)
     Q, q, t, Tc, e = esmc2_build_hmm(
         n,
         Xi,
@@ -1650,12 +1727,14 @@ def _expectation_step(
 
     accum_N *= np.asarray(Q, dtype=np.float64).T
 
+    total_length = float(np.sum(sequence_lengths))
+    total_transitions = float(np.sum(np.maximum(sequence_lengths - 1, 0)))
     n_total = float(np.sum(accum_N))
-    if n_total > 0.0:
-        accum_N *= (L - 1) / n_total
+    if n_total > 0.0 and total_transitions > 0.0:
+        accum_N *= total_transitions / n_total
     m_total = float(np.sum(accum_M))
-    if m_total > 0.0:
-        accum_M *= L / m_total
+    if m_total > 0.0 and total_length > 0.0:
+        accum_M *= total_length / m_total
     q_total = float(np.sum(accum_q_post))
     if q_total > 0.0:
         accum_q_post /= q_total
@@ -1827,9 +1906,10 @@ def _run_bawe2_prepass(
     *,
     sequences: list[np.ndarray],
     n: int,
-    L: int,
+    reference_length: int,
     n_iterations: int,
-    theta_W: float,
+    theta_terms: np.ndarray,
+    sequence_lengths: np.ndarray,
     mu_b: float,
     beta: float,
     sigma: float,
@@ -1837,9 +1917,14 @@ def _run_bawe2_prepass(
     rho_penalty: float,
 ) -> tuple[float, float]:
     """Run the constant-population rho-only BaWe==2 prepass."""
-    theta_run = _theta_from_beta_sigma(beta, sigma, mu_b, theta_W)
-    mu_run = theta_run / (2.0 * L)
-    current_rho = theta_run
+    mu_run = _shared_mu_from_theta_terms(
+        theta_terms,
+        sequence_lengths,
+        beta=beta,
+        sigma=sigma,
+        mu_b=mu_b,
+    )
+    current_rho = mu_run * 2.0 * float(reference_length)
     old_likelihood = None
     saved_rho = current_rho
     inner_it = 0
@@ -1855,7 +1940,7 @@ def _run_bawe2_prepass(
             rho=current_rho,
             mu=mu_run,
             mu_b=mu_b,
-            L=L,
+            L=reference_length,
         )
 
         if inner_it > 1 and (
@@ -1871,7 +1956,7 @@ def _run_bawe2_prepass(
         _, _, current_rho, _, _ = _optimize_baum_welch(
             stats=stats,
             n=n,
-            L=L,
+            L=reference_length,
             mu=mu_run,
             mu_b=mu_b,
             beta=beta,
@@ -1884,7 +1969,7 @@ def _run_bawe2_prepass(
             box_r=box_r,
             box_p=(2.0, 2.0),
             rp=(0.0, 0.0),
-            rho_base=theta_run,
+            rho_base=mu_run * 2.0 * float(reference_length),
             rho_penalty=rho_penalty,
             estimate_beta=False,
             estimate_sigma=False,
@@ -1899,9 +1984,10 @@ def _apply_bawe2_warm_start(
     *,
     sequences: list[np.ndarray],
     n: int,
-    L: int,
+    reference_length: int,
     n_iterations: int,
-    theta_W: float,
+    theta_terms: np.ndarray,
+    sequence_lengths: np.ndarray,
     rho_over_theta: float,
     mu_b: float,
     estimate_beta: bool,
@@ -1917,9 +2003,10 @@ def _apply_bawe2_warm_start(
     prepass_rho, prepass_mu = _run_bawe2_prepass(
         sequences=sequences,
         n=n,
-        L=L,
+        reference_length=reference_length,
         n_iterations=n_iterations,
-        theta_W=theta_W,
+        theta_terms=theta_terms,
+        sequence_lengths=sequence_lengths,
         mu_b=mu_b,
         beta=beta,
         sigma=sigma,
@@ -1927,7 +2014,7 @@ def _apply_bawe2_warm_start(
         rho_penalty=rho_penalty,
     )
     gamma = float(rho_over_theta)
-    prepass_rho_public = _public_rho_from_sequence_rho(prepass_rho, L)
+    prepass_rho_public = _public_rho_from_sequence_rho(prepass_rho, reference_length)
     effect = (
         prepass_rho_public * (beta * 2.0 * (1.0 - sigma) / (2.0 - sigma)) / prepass_mu
         if prepass_mu > 0.0
@@ -1955,9 +2042,13 @@ def _apply_bawe2_warm_start(
             sigma_warm = (1.0 - (effect / beta_warm)) / (1.0 - (effect / (2.0 * beta_warm)))
             sigma_warm = min(box_s[1], max(box_s[0], sigma_warm))
 
-    theta_run = _theta_from_beta_sigma_bawe2_main(beta_warm, sigma_warm, theta_W)
-    mu_run = theta_run / (2.0 * L)
-    rho_run = float(rho_over_theta) * theta_run
+    mu_run = _shared_mu_from_theta_terms_bawe2_main(
+        theta_terms,
+        sequence_lengths,
+        beta=beta_warm,
+        sigma=sigma_warm,
+    )
+    rho_run = float(rho_over_theta) * mu_run * 2.0 * float(reference_length)
     return beta_warm, sigma_warm, rho_run, mu_run
 
 
@@ -2041,20 +2132,27 @@ def _esmc2_native(
 
     # --- Prepare sequences ---
     sequences = _sequences_from_smcdata(data)
+    sequence_lengths = _sequence_lengths(sequences)
+    reference_length = int(sequence_lengths[0])
+    total_length = int(np.sum(sequence_lengths))
+    theta_terms = _theta_w_terms_from_sequences(sequences)
 
     # --- Compute initial theta from data ---
-    theta_W = _theta_w_from_sequences(sequences)
-    # Per-sequence Watterson's theta
-    L_total = max(len(seq) for seq in sequences)
-
-    # theta_W corrected for β and σ: θ = θ_W * β² * 2 / ((2-σ) * (β + (1-β)*μ_b))
-    theta = theta_W * (beta**2) * 2.0 / ((2.0 - sigma) * (beta + (1.0 - beta) * mu_b))
-    rho_scaled = rho_over_theta * theta  # recombination rate per sequence
+    mu_run = _shared_mu_from_theta_terms(
+        theta_terms,
+        sequence_lengths,
+        beta=beta,
+        sigma=sigma,
+        mu_b=mu_b,
+    )
+    theta = mu_run * 2.0 * float(reference_length)
+    rho_scaled = rho_over_theta * theta
 
     logger.info(
-        "eSMC2: n=%d, L=%d, theta=%.4f, rho=%.4f, beta=%.4f, sigma=%.4f",
+        "eSMC2: n=%d, L_ref=%d, L_total=%d, theta=%.4f, rho=%.4f, beta=%.4f, sigma=%.4f",
         n,
-        L_total,
+        reference_length,
+        total_length,
         theta,
         rho_scaled,
         beta,
@@ -2075,8 +2173,6 @@ def _esmc2_native(
     gamma = float(rho_over_theta)
     max_bits = 1
     bit = 0
-    theta_run = _theta_from_beta_sigma(current_beta, current_sigma, mu_b, theta_W)
-    mu_run = theta_run / (2.0 * L_total)
     if use_bawe2_wrapper:
         (
             current_beta,
@@ -2086,9 +2182,10 @@ def _esmc2_native(
         ) = _apply_bawe2_warm_start(
             sequences=sequences,
             n=n,
-            L=L_total,
+            reference_length=reference_length,
             n_iterations=n_iterations,
-            theta_W=theta_W,
+            theta_terms=theta_terms,
+            sequence_lengths=sequence_lengths,
             rho_over_theta=rho_over_theta,
             mu_b=mu_b,
             estimate_beta=estimate_beta,
@@ -2100,15 +2197,20 @@ def _esmc2_native(
             box_r=box_r,
             rho_penalty=rho_penalty,
         )
-        theta_run = mu_run * 2.0 * L_total
     allow_redo_rho = bool(estimate_rho and not use_bawe2_wrapper)
 
     while bit < max_bits:
         bit += 1
         inner_maxit = int(n_iterations)
         if not use_bawe2_wrapper or bit > 1:
-            theta_run = _theta_from_beta_sigma(current_beta, current_sigma, mu_b, theta_W)
-            mu_run = theta_run / (2.0 * L_total)
+            mu_run = _shared_mu_from_theta_terms(
+                theta_terms,
+                sequence_lengths,
+                beta=current_beta,
+                sigma=current_sigma,
+                mu_b=mu_b,
+            )
+        theta_run = mu_run * 2.0 * float(reference_length)
         rho_base = gamma * theta_run if estimate_rho else current_rho
         beta_hidden = current_beta
         sigma_hidden = current_sigma
@@ -2152,7 +2254,7 @@ def _esmc2_native(
                 rho=current_rho,
                 mu=mu_run,
                 mu_b=mu_b,
-                L=L_total,
+                L=reference_length,
                 beta_hidden=beta_hidden,
                 sigma_hidden=sigma_hidden,
             )
@@ -2186,7 +2288,7 @@ def _esmc2_native(
                 ) = _optimize_baum_welch(
                     stats=stats,
                     n=n,
-                    L=L_total,
+                    L=reference_length,
                     mu=mu_run,
                     mu_b=mu_b,
                     beta=current_beta,
@@ -2220,7 +2322,7 @@ def _esmc2_native(
                 rho=current_rho,
                 mu=mu_run,
                 mu_b=mu_b,
-                L=L_total,
+                L=reference_length,
                 beta_hidden=beta_hidden,
                 sigma_hidden=sigma_hidden,
             )
@@ -2232,10 +2334,10 @@ def _esmc2_native(
                 "log_likelihood": ll_round,
                 "beta": current_beta,
                 "sigma": current_sigma,
-                "rho": _public_rho_from_sequence_rho(current_rho, L_total),
+                "rho": _public_rho_from_sequence_rho(current_rho, reference_length),
                 "rho_per_sequence": current_rho,
                 "mu": mu_run,
-                "theta": mu_run * 2.0 * L_total,
+                "theta": mu_run * 2.0 * reference_length,
                 "Xi": Xi_round.copy(),
                 "Tc": Tc_round.copy(),
                 "t": t_round.copy(),
@@ -2255,7 +2357,7 @@ def _esmc2_native(
             gamma = gamma_next
 
     # --- Final results ---
-    theta_final = mu_run * 2.0 * L_total
+    theta_final = mu_run * 2.0 * reference_length
     mu_final = mu_run
 
     Xi_final = _xi_from_free_params(current_xi_free, pv, n)
@@ -2267,7 +2369,7 @@ def _esmc2_native(
         current_rho,
         mu_final,
         mu_b,
-        L_total,
+        reference_length,
     )
 
     # Ne = Xi * Ne0, where Ne0 = theta / (4 * mu_per_gen)
@@ -2279,7 +2381,7 @@ def _esmc2_native(
     # Time in years: t_final is in units of 2*Ne0 generations
     # (from the coalescent scaling: time boundaries are in 2Ne units)
     time_years = t_final * 2.0 * ne0 * generation_time
-    rho_public = _public_rho_from_sequence_rho(current_rho, L_total)
+    rho_public = _public_rho_from_sequence_rho(current_rho, reference_length)
 
     result_obj = Esmc2Result(
         Tc=Tc_final,
@@ -2303,7 +2405,7 @@ def _esmc2_native(
                 rho=current_rho,
                 mu=mu_final,
                 mu_b=mu_b,
-                L=L_total,
+                L=reference_length,
             )[1]
         ),
         n_iterations=n_iterations,

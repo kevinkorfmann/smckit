@@ -166,6 +166,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#ecological-and-migration-parameters-need-extra-caution">Ecological and migration parameters need extra caution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
 </ul>
 </li>
@@ -308,6 +309,7 @@
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="esmc2.html#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -456,9 +458,15 @@
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-improved">What improved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
@@ -1016,18 +1024,22 @@ they are not yet interchangeable on every search path.</p></li>
 <p>The upstream and native paths now share the same normalized public result
 fields, including <code class="docutils literal notranslate"><span class="pre">best_params</span></code>, <code class="docutils literal notranslate"><span class="pre">ordered_params</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code>, and demographic
 arrays.</p>
-<p>On the tracked README <code class="docutils literal notranslate"><span class="pre">exp</span></code> fixture, parity is materially tighter than before:</p>
+<p>On the tracked README fixtures, parity is materially tighter than before:</p>
 <ul class="simple">
 <li><p>at the upstream best-fit parameter vector, the native fixed-point log-likelihood
 delta is now about <code class="docutils literal notranslate"><span class="pre">7.45e-4</span></code></p></li>
 <li><p>replaying each explicit <code class="docutils literal notranslate"><span class="pre">exp.rand</span></code> start point now lands on the same endpoint
 to displayed precision, with log-likelihood deltas at or below about <code class="docutils literal notranslate"><span class="pre">2.21e-4</span></code></p></li>
-<li><p>the docs gallery now shows both the current native and upstream <code class="docutils literal notranslate"><span class="pre">exp</span></code> panels</p></li>
+<li><p>the full independent native searches now land on the same best-fit parameter
+vectors as upstream on both README <code class="docutils literal notranslate"><span class="pre">exp</span></code> and README <code class="docutils literal notranslate"><span class="pre">IM</span></code></p></li>
+<li><p>at the upstream best-fit parameter vector on README <code class="docutils literal notranslate"><span class="pre">IM</span></code>, the native
+fixed-point log-likelihood delta is now about <code class="docutils literal notranslate"><span class="pre">1.63e-3</span></code></p></li>
 </ul>
-<p>The remaining gap is the full independent search path. On the current full
-README <code class="docutils literal notranslate"><span class="pre">exp</span></code> meta-start run, native still lands at about <code class="docutils literal notranslate"><span class="pre">-15.9743</span></code> while
-upstream lands at about <code class="docutils literal notranslate"><span class="pre">-15.8771</span></code>, so the gallery remains a useful visual of
-the current discrepancy rather than evidence of interchangeability.</p>
+<p>The remaining gap is the objective value, not the search winner. Native and
+upstream now agree on the README <code class="docutils literal notranslate"><span class="pre">exp</span></code> and <code class="docutils literal notranslate"><span class="pre">IM</span></code> best-fit parameter vectors, but
+the native reported log-likelihood is still slightly offset at those same
+points, so the method is closer to interchangeable than before without yet
+fully reaching it.</p>
 </section>
 <section id="learn-more">
 <h2>Learn more<a class="headerlink" href="#learn-more" title="Link to this heading"></a></h2>

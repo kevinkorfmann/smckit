@@ -47,8 +47,8 @@
      - ✓
      - ✓
      - ✗
-     - `README exp fixed-point dloglik=7.45e-4; explicit starts <=2.21e-4; full search dloglik=9.73e-2`
-     - Public upstream Java bridge parses the EM-path stdout into structured results; docs now show both README exp panels, but the current full native search still misses the upstream fit and IM parity is still open.
+     - `README exp search matches best params; fixed-point dloglik=7.45e-4. README IM search matches best params; fixed-point dloglik=3.15e-2.`
+     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README exp and IM searches now reach the upstream best-fit parameter vectors; the remaining gap is the native fixed-point likelihood value at those shared points.
    * - SSM
      - n/a
      - ✓

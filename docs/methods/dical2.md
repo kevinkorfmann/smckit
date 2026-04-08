@@ -171,7 +171,7 @@ On the tracked README fixtures, parity is materially tighter than before:
 - the full independent native searches now land on the same best-fit parameter
   vectors as upstream on both README `exp` and README `IM`
 - at the upstream best-fit parameter vector on README `IM`, the native
-  fixed-point log-likelihood delta is now about `3.15e-2`
+  fixed-point log-likelihood delta is now about `1.63e-3`
 
 The remaining gap is the objective value, not the search winner. Native and
 upstream now agree on the README `exp` and `IM` best-fit parameter vectors, but

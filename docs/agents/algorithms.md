@@ -43,9 +43,9 @@
 - Purpose: extend pairwise SMC inference to dormancy and selfing.
 - Input: pairwise sequence / `.psmcfa`-style data.
 - Upstream status: vendored R package plus public bridge.
-- Native status: available; tracked fit parity is enforced on the current
-  oracle fixture matrix, with upstream still acting as the broader fidelity
-  baseline.
+- Native status: available; tracked fit parity now covers the public `.psmcfa`
+  and `multihetsep` input families, with upstream still acting as the broader
+  fidelity baseline for vendor-surface experiments outside that matrix.
 - Main outputs: `Tc`, `Xi`, `ne`, `beta`, `sigma`, `rho`.
 
 ## ASMC

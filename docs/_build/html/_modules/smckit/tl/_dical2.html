@@ -306,6 +306,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
@@ -454,9 +455,15 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
@@ -1895,6 +1902,25 @@
     <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">refined</span><span class="o">.</span><span class="n">demo</span><span class="o">.</span><span class="n">epochs</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pulse_migration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_refined_is_structured</span><span class="p">(</span><span class="n">refined</span><span class="p">:</span> <span class="n">RefinedDemography</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">refined</span><span class="o">.</span><span class="n">demo</span><span class="o">.</span><span class="n">n_present_demes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">refined</span><span class="o">.</span><span class="n">demo</span><span class="o">.</span><span class="n">epochs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">migration_matrix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">migration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">migration_matrix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">off_diag</span> <span class="o">=</span> <span class="n">migration</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">off_diag</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">off_diag</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">EPS</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">epoch</span><span class="o">.</span><span class="n">pulse_migration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pulse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">pulse_migration</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">pulse</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">atol</span><span class="o">=</span><span class="n">EPS</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
 
@@ -3726,11 +3752,12 @@
     <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">EigenCore</span> <span class="o">|</span> <span class="n">ODECore</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="n">has_growth</span> <span class="o">=</span> <span class="n">_refined_has_growth</span><span class="p">(</span><span class="n">refined</span><span class="p">)</span>
+    <span class="n">use_ode</span> <span class="o">=</span> <span class="n">has_growth</span> <span class="ow">or</span> <span class="n">_refined_is_structured</span><span class="p">(</span><span class="n">refined</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">has_growth</span> <span class="ow">and</span> <span class="n">_refined_has_pulse</span><span class="p">(</span><span class="n">refined</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
             <span class="s2">&quot;Native diCal2 does not support combining pulse migration with ODECore.&quot;</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="n">has_growth</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">use_ode</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">ODECore</span><span class="p">(</span>
                 <span class="n">refined</span><span class="o">=</span><span class="n">refined</span><span class="p">,</span>

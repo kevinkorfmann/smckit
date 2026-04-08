@@ -102,6 +102,68 @@ even from the final best-fit parameters alone. We needed to see:
 - the effective marginal SD
 - the concrete offspring proposals for the next generation
 
+### 8. Java `nextLong()` and coordinatewise shuffle semantics were still off
+
+The native `_JavaRandom` implementation initially combined the second 32-bit
+piece of `nextLong()` as an unsigned integer. Java sign-extends that lower
+`int`, so the third spawned offspring seed on the tracked README `exp` run was
+wrong by exactly `2^32`.
+
+That mattered because the wrong offspring seed changed the initial simplex sign
+pattern in the seeded M-step replay for the `exp` outlier path. After fixing
+`nextLong()`, the full native README `exp` meta-start run began reaching the
+same best-fit parameter vector as upstream.
+
+The README `IM` fixture still differed after that because it uses the default
+coordinatewise M-step. Upstream shuffles the coordinate order with
+`Collections.shuffle(..., Random)`, which consumes `nextInt(i)` draws. The
+native permutation code had been using `int(random() * i)`, which is not the
+same RNG path. After switching to Java-style bounded `nextInt()` for the
+coordinatewise shuffle, the full native README `IM` run also reached the same
+best-fit parameter vector as upstream.
+
+### 9. VCF-backed native configs needed to be compacted after filtering
+
+The VCF reader already filtered the returned sequence matrix down to the
+haplotypes selected by the `.config` file. However, the stored native
+`DiCal2Config` still kept the original unfiltered haplotype row indexing.
+
+That was harmless on the packaged README fixtures because their included rows
+happened to be a prefix of the config, but it broke reduced pairwise debug
+configs immediately. The fix was to compact the native `DiCal2Config` after VCF
+filtering so `config.haplotype_populations`, `haplotype_multiplicities`, and
+`sample_sizes` line up with the filtered sequence rows.
+
+Why this mattered: once the config and sequence matrix shared the same compact
+indexing, reduced two-haplotype and three-haplotype native/upstream probes
+became valid tools for localizing the remaining `IM` evaluator mismatch.
+
+### 10. The remaining `IM` mismatch is concentrated in cross-pop PCL cases
+
+After the VCF config compaction fix, reduced README `IM` probes could be run on
+small temporary configs while still using the same vendored VCF/demo/param
+bundle.
+
+What those probes showed:
+
+- two-haplotype cross-pop configs such as `(0, 2)` and `(0, 3)` now run cleanly
+  and show native-minus-upstream fixed-point log-likelihood deltas of about
+  `-1.07e-2`
+- three-haplotype mixed-pop configs such as `(0, 1, 2)` and `(0, 2, 3)` show
+  deltas around `-2.1e-2`
+- same-pop tiny configs on this VCF often collapse to no segregating sites, so
+  they do not provide a useful upstream oracle on this bundle
+
+Interpretation:
+
+- the remaining README `IM` evaluator gap is not a general optimizer problem
+- it is not primarily caused by the old config-index mismatch
+- it is concentrated in the cross-pop PCL evaluator path
+- varying the migration parameter alone on the two-haplotype cross-pop probe
+  does not materially change the delta, so the remaining bug is more likely a
+  fixed normalization/emission/state-space issue than a simple “wrong migration
+  rate” bug
+
 ## What improved
 
 On the README `exp` fixture:
@@ -111,37 +173,73 @@ On the README `exp` fixture:
 - replaying each explicit `exp.rand` start point now lands on the upstream
   endpoint to displayed precision, with log-likelihood deltas at or below about
   `2.21e-4`
+- the full independent meta-start search now reaches the same best-fit
+  parameters as upstream
+
+On the README `IM` fixture:
+
+- the native fixed-point likelihood at the upstream best-fit parameters is now
+  within about `1.63e-3`
+- the full independent meta-start search now reaches the same best-fit
+  parameters as upstream
+- the earlier large apparent `IM` gap turned out to be partly diagnostic noise:
+  the old oracle comparison script was reporting the last stdout row instead of
+  the best one, while the upstream bridge was already selecting the best fit
+- reduced VCF-backed `IM` probes now work even when the included haplotypes are
+  not a prefix of the original config rows
 
 Those two results are the reason the current docs now describe `exp`
-oracle-point and explicit-start parity as strong.
+oracle-point, explicit-start, and full-search parameter parity as strong.
+
+### 11. Structured no-growth native runs needed `ODECore`, not `EigenCore`
+
+The reduced two-haplotype cross-pop README `IM` probes eventually isolated the
+remaining evaluator gap to the emission side of the no-growth structured core.
+
+The decisive checks were:
+
+- the reduced cross-pop fixed-point delta stayed at about `-1.07e-2` even when
+  `rho = 0`, which ruled recombination transitions out as the main blocker
+- under `rho = 0`, that same delta grew rapidly with `theta`, which pointed to
+  the emission path rather than the initial-state marginal
+- swapping the reduced and full README `IM` fixed-point evaluations from the
+  no-growth structured `EigenCore` to `ODECore` collapsed the gap by more than
+  an order of magnitude
+
+Why this mattered: the issue was not in grouped-locus pair counting itself. It
+was in the exact no-growth structured emission path used by `EigenCore`.
+Routing structured multi-deme native runs through `ODECore` preserved the
+already-correct search path while bringing the README `IM` fixed-point value
+much closer to the vendored oracle.
 
 ## What still does not match
 
-The full independent searches are still not interchangeable:
+The full independent searches now agree on the best-fit parameters, but the
+native and upstream fixed-point likelihood values still differ slightly at those
+same points:
 
 - README `exp`
-  - upstream log-likelihood: about `-15.8771`
-  - native log-likelihood: about `-15.9743`
+  - upstream log-likelihood: about `-15.87706545`
+  - native log-likelihood at the same best-fit point: about `-15.87632006`
 - README `IM`
-  - upstream log-likelihood: about `-75.1458`
-  - native log-likelihood: about `-70.1214`
+  - upstream log-likelihood: about `-70.16830865`
+  - native log-likelihood at the same best-fit point: about `-70.16668205`
 
 Interpretation:
 
-- for `exp`, the trace now shows that the mismatch already appears in meta step
-  0 on start point 2. Upstream reaches about `-16.3759` at
-  `[320.1277, 0.0176506752, 0.0763549920, 0.3490567120, 1.2603001600]`, while
-  native reaches about `-16.1988` at
-  `[417.9587, 0.0179448631, 0.0908988032, 0.4322718170, 1.5015576202]`.
-  That means the remaining blocker is not only next-generation proposal logic;
-  it is already present in the seeded EM/M-step path for at least one tracked
-  start point.
-- for `IM`, the remaining grouped-locus/state-model mismatch is still large
+- the optimizer-path mismatch is no longer the blocker on the tracked README
+  fixtures
+- the remaining blocker is the native fixed-point likelihood calculation itself,
+  which is now close enough that it should be debugged as a numerical/core-CSD
+  issue rather than as a search-ceremony issue
 
 ## Next steps
 
-- close the remaining `exp` seeded-start EM/M-step gap before expecting the
-  final meta-start winner to align
-- bring `IM` fixed-parameter likelihood parity up to the same standard as `exp`
+- close the remaining fixed-point `exp` likelihood delta now that the search
+  winner is aligned
+- bring `IM` fixed-point likelihood parity down from `1.63e-3` to the same
+  tighter standard
+- focus `IM` debugging on the cross-pop PCL evaluator path first, because the
+  reduced probes now show that is where most of the remaining gap lives
 - only then tighten the integration gate back to true native/upstream
   interchangeability

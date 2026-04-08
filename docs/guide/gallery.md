@@ -10,7 +10,7 @@ approximate.
 The layout is intentionally gentle rather than dense. You should be able to
 scan it and immediately see whether a method is behaving similarly across both
 implementations, and where the comparison is only claimed on a tracked oracle
-fixture matrix rather than across arbitrary runs.
+matrix or an explicit public input-family gate rather than across arbitrary runs.
 
 ## PSMC
 
@@ -106,7 +106,8 @@ fixture matrix rather than across arbitrary runs.
    Vendor-style eSMC2 estimation modes on the tracked oracle fixture. The
    panels keep demographic fitting on and toggle the upstream ``Rho``, ``SB``,
    and ``SF`` branches, with native/upstream overlays and fitted parameter
-   summaries.
+   summaries. Read this as the parameter-estimation companion to the broader
+   public input-family parity gate, not as the only eSMC2 validation surface.
 
 .. list-table::
    :widths: 1 1
@@ -118,7 +119,8 @@ fixture matrix rather than across arbitrary runs.
 
        Oracle-backed native/upstream overlays on the clean 800 bp fixture for
        the six enforced fit branches: fixed rho, rho redo, beta, sigma,
-       beta+sigma, and grouped ``pop_vect=[3,3]``.
+       beta+sigma, and grouped ``pop_vect=[3,3]``. Those tracked branches now
+       sit alongside the public `.psmcfa` and `multihetsep` input-family gate.
 
      - **Transition Agreement**
 
@@ -126,8 +128,10 @@ fixture matrix rather than across arbitrary runs.
           :alt: eSMC2 tracked parity transition figure
 
        Final-state transition matrices for representative challenging branches.
-       This is a scoped parity check on tracked fixtures, not a blanket claim
-       for every eSMC2 input shape.
+       This remains a scoped fixture check, while the integration suite now
+       separately gates `.psmcfa` clean, missing-site, multi-record, and
+       `multihetsep` single-pair, multi-pair, multi-file, and
+       ``skip_ambiguous=True`` families.
 ```
 
 ## SMC++

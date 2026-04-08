@@ -21,7 +21,7 @@ important and you need more than a plain PSMC history.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | In-repo Python/Numba implementation with tracked fit parity on the current oracle fixture matrix. |
+| `implementation="native"` | Available | In-repo Python/Numba implementation with tracked fit parity across the public `.psmcfa` and `multihetsep` eSMC2 input families. |
 | `implementation="upstream"` | Available | Runs the vendored R implementation through `Rscript`. |
 | `implementation="auto"` | Available | Currently prefers upstream when the R environment is configured. |
 
@@ -44,6 +44,22 @@ Packaged quickstart fixture:
 
 If you are not sure what a `.psmcfa` file represents, start with the
 [I/O formats guide](../guide/io-formats.md).
+
+## Public parity matrix
+
+The tracked native/upstream gate now covers the public eSMC2 input surface
+rather than only one clean fixture.
+
+- `.psmcfa`: one clean record, one record with missing sites, and multi-record inputs
+- `multihetsep`: one pair, multiple pairs from one file, multiple files / chromosomes, and `skip_ambiguous=True` runs where ambiguous sites become missing
+- grouped `pop_vect` fitting on a non-default multi-record `.psmcfa` case
+
+The upstream bridge records which public family ran in
+`data.results["esmc2"]["upstream"]`, together with `n_sequences`,
+`sequence_lengths`, and `used_sequence_indices`. That provenance is important
+because the vendored eSMC2 wrapper still drops very poor pairwise sequences
+before fitting; smckit now records exactly which sequences survived that
+vendor-side filter.
 
 ## Recommended starting call
 
@@ -155,6 +171,7 @@ Common fields to look at first:
 - `ne`: absolute effective population size curve
 - `time` and `time_years`: time grid in model units and calendar units
 - `rounds`: per-iteration diagnostics
+- `upstream`: raw upstream metadata and provenance when the vendored path ran
 
 The quickest sanity check is usually:
 
@@ -185,11 +202,12 @@ print(res["rounds"][-1])
   `beta` is ignored completely.
 - `mu_b`, `box_*`, `rp`, and `rho_penalty` are advanced controls. Most users
   should not touch them on a first pass.
-- Native/upstream fit parity is enforced on the current oracle fixture matrix
-  for fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped
-  `pop_vect=[3,3]` runs.
-- Upstream remains the safer choice outside that tracked matrix, especially for
-  multi-sequence inputs and broader grouped-`Xi` layouts.
+- Native/upstream fit parity is enforced across the public `.psmcfa` and
+  `multihetsep` input families, plus the tracked fixed-rho, rho-redo, beta,
+  sigma, beta+sigma, and grouped-state validation cases.
+- The vendored path is still the fidelity baseline for broader vendor-surface
+  experiments, especially unusual grouped-`Xi` layouts that are not yet in the
+  tracked gate matrix.
 
 ## Learn more
 
