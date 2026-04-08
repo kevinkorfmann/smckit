@@ -122,10 +122,10 @@ implementations.
 
    * - **Native**
 
-       .. image:: ../gallery/smcpp_native.png
-          :alt: SMC++ native figure
+       Native panel intentionally left blank for now.
 
-       The current in-repo SMC++ approximation on the shared zigzag simulation.
+       The current generated native SMC++ gallery output is not reliable enough
+       to display here.
 
      - **Upstream**
 
@@ -143,10 +143,10 @@ implementations.
 
    * - **Native**
 
-       .. image:: ../gallery/dical2_native.png
-          :alt: diCal2 native figure
+       Native panel intentionally left blank for now.
 
-       Fitted epoch boundaries, sizes, and growth from the in-repo implementation.
+       The current generated native diCal2 gallery output is not reliable
+       enough to display here.
 
      - **Upstream**
 

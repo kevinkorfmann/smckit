@@ -430,8 +430,19 @@ def esmc2_build_transition_matrix(Tc, Xi, t, beta, sigma, rho, L):
 
 
 @numba.njit(cache=True)
-def esmc2_build_hmm(n, Xi, beta, sigma, rho, mu, mu_b, L):
-    """Build complete HMM matrices for eSMC2.
+def _esmc2_build_hmm_impl(
+    n,
+    Xi,
+    beta,
+    sigma,
+    rho,
+    mu,
+    mu_b,
+    L,
+    beta_hidden,
+    sigma_hidden,
+):
+    """Build complete HMM matrices for eSMC2 with split hidden-state params.
 
     Parameters
     ----------
@@ -460,12 +471,49 @@ def esmc2_build_hmm(n, Xi, beta, sigma, rho, mu, mu_b, L):
     Tc : (n,) time boundaries
     e : (3, n) emission matrix
     """
-    Tc = esmc2_build_time_boundaries(n, beta, sigma)
+    Tc = esmc2_build_time_boundaries(n, beta_hidden, sigma_hidden)
     t = esmc2_expected_times(Tc, Xi, beta, sigma)
     q = esmc2_equilibrium_probs(Tc, Xi, beta, sigma)
     Q = esmc2_build_transition_matrix(Tc, Xi, t, beta, sigma, rho, L)
     e = esmc2_build_emission_matrix(mu, mu_b, Tc, t, beta, n)
     return Q, q, t, Tc, e
+
+
+def esmc2_build_hmm(
+    n,
+    Xi,
+    beta,
+    sigma,
+    rho,
+    mu,
+    mu_b,
+    L,
+    beta_hidden=None,
+    sigma_hidden=None,
+):
+    """Build complete HMM matrices for eSMC2.
+
+    When ``beta_hidden`` / ``sigma_hidden`` are supplied, the hidden-state time
+    grid matches upstream eSMC2's Baum-Welch semantics: hidden states are built
+    from the run's fixed ``Beta`` / ``Self`` values, while transition and
+    emission terms still use the candidate ``beta`` / ``sigma``.
+    """
+    if beta_hidden is None:
+        beta_hidden = beta
+    if sigma_hidden is None:
+        sigma_hidden = sigma
+    return _esmc2_build_hmm_impl(
+        n,
+        Xi,
+        beta,
+        sigma,
+        rho,
+        mu,
+        mu_b,
+        L,
+        beta_hidden,
+        sigma_hidden,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -482,6 +482,7 @@ compute_final_sufficient_statistics <- function(
   test <- eSMC2:::Build_zip_Matrix_mailund(Q, g, zipped[[2]], nu)
   fo <- eSMC2:::forward_zip_mailund(as.numeric(zipped[[1]]), g, nu, test[[1]])
   c <- exp(fo[[2]])
+  ll <- sum(fo[[2]])
   ba <- eSMC2:::Backward_zip_mailund(as.numeric(zipped[[1]]), test[[3]], length(t_vals), c)
 
   W_P <- list()
@@ -589,7 +590,7 @@ compute_final_sufficient_statistics <- function(
   N <- N * ((L - 1) / sum(N))
   M_counts <- M_counts * (L / sum(M_counts))
   q_ <- q_ / sum(q_)
-  list(N = N, M = t(M_counts), q = q_)
+  list(N = N, M = t(M_counts), q = q_, log_likelihood = ll)
 }
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 sink(file.path(out_dir, "stdout.log"))
@@ -710,6 +711,12 @@ if (capture_final_sufficient_statistics) {
   write.table(
     final_stats$q,
     file=file.path(out_dir, "final_q.txt"),
+    row.names=FALSE,
+    col.names=FALSE
+  )
+  write.table(
+    final_stats$log_likelihood,
+    file=file.path(out_dir, "final_ll.txt"),
     row.names=FALSE,
     col.names=FALSE
   )
@@ -886,6 +893,12 @@ if (capture_final_sufficient_statistics) {
                     )
                     .reshape(n)
                     .tolist()
+                ),
+                "log_likelihood": float(
+                    np.asarray(
+                        np.loadtxt(out_dir / "final_ll.txt", dtype=np.float64),
+                        dtype=np.float64,
+                    )
                 ),
             }
             payload["final_sufficient_statistics"] = final_stats
@@ -1121,6 +1134,11 @@ def _theta_from_beta_sigma(beta: float, sigma: float, mu_b: float, theta_W: floa
     return theta_W * (beta**2) * 2.0 / ((2.0 - sigma) * (beta + (1.0 - beta) * mu_b))
 
 
+def _theta_from_beta_sigma_bawe2_main(beta: float, sigma: float, theta_W: float) -> float:
+    """Reproduce the BaWe==2 wrapper theta reset before the main run."""
+    return theta_W * (beta**2) * 2.0 / (2.0 - sigma)
+
+
 def _theta_w_from_sequences(sequences: list[np.ndarray]) -> float:
     """Reproduce upstream theta_W aggregation on dense sequences."""
     theta_terms: list[float] = []
@@ -1316,7 +1334,7 @@ def _spg_box(
     best_value = f_value
     f_change = float("inf")
     iteration = 0
-    lsflag = 0
+    lsflag: int | None = None
 
     while pginf > gtol and iteration <= maxit and f_change > ftol:
         iteration += 1
@@ -1357,14 +1375,15 @@ def _spg_box(
         grad = grad_new
         projected_grad = _project_box(param - grad, lower, upper) - param
         pginf = float(np.max(np.abs(projected_grad)))
-    if f_value < best_value:
-        best_value = f_value
-        best_param = param.copy()
+        if f_value < best_value:
+            best_value = f_value
+            best_param = param.copy()
 
-    success = lsflag == 0 and (pginf <= gtol or f_change <= ftol or iteration >= maxit)
-    if not success and np.isfinite(best_value):
-        return best_param, best_value, False
-    return best_param, best_value, True
+    if lsflag is None:
+        return best_param.copy(), float(best_value), True
+
+    success = lsflag == 0 and (pginf <= gtol or f_change <= ftol)
+    return best_param.copy(), float(best_value), success
 
 
 def _optimize_baum_welch(
@@ -1390,6 +1409,9 @@ def _optimize_baum_welch(
     estimate_sigma: bool,
     estimate_rho: bool,
     estimate_pop: bool = True,
+    maxit: int | None = None,
+    beta_hidden: float | None = None,
+    sigma_hidden: float | None = None,
 ) -> tuple[float, float, float, np.ndarray, float]:
     """Optimize one upstream-style M-step with fixed sufficient statistics."""
     n_groups = len(pop_vect)
@@ -1403,7 +1425,6 @@ def _optimize_baum_welch(
     if estimate_pop:
         units.extend(["Xi"] * n_groups)
 
-    bounds = [(0.0, 1.0)] * len(units)
     transition_counts = np.asarray(stats["N"], dtype=np.float64)
 
     def _unpack(unit_values: np.ndarray) -> tuple[float, float, float, np.ndarray]:
@@ -1431,7 +1452,18 @@ def _optimize_baum_welch(
     def _objective(unit_values: np.ndarray) -> float:
         beta_val, sigma_val, rho_val, xi_val = _unpack(unit_values)
         Xi = _xi_from_free_params(xi_val, pop_vect, n)
-        Q, q, t, Tc, e = esmc2_build_hmm(n, Xi, beta_val, sigma_val, rho_val, mu, mu_b, L)
+        Q, q, t, Tc, e = esmc2_build_hmm(
+            n,
+            Xi,
+            beta_val,
+            sigma_val,
+            rho_val,
+            mu,
+            mu_b,
+            L,
+            beta_hidden=beta_hidden,
+            sigma_hidden=sigma_hidden,
+        )
         objective = _baum_welch_transition_objective(Q, transition_counts)
         objective += _xi_penalty(xi_val, rp)
         if rho_penalty > 0.0 and rho_base > 0.0 and rho_val > 0.0:
@@ -1450,26 +1482,15 @@ def _optimize_baum_welch(
     initial_array = np.clip(np.asarray(initial, dtype=np.float64), 0.0, 1.0)
     lower = np.zeros_like(initial_array)
     upper = np.ones_like(initial_array)
-    best_x, best_fun, success = _spg_box(
+    best_x, best_fun, _ = _spg_box(
         initial=initial_array,
         objective=_objective,
         lower=lower,
         upper=upper,
         method=2,
         memory=20,
-        maxit=15 + len(initial_array),
+        maxit=(15 + len(initial_array)) if maxit is None else int(maxit),
     )
-    if not success:
-        polish = minimize(
-            _objective,
-            np.clip(best_x, 0.0, 1.0),
-            method="L-BFGS-B",
-            bounds=bounds,
-            options={"maxiter": 50, "ftol": 1e-12},
-        )
-        if polish.success and float(polish.fun) < float(best_fun):
-            best_x = np.asarray(polish.x, dtype=np.float64)
-            best_fun = float(polish.fun)
     best_x = np.clip(np.asarray(best_x, dtype=np.float64), 0.0, 1.0)
     best_beta, best_sigma, best_rho, best_xi = _unpack(best_x)
     return best_beta, best_sigma, best_rho, best_xi, float(best_fun)
@@ -1611,9 +1632,22 @@ def _expectation_step(
     mu: float,
     mu_b: float,
     L: int,
+    beta_hidden: float | None = None,
+    sigma_hidden: float | None = None,
 ) -> tuple[dict, float, np.ndarray, np.ndarray]:
     """Run the upstream-equivalent zipped E-step for a parameter set."""
-    Q, q, t, Tc, e = esmc2_build_hmm(n, Xi, beta, sigma, rho, mu, mu_b, L)
+    Q, q, t, Tc, e = esmc2_build_hmm(
+        n,
+        Xi,
+        beta,
+        sigma,
+        rho,
+        mu,
+        mu_b,
+        L,
+        beta_hidden=beta_hidden,
+        sigma_hidden=sigma_hidden,
+    )
     zip_cache = _build_zip_cache(Q, e)
     accum_N = np.zeros((n, n), dtype=np.float64)
     accum_M = np.zeros((3, n), dtype=np.float64)
@@ -1816,6 +1850,144 @@ class Esmc2Result:
     rounds: list[dict] = field(default_factory=list)
 
 
+def _run_bawe2_prepass(
+    *,
+    sequences: list[np.ndarray],
+    n: int,
+    L: int,
+    n_iterations: int,
+    theta_W: float,
+    mu_b: float,
+    beta: float,
+    sigma: float,
+    box_r: tuple[float, float],
+    rho_penalty: float,
+) -> tuple[float, float]:
+    """Run the constant-population rho-only BaWe==2 prepass."""
+    theta_run = _theta_from_beta_sigma(beta, sigma, mu_b, theta_W)
+    mu_run = theta_run / (2.0 * L)
+    current_rho = theta_run
+    old_likelihood = None
+    saved_rho = current_rho
+    inner_it = 0
+
+    while inner_it < int(n_iterations):
+        inner_it += 1
+        stats, current_ll, _, _ = _expectation_step(
+            sequences=sequences,
+            n=n,
+            Xi=np.ones(n, dtype=np.float64),
+            beta=beta,
+            sigma=sigma,
+            rho=current_rho,
+            mu=mu_run,
+            mu_b=mu_b,
+            L=L,
+        )
+
+        if inner_it > 1 and (
+            (old_likelihood is not None and old_likelihood > current_ll)
+            or not np.isfinite(current_ll)
+        ):
+            if inner_it > 2:
+                current_rho = saved_rho
+            break
+
+        old_likelihood = current_ll
+        saved_rho = current_rho
+        _, _, current_rho, _, _ = _optimize_baum_welch(
+            stats=stats,
+            n=n,
+            L=L,
+            mu=mu_run,
+            mu_b=mu_b,
+            beta=beta,
+            sigma=sigma,
+            rho=current_rho,
+            xi_free=np.ones(1, dtype=np.float64),
+            pop_vect=np.asarray([n], dtype=np.int32),
+            box_b=(0.05, 1.0),
+            box_s=(0.0, 0.99),
+            box_r=box_r,
+            box_p=(2.0, 2.0),
+            rp=(0.0, 0.0),
+            rho_base=theta_run,
+            rho_penalty=rho_penalty,
+            estimate_beta=False,
+            estimate_sigma=False,
+            estimate_rho=True,
+            estimate_pop=False,
+        )
+
+    return current_rho, mu_run
+
+
+def _apply_bawe2_warm_start(
+    *,
+    sequences: list[np.ndarray],
+    n: int,
+    L: int,
+    n_iterations: int,
+    theta_W: float,
+    rho_over_theta: float,
+    mu_b: float,
+    estimate_beta: bool,
+    estimate_sigma: bool,
+    beta: float,
+    sigma: float,
+    box_b: tuple[float, float],
+    box_s: tuple[float, float],
+    box_r: tuple[float, float],
+    rho_penalty: float,
+) -> tuple[float, float, float, float]:
+    """Reproduce the upstream BaWe==2 rho-only warm-start wrapper."""
+    prepass_rho, prepass_mu = _run_bawe2_prepass(
+        sequences=sequences,
+        n=n,
+        L=L,
+        n_iterations=n_iterations,
+        theta_W=theta_W,
+        mu_b=mu_b,
+        beta=beta,
+        sigma=sigma,
+        box_r=box_r,
+        rho_penalty=rho_penalty,
+    )
+    gamma = float(rho_over_theta)
+    prepass_rho_public = _public_rho_from_sequence_rho(prepass_rho, L)
+    effect = (
+        prepass_rho_public * (beta * 2.0 * (1.0 - sigma) / (2.0 - sigma)) / prepass_mu
+        if prepass_mu > 0.0
+        else 0.0
+    )
+    if gamma > 0.0:
+        effect /= gamma
+
+    beta_warm = beta
+    sigma_warm = sigma
+    if estimate_sigma and not estimate_beta:
+        sigma_warm = (1.0 - effect) / (1.0 - (effect / 2.0))
+        sigma_warm = min(box_s[1], max(box_s[0], sigma_warm))
+    elif estimate_beta and not estimate_sigma:
+        beta_warm = min(box_b[1], max(box_b[0], effect))
+    elif estimate_beta and estimate_sigma:
+        if min(box_b) > (1.0 - max(box_s)):
+            sigma_warm = (1.0 - (effect / beta_warm)) / (1.0 - (effect / (2.0 * beta_warm)))
+            sigma_warm = min(box_s[1], max(box_s[0], sigma_warm))
+            beta_warm = effect * (2.0 - sigma_warm) / (2.0 * (1.0 - sigma_warm))
+            beta_warm = min(box_b[1], max(box_b[0], beta_warm))
+        else:
+            beta_warm = effect * (2.0 - sigma_warm) / (2.0 * (1.0 - sigma_warm))
+            beta_warm = min(box_b[1], max(box_b[0], beta_warm))
+            sigma_warm = (1.0 - (effect / beta_warm)) / (1.0 - (effect / (2.0 * beta_warm)))
+            sigma_warm = min(box_s[1], max(box_s[0], sigma_warm))
+
+    theta_run = _theta_from_beta_sigma_bawe2_main(beta_warm, sigma_warm, theta_W)
+    mu_run = theta_run / (2.0 * L)
+    rho_run = float(rho_over_theta) * theta_run
+    return beta_warm, sigma_warm, rho_run, mu_run
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -1922,6 +2094,7 @@ def _esmc2_native(
 
     # --- EM loop ---
     rounds: list[dict] = []
+    use_bawe2_wrapper = bool(estimate_beta or estimate_sigma)
     current_beta = beta
     current_sigma = sigma
     current_rho = rho_scaled
@@ -1931,13 +2104,41 @@ def _esmc2_native(
     bit = 0
     theta_run = _theta_from_beta_sigma(current_beta, current_sigma, mu_b, theta_W)
     mu_run = theta_run / (2.0 * L_total)
+    if use_bawe2_wrapper:
+        (
+            current_beta,
+            current_sigma,
+            current_rho,
+            mu_run,
+        ) = _apply_bawe2_warm_start(
+            sequences=sequences,
+            n=n,
+            L=L_total,
+            n_iterations=n_iterations,
+            theta_W=theta_W,
+            rho_over_theta=rho_over_theta,
+            mu_b=mu_b,
+            estimate_beta=estimate_beta,
+            estimate_sigma=estimate_sigma,
+            beta=current_beta,
+            sigma=current_sigma,
+            box_b=box_b,
+            box_s=box_s,
+            box_r=box_r,
+            rho_penalty=rho_penalty,
+        )
+        theta_run = mu_run * 2.0 * L_total
+    allow_redo_rho = bool(estimate_rho and not use_bawe2_wrapper)
 
     while bit < max_bits:
         bit += 1
         inner_maxit = int(n_iterations)
-        theta_run = _theta_from_beta_sigma(current_beta, current_sigma, mu_b, theta_W)
-        mu_run = theta_run / (2.0 * L_total)
+        if not use_bawe2_wrapper or bit > 1:
+            theta_run = _theta_from_beta_sigma(current_beta, current_sigma, mu_b, theta_W)
+            mu_run = theta_run / (2.0 * L_total)
         rho_base = gamma * theta_run if estimate_rho else current_rho
+        beta_hidden = current_beta
+        sigma_hidden = current_sigma
 
         # Upstream restarts rho/Xi from the new prior when redo_R triggers.
         current_rho = rho_base
@@ -1979,6 +2180,8 @@ def _esmc2_native(
                 mu=mu_run,
                 mu_b=mu_b,
                 L=L_total,
+                beta_hidden=beta_hidden,
+                sigma_hidden=sigma_hidden,
             )
 
             if inner_it > 1 and (
@@ -2029,6 +2232,9 @@ def _esmc2_native(
                     estimate_sigma=("sigma" in stage),
                     estimate_rho=("rho" in stage),
                     estimate_pop=("Xi" in stage),
+                    maxit=None if ("rho" in stage) else 30,
+                    beta_hidden=beta_hidden,
+                    sigma_hidden=sigma_hidden,
                 )
 
             Xi_round = _xi_from_free_params(current_xi_free, pv, n)
@@ -2042,6 +2248,8 @@ def _esmc2_native(
                 mu=mu_run,
                 mu_b=mu_b,
                 L=L_total,
+                beta_hidden=beta_hidden,
+                sigma_hidden=sigma_hidden,
             )
 
             rounds.append({
@@ -2069,7 +2277,7 @@ def _esmc2_native(
             )
 
         gamma_next = current_rho / theta_run if theta_run > 0.0 else 0.0
-        if estimate_rho and (gamma_next <= 0.5 * gamma or gamma_next >= 2.0 * gamma):
+        if allow_redo_rho and (gamma_next <= 0.5 * gamma or gamma_next >= 2.0 * gamma):
             max_bits += 1
             gamma = gamma_next
 

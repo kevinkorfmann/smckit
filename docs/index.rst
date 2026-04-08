@@ -112,13 +112,13 @@ Python environment.
      - ✓
      - ✗
      - tracked native-vs-upstream log-`N_e` corr
-     - Public upstream path exists, but the vendored source/bootstrap contract is still incomplete.
+     - Public upstream path exists; use the upstream path for docs and gallery output while the native presentation remains unstable.
    * - diCal2
      - ✓
      - ✓
      - ✗
      - `2.27%` max rel loglik delta
-     - Public upstream Java bridge parses the EM-path stdout into structured results; Java must be installed locally.
+     - Public upstream Java bridge parses the EM-path stdout into structured results; the gallery currently keeps only the upstream panel.
    * - SSM
      - ✗
      - ✓
@@ -247,7 +247,7 @@ Quick Feature-to-Tool Table
      - many unphased genomes
      - `.smc` or `.smc.gz`
      - `N_e(t)`
-     - upstream-backed runs are the safest choice today; the native solver is still tracked against them
+     - upstream-backed runs are the safest choice today; docs currently present the upstream gallery panel only
    * - :doc:`ASMC <methods/asmc>`
      - per-site pairwise ancestry or TMRCA on phased haplotypes
      - hap/map/samples plus decoding quantities
@@ -257,7 +257,7 @@ Quick Feature-to-Tool Table
      - explicit structured demographic model files
      - `.param`, `.demo`, `.config`, sequences
      - sizes, growth, and migration parameters
-     - best fit when the demographic specification already exists outside smckit
+     - best fit when the demographic specification already exists outside smckit, with the upstream path acting as the display baseline
    * - :doc:`SSM Framework <methods/ssm>` / :doc:`PSMC-SSM <guide/psmc-ssm>`
      - method development, HMM inspection, and gradient fitting
      - `psmcfa`-style observations
