@@ -5,6 +5,11 @@
 [![PyPI status](https://img.shields.io/pypi/status/smckit.svg)](https://pypi.org/project/smckit/)
 [![Publish](https://github.com/kevinkorfmann/smckit/actions/workflows/publish.yml/badge.svg?branch=main)](https://github.com/kevinkorfmann/smckit/actions/workflows/publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Extras: all-models](https://img.shields.io/badge/extra-all--models-0A7BBB)](https://pypi.org/project/smckit/)
+[![Extra: asmc](https://img.shields.io/badge/extra-asmc-0A7BBB)](https://pypi.org/project/smckit/)
+[![Extra: jax](https://img.shields.io/badge/extra-jax-0A7BBB)](https://pypi.org/project/smckit/)
+[![Extra: dev](https://img.shields.io/badge/extra-dev-0A7BBB)](https://pypi.org/project/smckit/)
+[![Extra: docs](https://img.shields.io/badge/extra-docs-0A7BBB)](https://pypi.org/project/smckit/)
 
 Unified framework for Sequentially Markovian Coalescent methods.
 
