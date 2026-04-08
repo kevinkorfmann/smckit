@@ -23,17 +23,17 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-
-[project.urls]
-Homepage = "https://github.com/kevinkorfmann/smckit"
-Repository = "https://github.com/kevinkorfmann/smckit"
-Issues = "https://github.com/kevinkorfmann/smckit/issues"
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
     "matplotlib>=3.7",
     "numba>=0.59",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kevinkorfmann/smckit"
+Repository = "https://github.com/kevinkorfmann/smckit"
+Issues = "https://github.com/kevinkorfmann/smckit/issues"
 
 [project.optional-dependencies]
 jax = [
