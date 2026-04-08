@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "smckit"
-version = "0.0.1"
+version = "0.0.1b0"
 description = "Unified framework for Sequentially Markovian Coalescent methods"
 readme = "README.md"
-license = "MIT"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
     { name = "Kevin Korfmann" },
@@ -16,12 +16,18 @@ keywords = ["population-genetics", "coalescent", "demographic-inference", "PSMC"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kevinkorfmann/smckit"
+Repository = "https://github.com/kevinkorfmann/smckit"
+Issues = "https://github.com/kevinkorfmann/smckit/issues"
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
