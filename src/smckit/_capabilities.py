@@ -12,11 +12,14 @@ STANDARD_CAPABILITY = "standard"
 
 def _native_capabilities(entry: dict[str, Any]) -> dict[str, Any]:
     promoted = bool(entry.get("native_default_eligible", False))
+    promoted_capabilities = list(entry.get("native_promoted_capabilities", []))
+    if promoted and STANDARD_CAPABILITY not in promoted_capabilities:
+        promoted_capabilities.insert(0, STANDARD_CAPABILITY)
     return {
         "available": entry.get("native") == "✓",
         "trusted": bool(entry.get("native_trusted_for_docs", False)),
         "default_eligible": promoted,
-        "promoted": [STANDARD_CAPABILITY] if promoted else [],
+        "promoted": promoted_capabilities if promoted else [],
         "warning": entry.get("native_warning"),
         "agreement": entry.get("tracked_agreement"),
     }

@@ -1,5 +1,7 @@
 """Tests for PSMC implementation — pattern parsing, time intervals, HMM params, EM."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -14,17 +16,22 @@ from smckit.backends._numpy import (
     q_function,
     viterbi,
 )
+from smckit.io import read_psmc_output, read_psmcfa
 from smckit.tl._psmc import (
     PSMC_N_PARAMS,
+    bootstrap_psmc_records,
     compute_hmm_params,
     compute_time_intervals,
     parse_pattern,
+    psmc,
+    psmc_bootstrap,
+    split_psmc_records,
 )
-
 
 # ---------------------------------------------------------------------------
 # Pattern parsing
 # ---------------------------------------------------------------------------
+
 
 class TestParsePattern:
     def test_default_pattern(self):
@@ -62,9 +69,164 @@ class TestParsePattern:
         assert all(par_map[i] == 0 for i in range(5))
 
 
+class TestCompletePsmcWorkflow:
+    @staticmethod
+    def _records():
+        return [
+            {
+                "name": "chr1",
+                "codes": np.array([0, 1, 2, 0, 0, 1, 0], dtype=np.int8),
+            },
+            {
+                "name": "chr2",
+                "codes": np.array([0, 2, 0, 1, 0], dtype=np.int8),
+            },
+        ]
+
+    def test_splitfa_boundary_rule(self):
+        records = [{"name": "chr1", "codes": np.zeros(120, dtype=np.int8)}]
+        split = split_psmc_records(records, segment_length=50)
+        assert [len(record["codes"]) for record in split] == [50, 70]
+        assert [(record["source_start"], record["source_end"]) for record in split] == [
+            (0, 50),
+            (50, 120),
+        ]
+
+    def test_bootstrap_is_deterministic_for_seed(self):
+        segments = split_psmc_records(self._records(), segment_length=3)
+        first = bootstrap_psmc_records(segments, np.random.default_rng(19))
+        second = bootstrap_psmc_records(segments, np.random.default_rng(19))
+        assert [record["source_name"] for record in first] == [
+            record["source_name"] for record in second
+        ]
+        assert [record["source_start"] for record in first] == [
+            record["source_start"] for record in second
+        ]
+
+    @pytest.mark.parametrize("decode", ["posterior", "full"])
+    def test_native_decode_missing_multirecord_and_output_round_trip(
+        self,
+        tmp_path,
+        decode,
+    ):
+        source = tmp_path / "input.psmcfa"
+        source.write_text(">chr1\nTKNTTTK\n>chr2\nTNTKT\n", encoding="utf-8")
+        output = tmp_path / "native.psmc"
+        result = psmc(
+            read_psmcfa(source),
+            pattern="1+1+1",
+            n_iterations=0,
+            random_init=0,
+            seed=2,
+            decode=decode,
+            output_path=output,
+            implementation="native",
+        ).results["psmc"]
+
+        assert result["input_summary"] == {
+            "records": 2,
+            "original_records": 2,
+            "callable_windows": 10,
+            "heterozygous_windows": 3,
+            "missing_windows": 2,
+            "bootstrap": False,
+        }
+        assert result["decode"]["mode"] == decode
+        assert len(result["decode"]["records"]) == 2
+        if decode == "full":
+            for record in result["decode"]["records"]:
+                np.testing.assert_allclose(record["posterior"].sum(axis=1), 1.0)
+        parsed = read_psmc_output(output)
+        assert len(parsed) == 1
+        assert parsed[0]["pattern"] == "1+1+1"
+        if decode == "posterior":
+            assert parsed[0]["decoded_segments"]
+        else:
+            assert len(parsed[0]["decoded_full"]) == 12
+        assert result["provenance"]["artifacts"][0]["sha256"]
+
+    def test_fixed_intervals_divergence_and_transition_cap(self, tmp_path):
+        source = tmp_path / "input.psmcfa"
+        source.write_text(">chr1\nTTKTTTTKTT\n", encoding="utf-8")
+        params = np.array([0.2, 0.05, 4.0, 1.0, 1.2, 0.8, 0.4])
+        result = psmc(
+            read_psmcfa(source),
+            pattern="1+1+1",
+            n_iterations=0,
+            initial_params=params,
+            time_intervals=[0.0, 0.5, 4.0],
+            divergence_time=0.4,
+            decode="full",
+            transition_cap=1,
+            implementation="native",
+        ).results["psmc"]
+
+        np.testing.assert_allclose(result["time"], [0.0, 0.5, 4.0])
+        assert result["divergence_time"] == pytest.approx(0.4)
+        posterior = result["decode"]["records"][0]["posterior"]
+        np.testing.assert_allclose(posterior[1:, 2], 0.0)
+
+    def test_bootstrap_workflow_records_replicates(self, tmp_path):
+        source = tmp_path / "input.psmcfa"
+        source.write_text(">chr1\nTTKTTTTKTTTT\n", encoding="utf-8")
+        result = psmc_bootstrap(
+            read_psmcfa(source),
+            n_replicates=2,
+            segment_length=5,
+            seed=11,
+            output_dir=tmp_path / "bootstrap",
+            pattern="1+1+1",
+            n_iterations=0,
+            random_init=0,
+        ).results["psmc_bootstrap"]
+
+        assert result["n_replicates"] == 2
+        assert len(result["replicates"]) == 2
+        assert result["replicates"][0]["seed"] != result["replicates"][1]["seed"]
+        assert all(Path(rep["artifact"]).is_file() for rep in result["replicates"])
+
+    def test_sequence_probabilities_and_simulation_are_serialized(self, tmp_path):
+        source = tmp_path / "input.psmcfa"
+        source.write_text(">chr1\nTTKNTTTKTTTT\n", encoding="utf-8")
+        output = tmp_path / "simulation.psmc"
+
+        result = psmc(
+            read_psmcfa(source),
+            pattern="1+1+1",
+            n_iterations=0,
+            random_init=0,
+            sequence_probability=True,
+            simulate=True,
+            seed=29,
+            output_path=output,
+            implementation="native",
+        ).results["psmc"]
+        repeated = psmc(
+            read_psmcfa(source),
+            pattern="1+1+1",
+            n_iterations=0,
+            random_init=0,
+            sequence_probability=True,
+            simulate=True,
+            seed=29,
+            implementation="native",
+        ).results["psmc"]
+
+        assert len(result["sequence_probabilities"][0]["scale"]) == 12
+        np.testing.assert_array_equal(
+            result["simulated_records"][0]["codes"],
+            repeated["simulated_records"][0]["codes"],
+        )
+        assert result["simulated_records"][0]["codes"][3] == 2
+        parsed = read_psmc_output(output)[0]
+        assert len(parsed["sequence_probabilities"][0]["scale"]) == 12
+        assert parsed["simulated_records"][0]["sequence"][3] == "N"
+
+
 # ---------------------------------------------------------------------------
 # Time intervals
 # ---------------------------------------------------------------------------
+
 
 class TestTimeIntervals:
     def test_basic(self):
@@ -95,6 +257,7 @@ class TestTimeIntervals:
 # HMM parameters from coalescent params
 # ---------------------------------------------------------------------------
 
+
 class TestComputeHmmParams:
     @pytest.fixture
     def simple_setup(self):
@@ -102,12 +265,12 @@ class TestComputeHmmParams:
         par_map, n_free, n = parse_pattern("1+1+1")
         n_params = n_free + PSMC_N_PARAMS
         params = np.zeros(n_params)
-        params[0] = 0.01   # theta
+        params[0] = 0.01  # theta
         params[1] = 0.0025  # rho
-        params[2] = 15.0   # max_t
-        params[3] = 1.0    # lambda_0
-        params[4] = 1.0    # lambda_1
-        params[5] = 1.0    # lambda_2
+        params[2] = 15.0  # max_t
+        params[3] = 1.0  # lambda_0
+        params[4] = 1.0  # lambda_1
+        params[5] = 1.0  # lambda_2
         t = compute_time_intervals(n, params[2], 0.1)
         return params, par_map, n, t
 
@@ -171,16 +334,19 @@ class TestComputeHmmParams:
 # Forward / backward / likelihood
 # ---------------------------------------------------------------------------
 
+
 class TestForwardBackward:
     @pytest.fixture
     def hmm_setup(self):
         """Simple 2-state HMM for testing."""
         a = np.array([[0.9, 0.1], [0.2, 0.8]])
-        e = np.array([
-            [0.8, 0.2],  # P(obs=0 | state)
-            [0.2, 0.8],  # P(obs=1 | state)
-            [1.0, 1.0],  # missing
-        ])
+        e = np.array(
+            [
+                [0.8, 0.2],  # P(obs=0 | state)
+                [0.2, 0.8],  # P(obs=1 | state)
+                [1.0, 1.0],  # missing
+            ]
+        )
         a0 = np.array([0.6, 0.4])
         seq = np.array([0, 1, 0, 0, 1, 1, 0], dtype=np.int8)
         return a, e, a0, seq
@@ -237,6 +403,7 @@ class TestForwardBackward:
 # Viterbi
 # ---------------------------------------------------------------------------
 
+
 class TestViterbi:
     def test_basic(self):
         a = np.array([[0.9, 0.1], [0.2, 0.8]])
@@ -253,6 +420,7 @@ class TestViterbi:
 # ---------------------------------------------------------------------------
 # Expected counts & Q-function
 # ---------------------------------------------------------------------------
+
 
 class TestExpectedCounts:
     def test_q_increases_or_stable(self):
@@ -292,6 +460,7 @@ class TestExpectedCounts:
 # ---------------------------------------------------------------------------
 # Integration: PSMC HMM with forward-backward
 # ---------------------------------------------------------------------------
+
 
 class TestPsmcIntegration:
     def test_psmc_hmm_forward_backward(self):

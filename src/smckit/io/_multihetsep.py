@@ -151,9 +151,7 @@ def read_multihetsep(
                 if n_haplotypes is None:
                     n_haplotypes = _detect_n_haplotypes(allele_cols)
                     if n_haplotypes == 0:
-                        raise ValueError(
-                            f"Could not detect haplotype count from {filepath}"
-                        )
+                        raise ValueError(f"Could not detect haplotype count from {filepath}")
 
                 if chrom not in chr_segments:
                     chr_segments[chrom] = {
@@ -168,13 +166,15 @@ def read_multihetsep(
 
         for chrom in chr_segments:
             seg = chr_segments[chrom]
-            segments.append({
-                "chr": chrom,
-                "source_path": str(filepath),
-                "positions": np.array(seg["positions"], dtype=np.int64),
-                "n_called": np.array(seg["n_called"], dtype=np.int64),
-                "_allele_cols": seg["allele_cols"],
-            })
+            segments.append(
+                {
+                    "chr": chrom,
+                    "source_path": str(filepath),
+                    "positions": np.array(seg["positions"], dtype=np.int64),
+                    "n_called": np.array(seg["n_called"], dtype=np.int64),
+                    "_allele_cols": seg["allele_cols"],
+                }
+            )
 
     if n_haplotypes is None or n_haplotypes == 0:
         raise ValueError("No valid data found in input file(s)")
@@ -194,9 +194,7 @@ def read_multihetsep(
     # Validate pair indices
     for i, j in pairs:
         if i < 0 or j < 0 or i >= n_haplotypes or j >= n_haplotypes:
-            raise ValueError(
-                f"Pair ({i}, {j}) out of range for {n_haplotypes} haplotypes"
-            )
+            raise ValueError(f"Pair ({i}, {j}) out of range for {n_haplotypes} haplotypes")
 
     # Compute observations per pair per segment
     for seg in segments:
@@ -243,6 +241,7 @@ def read_multihetsep(
     data.uns["pairs"] = pairs
     data.uns["n_haplotypes"] = n_haplotypes
     data.uns["source_paths"] = [str(p) for p in paths]
+    data.uns["skip_ambiguous"] = bool(skip_ambiguous)
 
     return data
 
@@ -297,6 +296,30 @@ def read_msmc_output(path: str | Path) -> dict[str, np.ndarray]:
         "right_boundary": np.array(right_boundaries, dtype=np.float64),
         "lambda": np.array(lambdas, dtype=np.float64),
     }
+
+
+def write_msmc_output(
+    path: str | Path,
+    *,
+    left_boundary: np.ndarray,
+    right_boundary: np.ndarray,
+    lambda_values: np.ndarray,
+) -> Path:
+    """Write an original-compatible MSMC2 ``.final.txt`` result."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    left = np.asarray(left_boundary, dtype=np.float64)
+    right = np.asarray(right_boundary, dtype=np.float64)
+    lambdas = np.asarray(lambda_values, dtype=np.float64)
+    if left.shape != right.shape or left.shape != lambdas.shape:
+        raise ValueError("MSMC2 output arrays must have identical shapes.")
+    with path.open("wt", encoding="utf-8") as handle:
+        handle.write("time_index\tleft_time_boundary\tright_time_boundary\tlambda\n")
+        for index, (left_value, right_value, lambda_value) in enumerate(
+            zip(left, right, lambdas, strict=True)
+        ):
+            handle.write(f"{index}\t{left_value:.17g}\t{right_value:.17g}\t{lambda_value:.17g}\n")
+    return path
 
 
 def read_msmc_combined_output(

@@ -47,7 +47,8 @@ def test_public_capability_registry_is_machine_readable() -> None:
     psmc = smckit.capabilities("psmc")
     assert psmc["schema_version"] == 1
     assert psmc["native"]["default_eligible"] is True
-    assert psmc["native"]["promoted"] == ["standard"]
+    assert psmc["native"]["promoted"][0] == "standard"
+    assert {"bootstrap", "decode", "output"} <= set(psmc["native"]["promoted"])
     assert psmc["upstream"]["tool"] == "psmc"
 
     dical2 = smckit.capabilities("dical2")

@@ -33,6 +33,8 @@ data = smckit.tl.psmc(
     tr_ratio=4.0,
     mu=1.25e-8,
     generation_time=25.0,
+    decode="posterior",
+    output_path="sample.psmc",
     implementation="native",
 )
 
@@ -46,6 +48,31 @@ mutation-to-recombination scale ratio, not a claim about your organism.
 If you want to validate against the original upstream `psmc` binary, use a
 source checkout instead of a wheel install so the vendored upstream source is
 present.
+
+For a diploid consensus FASTA or FASTQ, create the windowed input natively:
+
+```python
+data = smckit.pp.psmcfa_from_consensus(
+    "diploid.fq.gz",
+    output_path="diploid.psmcfa.gz",
+    min_quality=20,
+    min_good_bases=10_000,
+    block_size=100,
+    masks={"chr1": [(10_000, 20_000)]},
+)
+```
+
+The mask coordinates are 0-based and half-open. The converter also supports
+the original transition, transversion, CpG-only, and CpG-exclusion filters.
+For bootstrap confidence curves, use `smckit.tl.psmc_bootstrap`; it applies
+the original `splitfa` boundary and length-matched resampling rules.
+
+Every original PSMC entry point remains selectable. For example:
+
+```bash
+smckit upstream psmc --entrypoint fq2psmcfa -- -q20 diploid.fq.gz
+smckit upstream psmc -- -N 25 -t 15 -r 5 -p 4+25*2+4+6 diploid.psmcfa
+```
 
 ## Inspect the result
 

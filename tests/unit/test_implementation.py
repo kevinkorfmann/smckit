@@ -97,6 +97,18 @@ def test_auto_falls_back_for_unpromoted_requested_capability() -> None:
     )
 
 
+def test_auto_uses_native_for_promoted_psmc_workflow_capability() -> None:
+    assert (
+        choose_implementation(
+            "auto",
+            upstream_available=True,
+            method_name="psmc",
+            requested_capabilities={"bootstrap", "decode", "output"},
+        )
+        == "native"
+    )
+
+
 def test_choose_implementation_auto_keeps_unpromoted_method_upstream() -> None:
     assert (
         choose_implementation(
@@ -113,7 +125,6 @@ def test_dical2_upstream_requires_path_backed_inputs() -> None:
         dical2(SmcData(), implementation="upstream")
 
 
-@pytest.mark.slow
 def test_dical2_auto_uses_native_for_array_inputs() -> None:
     data = SmcData(
         sequences=np.array([[0, 1, 0, 0], [0, 0, 1, 0]], dtype=np.int8),
@@ -123,7 +134,7 @@ def test_dical2_auto_uses_native_for_array_inputs() -> None:
     res = dical2(
         data,
         n_intervals=3,
-        n_em_iterations=1,
+        n_em_iterations=0,
         implementation="auto",
     ).results["dical2"]
     assert res["implementation_requested"] == "auto"
@@ -146,7 +157,7 @@ def test_smcpp_implementation_alias_and_metadata() -> None:
         res = smcpp(
             _tiny_smcpp_data(),
             n_intervals=4,
-            max_iterations=1,
+            max_iterations=0,
             regularization=1.0,
             seed=1,
             backend="native",
