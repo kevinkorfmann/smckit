@@ -6,7 +6,9 @@ import warnings
 from typing import Any
 
 import smckit.upstream as upstream
+from smckit._capabilities import native_supports
 from smckit._method_status import method_status
+from smckit._provenance import build_provenance
 
 VALID_IMPLEMENTATIONS = {"auto", "native", "upstream"}
 
@@ -48,9 +50,16 @@ def choose_implementation(
     implementation: str,
     *,
     upstream_available: bool,
+    method_name: str | None = None,
+    requested_capabilities: set[str] | None = None,
 ) -> str:
     """Resolve ``auto`` to the concrete implementation that will run."""
     if implementation == "auto":
+        if method_name is not None and native_supports(
+            method_name,
+            requested_capabilities,
+        ):
+            return "native"
         return "upstream" if upstream_available else "native"
     return implementation
 
@@ -79,9 +88,16 @@ def require_upstream_available(method_name: str) -> None:
 def annotate_result(
     result: dict[str, Any],
     *,
+    method_name: str,
     implementation_requested: str,
     implementation_used: str,
     upstream_metadata: dict[str, Any] | None = None,
+    effective_args: dict[str, Any] | None = None,
+    input_paths: list[str] | None = None,
+    seed: int | None = None,
+    runtime_seconds: float | None = None,
+    warning_messages: list[str] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Attach standardized implementation metadata to a result payload."""
     result["implementation_requested"] = implementation_requested
@@ -94,6 +110,18 @@ def annotate_result(
             result["upstream"] = merged
         else:
             result["upstream"] = upstream_metadata
+    result["provenance"] = build_provenance(
+        method=method_name,
+        implementation_requested=implementation_requested,
+        implementation_used=implementation_used,
+        arguments=effective_args,
+        inputs=input_paths,
+        seed=seed,
+        runtime_seconds=runtime_seconds,
+        warnings=warning_messages,
+        artifacts=artifacts,
+        upstream=upstream_metadata,
+    )
     return result
 
 

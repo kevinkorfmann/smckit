@@ -36,6 +36,9 @@ Homepage = "https://github.com/kevinkorfmann/smckit"
 Repository = "https://github.com/kevinkorfmann/smckit"
 Issues = "https://github.com/kevinkorfmann/smckit/issues"
 
+[project.scripts]
+smckit = "smckit.cli:main"
+
 [project.optional-dependencies]
 psmc = []
 msmc2 = []
@@ -46,8 +49,12 @@ asmc = [
     "asmc-asmc>=1.4.0; platform_system != 'Windows'",
 ]
 dical2 = []
+phlash = [
+    "phlash==1.0.6; python_version >= '3.12'",
+]
 all-models = [
     "asmc-asmc>=1.4.0; platform_system != 'Windows'",
+    "phlash==1.0.6; python_version >= '3.12'",
 ]
 jax = [
     "jax>=0.4.20",
@@ -64,6 +71,11 @@ docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "myst-parser",
+]
+publication = [
+    "snakemake>=8; python_version >= '3.11'",
+    "stdpopsim>=0.3",
+    "pyyaml>=6",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -85,6 +97,11 @@ select = ["E", "F", "I", "W", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
+    "unit: fast tests without external runtimes",
+    "integration: packaged workflow tests",
+    "oracle: live native-versus-upstream validation",
+    "benchmark: performance and memory regression tests",
+    "publication: frozen manuscript reproduction workflow",
     "gpu: marks tests that require GPU (deselect with '-m \"not gpu\"')",
     "slow: marks tests that take significant time to run",
 ]

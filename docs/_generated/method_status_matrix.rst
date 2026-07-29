@@ -49,6 +49,12 @@
      - ✗
      - `README exp search matches best params; fixed-point dloglik=7.45e-4. README IM search matches best params; fixed-point dloglik=3.15e-2.`
      - Public upstream Java bridge parses the EM-path stdout into structured results. Native README exp and IM searches now reach the upstream best-fit parameter vectors; the remaining gap is the native fixed-point likelihood value at those shared points.
+   * - PHLASH
+     - ✓
+     - n/a
+     - ✗
+     - `external package integration`
+     - Normalized adapter for the maintained PHLASH 1.0.6 Python package; no independent rewrite is planned for 1.0.
    * - SSM
      - n/a
      - ✓

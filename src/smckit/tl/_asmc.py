@@ -589,6 +589,8 @@ def asmc(
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("asmc"),
+        method_name="asmc",
+        requested_capabilities={"upstream_options"} if upstream_options else None,
     )
     warn_if_native_not_trusted("asmc", implementation_used)
     if implementation_used == "upstream":
@@ -686,7 +688,7 @@ def asmc(
         "per_pair_maps": result.per_pair_maps,
         "per_pair_indices": result.per_pair_indices,
         "n_pairs_decoded": result.n_pairs_decoded,
-    }, implementation_requested=implementation, implementation_used=implementation_used)
+    }, method_name="asmc", implementation_requested=implementation, implementation_used=implementation_used)
 
     return data
 
@@ -795,6 +797,7 @@ def _asmc_upstream(
             )
         data.results["asmc"] = annotate_result(
             result,
+            method_name="asmc",
             implementation_requested=implementation_requested,
             implementation_used="upstream",
         )

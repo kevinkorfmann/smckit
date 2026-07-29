@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "generated": "2026-07-29",
+  "tools": {
+    "psmc": {
+      "repository": "https://github.com/lh3/psmc.git",
+      "commit": "82fa2ada83ee463fe1251b562ae3d60e82d7ad6a",
+      "path": "vendor/psmc",
+      "license": "MIT",
+      "runtime": "C/make"
+    },
+    "msmc2": {
+      "repository": "https://github.com/stschiff/msmc2.git",
+      "commit": "5fc12bcd3afc74569cfc9d457b74497fbf441012",
+      "path": "vendor/msmc2",
+      "license": "GPL-3.0",
+      "runtime": "D/make"
+    },
+    "asmc": {
+      "repository": "https://github.com/PalamaraLab/ASMC.git",
+      "commit": "35eeea7ebd28827dd8cb0367ae0530480effdeee",
+      "path": "vendor/ASMC",
+      "license": "upstream license",
+      "runtime": "C++/Boost"
+    },
+    "msmc_im": {
+      "repository": "https://github.com/wangke16/MSMC-IM.git",
+      "commit": "d7fb1d0559027bf5541d08d3f2df09e94658892d",
+      "path": "vendor/MSMC-IM",
+      "license": "upstream license",
+      "runtime": "Python"
+    },
+    "esmc2": {
+      "repository": "https://github.com/TPPSellinger/eSMC2.git",
+      "commit": "66e60b339556a1b9faa63126e0237288770612e9",
+      "path": "vendor/eSMC2",
+      "license": "upstream license",
+      "runtime": "R"
+    },
+    "smcpp": {
+      "path": "vendor/smcpp",
+      "license": "GPL-3.0",
+      "runtime": "legacy Python/C++",
+      "audit_status": "tracked snapshot; immutable origin metadata still required"
+    },
+    "dical2": {
+      "path": "vendor/diCal2",
+      "license": "GPL-3.0",
+      "runtime": "Java",
+      "audit_status": "tracked snapshot; immutable origin metadata still required"
+    },
+    "phlash": {
+      "repository": "https://github.com/jthlab/phlash.git",
+      "commit": "96a6e3f8e01053271e88d21c97862198422d9ae0",
+      "package": "phlash==1.0.6",
+      "sdist_sha256": "3acd01d0d3292178c5ee725e96887df40012f2caadd219f64b70d25225d9bc80",
+      "wheel_sha256": "506482021b203cc5a1c111e3bf5d47910116f599f53f5c3d5eab5890845b8526",
+      "license": "MIT",
+      "runtime": "Python >=3.12 / JAX"
+    }
+  }
+}

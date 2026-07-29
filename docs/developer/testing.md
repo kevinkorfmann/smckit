@@ -1,138 +1,60 @@
 # Testing
 
-smckit uses `pytest` and a three-tier test organization. The goals are
-fast feedback during development, confidence in numerical correctness, and
-GPU coverage where applicable.
+The acceptance suite has five explicit tiers. A test may carry additional
+`slow` or `gpu` markers, but it must have exactly one primary tier based on its
+path or explicit marker.
 
-## Test organization
+## Tiers and budgets
 
-```
-tests/
-├── unit/          # fast, CPU-only, no external data
-├── integration/   # validates against original tool outputs
-└── gpu/           # GPU backend correctness
-```
+| Tier | Purpose | Routine budget |
+|---|---|---:|
+| `unit` | Pure Python/native kernels, no external runtime | under 5 minutes |
+| `integration` | Packaged workflows and fixed fixtures | per-PR |
+| `oracle` | Live native-versus-original comparisons | scheduled/on demand |
+| `benchmark` | Runtime and peak-memory regression | scheduled |
+| `publication` | Frozen end-to-end evidence workflow | release gate |
 
-### Unit tests (`tests/unit/`)
-
-Unit tests exercise the public API of individual modules with **synthetic,
-in-memory data**. They should:
-
-- Run in well under a second each.
-- Require no files on disk other than what they create.
-- Have no network or external-tool dependencies.
-- Be safe to run in parallel.
+Run them with:
 
 ```bash
-pytest tests/unit/
+pixi run test-unit
+pixi run test-integration
+pixi run -e upstream test-oracle
+uv run pytest -m benchmark
+uv run pytest -m publication
 ```
 
-CI runs the full unit suite on every push.
+Expensive optimization, compilation, and whole-genome cases must be marked
+`slow`; they never belong in routine unit feedback. The scheduled jobs retain
+coverage.
 
-### Integration tests (`tests/integration/`)
+## Numerical acceptance
 
-Integration tests **validate the smckit reimplementation against the
-original tool's output** on real example data. They are the source of truth
-that the reimplementation is correct.
+Every native method has a method-specific oracle specification. Identical
+deterministic kernels normally use machine-precision tolerances. Unless the
+specification justifies another scientific metric, final deterministic results
+must meet 0.1% scalar relative error, 1% normalized trajectory error, and
+`1e-6` per-site log-likelihood error.
 
-```bash
-pytest tests/integration/
-```
+Stochastic optimization is evaluated on at least 20 paired simulations. Native
+results must lie within upstream seed-to-seed variation and show no material
+paired bias.
 
-Each integration test typically:
+Optimization starts only after correctness is locked. Parsing, compilation/JIT,
+algorithmic execution, and plotting are timed separately. Native promotion
+requires a warmed-runtime bootstrap confidence interval excluding parity and
+peak memory at most 25% above upstream.
 
-1. Loads an example input from `vendor/<tool>/example_data/`.
-2. Runs the smckit version with the same parameters as the original tool.
-3. Loads the original tool's output from a checked-in golden file.
-4. Asserts numerical equivalence within tolerance.
+## Required edge cases
 
-```python
-def test_psmc_matches_c_reference():
-    data = smckit.io.read_psmcfa("vendor/psmc/example.psmcfa")
-    data = smckit.tl.psmc(data, pattern="4+5*3+4", n_iterations=25)
+Acceptance covers every documented example and option, malformed and missing
+inputs, masks, empty/short sequences, multiple chromosomes/files/records,
+interrupted upstream processes, absent runtimes, unsupported native requests,
+schema round trips, CPU/backend agreement, x86/ARM agreement, fixed-seed
+determinism, and long-chromosome stability.
 
-    c_rounds = smckit.io.read_psmc_output("vendor/psmc/example.psmc")
-    expected = c_rounds[-1]
+Package tests install wheels into a clean environment without the source tree.
+Preservation tests also exercise source-checkout and container execution.
 
-    np.testing.assert_allclose(
-        data.results["psmc"]["lambda"],
-        expected["lambda"],
-        rtol=1e-3,
-    )
-```
-
-Tolerances depend on the method. PSMC and MSMC-IM should match to machine
-precision; ASMC has stochastic CSFS sampling so use ~1% tolerance.
-
-### GPU tests (`tests/gpu/`)
-
-GPU tests are gated behind a `pytest` marker so they only run on machines
-with a CUDA device:
-
-```python
-import pytest
-
-@pytest.mark.gpu
-def test_psmc_gpu_matches_cpu():
-    ...
-```
-
-```bash
-pytest tests/gpu/ -m gpu
-```
-
-CI runs GPU tests on dedicated runners only.
-
-## The three-tier validation principle
-
-For every algorithm in smckit, three levels of correctness must be checked:
-
-1. **Reference level.** A NumPy implementation reproduces the original
-   tool's output bit-for-bit (or to machine precision). This is the math
-   anchor.
-2. **Backend level.** The Numba JIT (and future CuPy/CUDA) implementations
-   are validated against the NumPy reference. This decouples math
-   correctness from performance optimization.
-3. **End-to-end level.** Integration tests in `tests/integration/` exercise
-   the full pipeline through the public API.
-
-This pattern is what allows the project to swap backends or optimize
-kernels without introducing silent numerical regressions.
-
-## Writing a new test
-
-Pick the right tier:
-
-- **Unit** — testing a single function or class with synthetic input.
-- **Integration** — comparing smckit output to a reference tool.
-- **GPU** — testing a GPU-only kernel or backend equivalence.
-
-Naming convention: `tests/<tier>/test_<module>.py`. Test functions are
-discovered automatically by pytest.
-
-For numerical comparisons, prefer `np.testing.assert_allclose` over manual
-`abs(...) < eps` checks — the failure messages are much more informative.
-
-## Running everything
-
-```bash
-pytest tests/unit/ tests/integration/    # CPU-only, fast feedback
-pytest tests/gpu/ -m gpu                  # GPU machines only
-pytest                                    # everything (skips gpu without marker)
-```
-
-## Continuous integration
-
-CI configuration runs:
-
-- `ruff format --check` and `ruff check` on every push.
-- `pytest tests/unit/ tests/integration/` on every push.
-- `pytest tests/gpu/ -m gpu` on dedicated GPU runners (when configured).
-
-A PR cannot be merged with red CI.
-
-## See also
-
-- **[Contributing](contributing.md)** — day-to-day workflow.
-- **[Adding a Method](adding-a-method.md)** — where the test patterns
-  shown here come from.
+The machine-readable ledgers are in `docs/parity/feature-ledger.json` and
+`docs/parity/oracle-specifications.json`.

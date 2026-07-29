@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "smckit"
 platforms = ["osx-arm64", "osx-64", "linux-64"]
 channels = ["conda-forge"]
@@ -11,9 +11,14 @@ git = "*"
 [feature.upstream.dependencies]
 r-base = "*"
 openjdk = "21.*"
-ldc = "*"
 cmake = "*"
 make = "*"
+
+[feature.upstream.target.linux-64.dependencies]
+ldc = "*"
+
+[feature.upstream.target.osx-64.dependencies]
+ldc = "*"
 
 [environments]
 default = []
@@ -22,6 +27,9 @@ upstream = ["upstream"]
 [tasks]
 uv-sync = "uv sync --extra dev --extra docs"
 test = "uv run pytest -q"
-test-fast = "uv run pytest -q tests/unit tests/integration/test_packaged_quickstarts.py"
+test-unit = "uv run pytest -q tests/unit -m 'unit and not slow'"
+test-integration = "uv run pytest -q tests/integration -m 'integration and not slow'"
+test-oracle = "uv run pytest -q tests -m oracle"
+test-fast = "uv run pytest -q tests/unit tests/integration/test_packaged_quickstarts.py -m 'not slow'"
 docs = "uv run sphinx-build -b html docs docs/_build/html"
 build = "uv build --offline --no-build-isolation"

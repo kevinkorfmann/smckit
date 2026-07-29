@@ -72,14 +72,24 @@ pip install "smckit[docs]"
 
 ## Philosophy
 
-smckit is upstream-first by design.
+smckit is preservation-first by design.
 
 - `vendor/` holds the original source or release artifacts that act as the oracle.
 - `implementation="upstream"` means "run the original tool" when that bridge is wired and ready.
 - `implementation="native"` means "run the in-repo implementation".
-- `implementation="auto"` should prefer upstream fidelity whenever the upstream path is ready.
+- `implementation="auto"` selects native only for capabilities that have passed
+  their promotion gate; otherwise it falls back to upstream and records why.
 
 The repository exposes `smckit.upstream.status()` and `smckit.upstream.bootstrap()` so upstream readiness is inspectable rather than implicit.
+
+The command line exposes the same contract:
+
+```bash
+smckit methods
+smckit status
+smckit run psmc sample.psmcfa --implementation auto
+smckit upstream psmc --output-dir results/psmc -- -N 25 sample.psmcfa
+```
 
 ## Status
 

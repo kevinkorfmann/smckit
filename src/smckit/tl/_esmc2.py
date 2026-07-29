@@ -933,7 +933,7 @@ def _store_esmc2_result(
         "log_likelihood": result_obj.log_likelihood,
         "rounds": result_obj.rounds,
         "backend": implementation_used,
-    }, implementation_requested=implementation_requested, implementation_used=implementation_used)
+    }, method_name="esmc2", implementation_requested=implementation_requested, implementation_used=implementation_used)
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     return data
@@ -2582,6 +2582,8 @@ def esmc2(
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("esmc2"),
+        method_name="esmc2",
+        requested_capabilities={"upstream_options"} if upstream_options else None,
     )
     warn_if_native_not_trusted("esmc2", implementation_used)
 

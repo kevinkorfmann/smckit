@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import shutil
 import subprocess
 import sys
-import importlib.util
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -102,6 +102,8 @@ class UpstreamToolSpec:
         return _cache_root() / self.name
 
     def runtime_path(self) -> str | None:
+        if self.name == "phlash":
+            return sys.executable if importlib.util.find_spec("phlash") is not None else None
         if self.name == "dical2":
             return _find_java_executable(
                 env_var=self.runtime_env_var,
@@ -153,6 +155,8 @@ class UpstreamToolSpec:
         return all((self.cache_path / rel).exists() for rel in self.cache_outputs)
 
     def runtime_ready(self) -> bool:
+        if self.name == "phlash":
+            return self.runtime_path() is not None
         if self.name == "dical2":
             java = self.runtime_path()
             if java is None:
@@ -221,7 +225,11 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         bootstrap_summary="Build vendored psmc and copy the binary into the upstream cache.",
         cache_outputs=("bin/psmc",),
         bootstrap_commands=(("make",),),
-        notes="Build currently happens from the vendored source tree; the cache stores the executable used by smckit.",
+        notes=(
+            "Build currently happens from the vendored source tree; the cache stores "
+            "the executable used by smckit."
+        ),
+        version="82fa2ada83ee463fe1251b562ae3d60e82d7ad6a",
         public_upstream=True,
         adapter_ready=True,
     ),
@@ -234,7 +242,11 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         bootstrap_summary="Build vendored MSMC2 and copy the executable into the upstream cache.",
         cache_outputs=("bin/msmc2",),
         bootstrap_commands=(("make",),),
-        notes="Requires the upstream D toolchain; smckit runs the vendored CLI when the binary is available.",
+        notes=(
+            "Requires the upstream D toolchain; smckit runs the vendored CLI when "
+            "the binary is available."
+        ),
+        version="5fc12bcd3afc74569cfc9d457b74497fbf441012",
         public_upstream=True,
         adapter_ready=True,
     ),
@@ -256,8 +268,14 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         runtime_name="Python side environment",
         runtime_executable="python",
         runtime_env_var="SMCKIT_SMCPP_PYTHON",
-        bootstrap_summary="Use the vendored upstream source tree with a controlled side Python environment for the compiled extension/runtime.",
-        notes="Vendored source is tracked in-repo; the current upstream bridge still relies on a dedicated Python environment to execute the original package.",
+        bootstrap_summary=(
+            "Use the vendored upstream source tree with a controlled side Python "
+            "environment for the compiled extension/runtime."
+        ),
+        notes=(
+            "Vendored source is tracked in-repo; the current upstream bridge still "
+            "relies on a dedicated Python environment to execute the original package."
+        ),
         version="6779faec78f1db2d84b3cd8176cd99731c71d584",
         public_upstream=True,
         adapter_ready=True,
@@ -271,10 +289,11 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         runtime_env_var="SMCKIT_ESMC2_RSCRIPT",
         bootstrap_summary="Install the vendored eSMC2 R package into the repo-local .r-lib cache.",
         cache_outputs=("eSMC2/DESCRIPTION",),
-        bootstrap_commands=(
-            ("R", "CMD", "INSTALL", "--library", ".r-lib", "vendor/eSMC2/eSMC2"),
+        bootstrap_commands=(("R", "CMD", "INSTALL", "--library", ".r-lib", "vendor/eSMC2/eSMC2"),),
+        notes=(
+            "The upstream bridge expects a local R library containing the vendored "
+            "eSMC2 package."
         ),
-        notes="The upstream bridge expects a local R library containing the vendored eSMC2 package.",
         public_upstream=True,
         adapter_ready=True,
     ),
@@ -284,10 +303,19 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         vendor_subpath="vendor/ASMC",
         runtime_name="PyPI package or CMake/C++ toolchain",
         runtime_executable="cmake",
-        bootstrap_summary="Prefer the official PyPI package `asmc-asmc`; fall back to building vendored ASMC_exe.",
+        bootstrap_summary=(
+            "Prefer the official PyPI package `asmc-asmc`; fall back to building "
+            "vendored ASMC_exe."
+        ),
         cache_outputs=("bin/ASMC_exe",),
-        bootstrap_commands=(("cmake", "-S", "vendor/ASMC", "-B", ".smckit-cache/upstream/asmc/build"), ("cmake", "--build", ".smckit-cache/upstream/asmc/build", "--target", "ASMC_exe")),
-        notes="smckit prefers the official PyPI `asmc-asmc` module and falls back to the documented ASMC_exe CLI path.",
+        bootstrap_commands=(
+            ("cmake", "-S", "vendor/ASMC", "-B", ".smckit-cache/upstream/asmc/build"),
+            ("cmake", "--build", ".smckit-cache/upstream/asmc/build", "--target", "ASMC_exe"),
+        ),
+        notes=(
+            "smckit prefers the official PyPI `asmc-asmc` module and falls back to "
+            "the documented ASMC_exe CLI path."
+        ),
         public_upstream=True,
         adapter_ready=True,
     ),
@@ -299,7 +327,26 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         runtime_executable="java",
         runtime_env_var="SMCKIT_DICAL2_JAVA",
         bootstrap_summary="No build step; uses the vendored diCal2.jar directly.",
-        notes="smckit runs the vendored diCal2.jar and parses the EM-path stdout into structured results.",
+        notes=(
+            "smckit runs the vendored diCal2.jar and parses the EM-path stdout into "
+            "structured results."
+        ),
+        public_upstream=True,
+        adapter_ready=True,
+    ),
+    "phlash": UpstreamToolSpec(
+        name="phlash",
+        method_name="phlash",
+        vendor_subpath=None,
+        runtime_name="PHLASH 1.0.6 Python package",
+        runtime_executable=None,
+        bootstrap_summary="Install the immutable `smckit[phlash]` package extra.",
+        notes=(
+            "PHLASH has no command-line interface; smckit preserves its public Python "
+            "fit/contig/psmc workflow through the normalized external adapter."
+        ),
+        version="1.0.6",
+        requires_vendor_source=False,
         public_upstream=True,
         adapter_ready=True,
     ),
@@ -395,8 +442,6 @@ def bootstrap_tool(name: str) -> dict[str, Any]:
         # No build required; presence of vendored script/jar is the bootstrap contract.
         pass
     else:
-        raise RuntimeError(
-            f"Upstream bootstrap for {name} is not implemented yet."
-        )
+        raise RuntimeError(f"Upstream bootstrap for {name} is not implemented yet.")
 
     return get_tool(name).status()

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "updated": "2026-07-29",
+  "global": {
+    "deterministic_kernel": {"rtol": 1e-12, "atol": 1e-14},
+    "scalar_parameter_relative_error": 0.001,
+    "normalized_trajectory_error": 0.01,
+    "per_site_log_likelihood_absolute_error": 1e-6,
+    "stochastic_replicates": 20,
+    "runtime_repetitions": 5,
+    "promotion": {
+      "runtime": "warmed native bootstrap confidence interval excludes parity",
+      "peak_memory_ratio_max": 1.25,
+      "cold_jit_reported_separately": true
+    }
+  },
+  "methods": {
+    "psmc": {"fixtures": ["tiny synthetic", "NA12878 chromosome 22"], "status": "draft"},
+    "msmc2": {"fixtures": ["bundled multihetsep", "multi-chromosome synthetic"], "status": "draft"},
+    "esmc2": {"fixtures": ["psmcfa", "multihetsep", "selfing", "dormancy"], "status": "enforced_partial"},
+    "asmc": {"fixtures": ["synthetic decode", "published example"], "status": "draft"},
+    "msmc_im": {"fixtures": ["Yoruba/French", "simulated split-migration"], "status": "enforced_partial"},
+    "smcpp": {"fixtures": ["small one-pop control", "larger one-pop SMC", "two-pop split"], "status": "enforced_partial"},
+    "dical2": {"fixtures": ["README exponential", "README isolation-migration", "structured simulation"], "status": "enforced_partial"},
+    "phlash": {"fixtures": ["simulated psmcfa", "simulated tree sequence"], "status": "draft"}
+  }
+}

@@ -1,0 +1,21 @@
+name: Upstream oracles
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: prefix-dev/setup-pixi@v0.9.0
+        with:
+          environments: upstream
+      - run: pixi run -e upstream uv-sync
+      - run: pixi run -e upstream uv run python scripts/verify_upstreams.py
+      - run: pixi run -e upstream uv run pytest -q tests -m oracle

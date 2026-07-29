@@ -1,0 +1,26 @@
+schema_version: 1
+replicates: 20
+timing_repetitions: 5
+seed: 1729
+scenarios:
+  - constant
+  - bottleneck
+  - expansion
+  - split_with_migration
+  - structure
+  - selfing_dormancy
+platforms:
+  - linux-x86_64
+  - macos-arm64
+  - nvidia-gpu
+empirical:
+  human: "1000 Genomes accession and deterministic sample manifest required"
+  nonhuman: "Arabidopsis 1001 Genomes accession and sample manifest required"
+metrics:
+  - log_integrated_trajectory_error
+  - parameter_error
+  - likelihood_difference
+  - posterior_coverage
+  - runtime_seconds
+  - peak_memory_bytes
+  - installation_success

@@ -831,6 +831,7 @@ class TestComputeHmmParams:
 # ---------------------------------------------------------------------------
 
 class TestSmcppEndToEnd:
+    @pytest.mark.slow
     def test_synthetic_constant_population(self):
         """Run SMC++ on synthetic data from a constant-size population."""
         from smckit._core import SmcData
@@ -878,6 +879,7 @@ class TestSmcppEndToEnd:
         assert r["n_undist"] == n_undist
         assert r["n_distinguished"] == 1
 
+    @pytest.mark.slow
     def test_missing_observations_do_not_count_toward_theta(self):
         from smckit._core import SmcData
         from smckit.tl._smcpp import smcpp
@@ -962,11 +964,8 @@ class TestSmcppEndToEnd:
         assert np.isfinite(r["log_likelihood"])
         assert "model" in r["upstream"]
 
-    @pytest.mark.skipif(
-        _resolve_upstream_smcpp_python() is None,
-        reason="Upstream SMC++ side environment not available",
-    )
-    def test_auto_backend_prefers_upstream_when_available(self):
+    @pytest.mark.slow
+    def test_auto_backend_prefers_promoted_native(self):
         from smckit._core import SmcData
         from smckit.tl._smcpp import smcpp
 
@@ -990,4 +989,4 @@ class TestSmcppEndToEnd:
             seed=42,
         )
 
-        assert result.results["smcpp"]["backend"] == "upstream"
+        assert result.results["smcpp"]["implementation"] == "native"
