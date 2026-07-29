@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -222,9 +223,19 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         vendor_subpath="vendor/psmc",
         runtime_name="C compiler and make",
         runtime_executable="make",
-        bootstrap_summary="Build vendored psmc and copy the binary into the upstream cache.",
-        cache_outputs=("bin/psmc",),
-        bootstrap_commands=(("make",),),
+        bootstrap_summary=(
+            "Build vendored psmc and its compiled preprocessing/helper utilities, "
+            "then copy every original entry point into the upstream cache."
+        ),
+        cache_outputs=(
+            "bin/psmc",
+            "bin/fq2psmcfa",
+            "bin/splitfa",
+            "bin/psmc2history.pl",
+            "bin/history2ms.pl",
+            "bin/psmc_plot.pl",
+        ),
+        bootstrap_commands=(("make",), ("make", "-C", "utils")),
         notes=(
             "Build currently happens from the vendored source tree; the cache stores "
             "the executable used by smckit."
@@ -291,8 +302,7 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         cache_outputs=("eSMC2/DESCRIPTION",),
         bootstrap_commands=(("R", "CMD", "INSTALL", "--library", ".r-lib", "vendor/eSMC2/eSMC2"),),
         notes=(
-            "The upstream bridge expects a local R library containing the vendored "
-            "eSMC2 package."
+            "The upstream bridge expects a local R library containing the vendored eSMC2 package."
         ),
         public_upstream=True,
         adapter_ready=True,
@@ -410,8 +420,59 @@ def bootstrap_tool(name: str) -> dict[str, Any]:
         if not built.exists():
             raise RuntimeError("Bootstrapping psmc did not produce a psmc binary.")
         _copy_file(built, cache_path / "bin/psmc")
+        utilities = spec.vendor_path / "utils"
+        subprocess.run(["make"], check=True, cwd=utilities)
+        for source in utilities.iterdir():
+            if source.name in {"Makefile", "khash.h"} or source.suffix in {".c", ".o"}:
+                continue
+            if source.is_file():
+                _copy_file(source, cache_path / "bin" / source.name)
     elif name == "msmc2":
-        subprocess.run(["make"], check=True, cwd=spec.vendor_path)
+        compiler = shutil.which("dmd") or shutil.which("ldc2")
+        if compiler is None:
+            raise RuntimeError(
+                "Bootstrapping msmc2 requires a D compiler (`dmd` or `ldc2`).\n"
+                f"{status['install_help']}"
+            )
+        gsl_candidates = [
+            Path(value)
+            for value in [
+                os.environ.get("SMCKIT_GSL_LIBDIR", ""),
+                "/opt/homebrew/lib",
+                "/usr/local/lib",
+                "/usr/lib",
+                "/usr/lib/x86_64-linux-gnu",
+                "/usr/lib/aarch64-linux-gnu",
+            ]
+            if value
+        ]
+        gsl_dir = next(
+            (
+                candidate
+                for candidate in gsl_candidates
+                if (candidate / "libgsl.a").is_file()
+                and (candidate / "libgslcblas.a").is_file()
+            ),
+            None,
+        )
+        if gsl_dir is None:
+            raise RuntimeError(
+                "Bootstrapping msmc2 requires static libgsl and libgslcblas libraries. "
+                "Set SMCKIT_GSL_LIBDIR to their directory.\n"
+                f"{status['install_help']}"
+            )
+        build_env = os.environ.copy()
+        with tempfile.TemporaryDirectory(prefix="smckit-d-compiler-") as shim_directory:
+            if Path(compiler).name != "dmd":
+                shim = Path(shim_directory) / "dmd"
+                shim.symlink_to(compiler)
+                build_env["PATH"] = f"{shim_directory}{os.pathsep}{build_env['PATH']}"
+            subprocess.run(
+                ["make", f"GSLDIR={gsl_dir}"],
+                check=True,
+                cwd=spec.vendor_path,
+                env=build_env,
+            )
         candidates = [
             spec.vendor_path / "build/msmc2",
             spec.vendor_path / "build/release/msmc2",

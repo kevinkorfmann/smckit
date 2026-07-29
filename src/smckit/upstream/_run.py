@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -43,7 +44,7 @@ def _existing_executable(path: Path, *, tool: str) -> str:
     return str(path)
 
 
-def command_prefix(tool: str) -> list[str]:
+def command_prefix(tool: str, entrypoint: str | None = None) -> list[str]:
     """Resolve the preserved command prefix for one upstream tool."""
     spec = get_tool(tool)
     status = spec.status()
@@ -52,10 +53,56 @@ def command_prefix(tool: str) -> list[str]:
     runtime_path = status["runtime"]["path"]
 
     if tool == "psmc":
+        entrypoint = entrypoint or "psmc"
+        allowed = {
+            "avg.pl",
+            "calD",
+            "cntcpg",
+            "ctime_plot.pl",
+            "dec2ctime.pl",
+            "decode2bed.pl",
+            "fq2psmcfa",
+            "history2ms.pl",
+            "ms2psmcfa.pl",
+            "mutDiff",
+            "pcnt_bezier.lua",
+            "psmc",
+            "psmc2history.pl",
+            "psmc_plot.pl",
+            "psmc_trunc.pl",
+            "split-time.js",
+            "splitfa",
+            "vcf2snp.pl",
+        }
+        if entrypoint not in allowed:
+            choices = ", ".join(sorted(allowed))
+            raise ValueError(f"Unknown PSMC entry point {entrypoint!r}; choose from: {choices}.")
         cached = cache_path / "bin/psmc"
-        vendored = None if vendor_path is None else vendor_path / "psmc"
+        if entrypoint != "psmc":
+            cached = cache_path / "bin" / entrypoint
+        vendored = (
+            None
+            if vendor_path is None
+            else vendor_path / ("psmc" if entrypoint == "psmc" else f"utils/{entrypoint}")
+        )
         candidate = cached if cached.exists() or vendored is None else vendored
-        return [_existing_executable(candidate, tool=tool)]
+        executable = _existing_executable(candidate, tool=f"{tool}/{entrypoint}")
+        if entrypoint.endswith(".js"):
+            runtime = "k8" if entrypoint == "split-time.js" else "node"
+            resolved = shutil.which(runtime)
+            if resolved is None:
+                raise RuntimeError(
+                    f"Original PSMC utility {entrypoint} requires the {runtime} runtime."
+                )
+            return [resolved, executable]
+        if entrypoint.endswith(".lua"):
+            resolved = shutil.which("luajit")
+            if resolved is None:
+                raise RuntimeError(
+                    f"Original PSMC utility {entrypoint} requires the luajit runtime."
+                )
+            return [resolved, executable]
+        return [executable]
     if tool == "msmc2":
         candidates = [
             cache_path / "bin/msmc2",
@@ -121,13 +168,14 @@ def run(
     output_dir: str | Path | None = None,
     timeout: float | None = None,
     env: Mapping[str, str] | None = None,
+    entrypoint: str | None = None,
 ) -> UpstreamRunResult:
     """Execute an original tool without a shell and capture its artifacts.
 
     Relative input paths should be resolved by the caller before execution,
     because the command runs in an isolated output directory.
     """
-    prefix = command_prefix(tool)
+    prefix = command_prefix(tool) if entrypoint is None else command_prefix(tool, entrypoint)
     caller_directory = Path.cwd()
     resolved_args = [
         str((caller_directory / value).resolve())
@@ -145,6 +193,10 @@ def run(
         workdir.mkdir(parents=True, exist_ok=True)
 
     process_env = os.environ.copy()
+    if tool == "esmc2":
+        r_library = get_tool("esmc2").cache_path
+        if r_library.exists():
+            process_env.setdefault("R_LIBS_USER", str(r_library))
     if env:
         process_env.update({str(key): str(value) for key, value in env.items()})
 

@@ -21,9 +21,10 @@ from smckit.io._multihetsep import (
     read_msmc_combined_output,
     read_msmc_output,
     read_multihetsep,
+    write_msmc_output,
 )
-from smckit.io._psmcfa import read_psmcfa
 from smckit.io._psmc_output import read_psmc_output, write_psmc_output
+from smckit.io._psmcfa import read_psmcfa, write_psmcfa
 from smckit.io._smcpp_input import read_smcpp_input
 
 __all__ = [
@@ -48,5 +49,7 @@ __all__ = [
     "read_samples",
     "read_smcpp_input",
     "write_msmc_im_output",
+    "write_msmc_output",
     "write_psmc_output",
+    "write_psmcfa",
 ]

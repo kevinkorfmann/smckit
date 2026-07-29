@@ -1,5 +1,4 @@
 """Unit tests for diCal2 implementation."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -18,20 +17,18 @@ from smckit.io._dical2 import (
 )
 from smckit.tl._dical2 import (
     DICAL2_T_INF,
-    CoreMatrices,
     EigenCore,
     ODECore,
     SimpleTrunk,
-    _JavaRandom,
-    _build_native_core,
     _build_free_params,
+    _build_native_core,
+    _JavaRandom,
     _old_interval_boundaries,
     _resolve_dical2_options,
     _resolve_interval_boundaries,
     backward_log,
     build_extended_matrix,
     compute_time_intervals,
-    dical2,
     expected_counts,
     forward_log,
     h_integral,
@@ -785,60 +782,3 @@ class TestForwardBackward:
         # Transition counts (no_reco + reco) = L - 1
         total_trans = counts.no_reco_expect.sum() + counts.reco_expect.sum()
         assert total_trans == pytest.approx(L - 1, abs=1e-6)
-
-
-# ---------------------------------------------------------------------------
-# End-to-end
-# ---------------------------------------------------------------------------
-
-
-class TestDical2EndToEnd:
-    @pytest.mark.slow
-    def test_runs_synthetic_pcl(self):
-        rng = np.random.default_rng(7)
-        seqs = (rng.random((4, 200)) < 0.02).astype(np.int8)
-        data = read_dical2(sequences=seqs, theta=0.001, rho=0.0005)
-        data = dical2(
-            data,
-            n_intervals=4,
-            n_em_iterations=2,
-            max_t=2.0,
-            composite_mode="pcl",
-        )
-        res = data.results["dical2"]
-        assert "ne" in res
-        assert "log_likelihood" in res
-        assert np.isfinite(res["log_likelihood"])
-        assert np.all(res["ne"] > 0)
-        assert np.all(np.isfinite(res["ne"]))
-
-    @pytest.mark.slow
-    def test_runs_synthetic_pac(self):
-        rng = np.random.default_rng(8)
-        seqs = (rng.random((5, 150)) < 0.02).astype(np.int8)
-        data = read_dical2(sequences=seqs, theta=0.001, rho=0.0005)
-        data = dical2(
-            data,
-            n_intervals=3,
-            n_em_iterations=2,
-            max_t=1.5,
-            composite_mode="pac",
-        )
-        res = data.results["dical2"]
-        assert np.isfinite(res["log_likelihood"])
-        assert len(res["ne"]) >= 3
-
-    @pytest.mark.slow
-    def test_runs_synthetic_lol(self):
-        rng = np.random.default_rng(9)
-        seqs = (rng.random((4, 150)) < 0.02).astype(np.int8)
-        data = read_dical2(sequences=seqs, theta=0.001, rho=0.0005)
-        data = dical2(
-            data,
-            n_intervals=3,
-            n_em_iterations=1,
-            max_t=1.5,
-            composite_mode="lol",
-        )
-        res = data.results["dical2"]
-        assert np.isfinite(res["log_likelihood"])

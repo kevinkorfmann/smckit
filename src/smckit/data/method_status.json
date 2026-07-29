@@ -6,8 +6,19 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
+    "native_promoted_capabilities": [
+      "bootstrap",
+      "decode",
+      "divergence",
+      "initial_params",
+      "output",
+      "sequence_probability",
+      "simulation",
+      "time_intervals",
+      "transition_cap"
+    ],
     "tracked_agreement": "0.9999223 lambda corr",
-    "notes": "Public upstream bridge now runs the vendored binary; native port remains stable.",
+    "notes": "Preserved upstream execution and the native port cover missing and multi-record inputs, explicit intervals and parameters, divergence, bootstrap, decoding, transition capping, and original-compatible result files.",
     "install_extra": "psmc",
     "native_warning": null
   },
@@ -30,8 +41,15 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
+    "native_promoted_capabilities": [
+      "fixed_recombination",
+      "initial_lambda",
+      "internal_mu",
+      "output",
+      "quantile_boundaries"
+    ],
     "tracked_agreement": ">= 0.999999865 lambda corr",
-    "notes": "Public upstream bridge runs the vendored MSMC2 CLI.",
+    "notes": "Native parity covers pair selection, ambiguous and missing data, multiple chromosomes/files, fixed recombination, Li-Durbin and quantile boundaries, explicit initialization, and original-compatible artifacts.",
     "install_extra": "msmc2",
     "native_warning": null
   },
@@ -54,8 +72,11 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
+    "native_promoted_capabilities": [
+      "output"
+    ],
     "tracked_agreement": "<= 0.3605% max tracked Xi rel err",
-    "notes": "Native and upstream are interchangeable on the tracked public `.psmcfa` and `multihetsep` input-family matrix, plus the fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped-state oracle cases.",
+    "notes": "Native and upstream are interchangeable on the tracked public input and model matrix; native output preserves the original numeric tables, while raw upstream R execution exposes the complete exported helper package.",
     "install_extra": "esmc2",
     "native_warning": null
   },

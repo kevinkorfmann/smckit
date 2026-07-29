@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sys
 
+import pytest
+
 import smckit
 from smckit.tl._implementation import method_upstream_available, standard_upstream_metadata
 from smckit.upstream import _run
@@ -41,7 +43,7 @@ def test_install_help_is_available_for_known_tools() -> None:
     help_text = smckit.upstream.install_help("psmc")
     assert isinstance(help_text, str)
     assert help_text
-    assert 'smckit[psmc]' in help_text
+    assert "smckit[psmc]" in help_text
 
 
 def test_raw_runner_is_shell_free_and_captures_artifacts(tmp_path, monkeypatch) -> None:
@@ -78,3 +80,34 @@ def test_raw_runner_returns_124_on_timeout(tmp_path, monkeypatch) -> None:
 
     assert result.returncode == 124
     assert "exceeded timeout" in result.stderr
+
+
+def test_psmc_raw_runner_rejects_unknown_entrypoint() -> None:
+    with pytest.raises(ValueError, match="Unknown PSMC entry point"):
+        _run.command_prefix("psmc", "not-a-real-helper")
+
+
+def test_raw_esmc2_runner_exposes_bootstrapped_r_library(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    script = tmp_path / "runner.py"
+    script.write_text(
+        "import os\nprint(os.environ.get('R_LIBS_USER', ''))\n",
+        encoding="utf-8",
+    )
+    r_library = tmp_path / "r-library"
+    r_library.mkdir()
+
+    class Tool:
+        cache_path = r_library
+
+    monkeypatch.setattr(_run, "get_tool", lambda tool: Tool())
+    monkeypatch.setattr(
+        _run,
+        "command_prefix",
+        lambda tool: [sys.executable, str(script)],
+    )
+    result = _run.run("esmc2", [], output_dir=tmp_path / "output")
+
+    assert result.stdout.strip() == str(r_library)

@@ -16,24 +16,24 @@ time intervals, observations = hom/het/missing), but differs in:
 from __future__ import annotations
 
 import logging
-import math as pymath
+import math
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import math
 import numba
 import numpy as np
 
 from smckit._core import SmcData
-from smckit.io._multihetsep import read_msmc_output
+from smckit._provenance import sha256_file
+from smckit.io._multihetsep import read_msmc_output, write_msmc_output
 from smckit.tl._implementation import (
     annotate_result,
     choose_implementation,
     method_upstream_available,
     normalize_implementation,
-    require_upstream_available,
     standard_upstream_metadata,
     warn_if_native_not_trusted,
 )
@@ -48,6 +48,7 @@ HMM_TINY = 1e-25
 # ---------------------------------------------------------------------------
 # Pattern parsing (reused from PSMC, same format)
 # ---------------------------------------------------------------------------
+
 
 def parse_time_segment_pattern(pattern: str) -> list[int]:
     """Parse a time segment pattern string like ``"1*2+25*1+1*2+1*3"``.
@@ -108,6 +109,7 @@ def _build_par_map(segment_sizes: list[int]) -> tuple[np.ndarray, int, int]:
 # 1. Time interval boundaries
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
 def li_durbin_boundaries(n_intervals, factor=0.1):
     """Li & Durbin time boundaries.
@@ -165,6 +167,7 @@ def quantile_boundaries(n_intervals, factor=1.0):
 # 2. Mean time in interval (with lambda)
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
 def mean_time_in_interval(left, right, lam):
     """Expected coalescence time in interval [left, right) given rate lam.
@@ -205,9 +208,9 @@ def mean_time_in_interval(left, right, lam):
 # 3. Integrate lambda (survival probability across intervals)
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
-def _integrate_lambda(from_t, to_t, from_idx, to_idx, lambda_vec, boundaries,
-                      lambda_fac=1.0):
+def _integrate_lambda(from_t, to_t, from_idx, to_idx, lambda_vec, boundaries, lambda_fac=1.0):
     """Compute exp(-integral of lambda_fac * lambda(t) dt from from_t to to_t).
 
     This is the survival probability of the coalescent process across
@@ -261,6 +264,7 @@ def _integrate_lambda(from_t, to_t, from_idx, to_idx, lambda_vec, boundaries,
 # ---------------------------------------------------------------------------
 # 4. Transition matrix
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def compute_transition_matrix(boundaries, rho, lambda_vec):
@@ -320,14 +324,10 @@ def _q2_integral_smaller(a, b, boundaries, rho, lambda_vec):
     float
         Transition probability from column b to row a.
     """
-    mean_t = mean_time_in_interval(
-        boundaries[b], boundaries[b + 1], lambda_vec[b]
-    )
+    mean_t = mean_time_in_interval(boundaries[b], boundaries[b + 1], lambda_vec[b])
     delta_a = boundaries[a + 1] - boundaries[a]
 
-    integ = (1.0 - math.exp(-delta_a * 2.0 * lambda_vec[a])) / (
-        2.0 * lambda_vec[a]
-    )
+    integ = (1.0 - math.exp(-delta_a * 2.0 * lambda_vec[a])) / (2.0 * lambda_vec[a])
 
     total = 0.0
     for g in range(a):
@@ -336,8 +336,7 @@ def _q2_integral_smaller(a, b, boundaries, rho, lambda_vec):
             2.0
             * (1.0 - math.exp(-delta_g * 2.0 * lambda_vec[g]))
             * _integrate_lambda(
-                boundaries[g + 1], boundaries[a], g + 1, a,
-                lambda_vec, boundaries, 2.0
+                boundaries[g + 1], boundaries[a], g + 1, a, lambda_vec, boundaries, 2.0
             )
             / (2.0 * lambda_vec[g])
             * integ
@@ -346,12 +345,7 @@ def _q2_integral_smaller(a, b, boundaries, rho, lambda_vec):
 
     total += 2.0 * (delta_a - integ) / (2.0 * lambda_vec[a])
 
-    result = (
-        (1.0 - math.exp(-rho * 2.0 * mean_t))
-        / (mean_t * 2.0)
-        * lambda_vec[a]
-        * total
-    )
+    result = (1.0 - math.exp(-rho * 2.0 * mean_t)) / (mean_t * 2.0) * lambda_vec[a] * total
     return result
 
 
@@ -374,15 +368,11 @@ def _q2_integral_greater(a, b, boundaries, rho, lambda_vec):
     float
         Transition probability from column b to row a.
     """
-    mean_t = mean_time_in_interval(
-        boundaries[b], boundaries[b + 1], lambda_vec[b]
-    )
+    mean_t = mean_time_in_interval(boundaries[b], boundaries[b + 1], lambda_vec[b])
     delta_a = boundaries[a + 1] - boundaries[a]
 
     integ = (
-        _integrate_lambda(
-            mean_t, boundaries[a], b, a, lambda_vec, boundaries, 1.0
-        )
+        _integrate_lambda(mean_t, boundaries[a], b, a, lambda_vec, boundaries, 1.0)
         / lambda_vec[a]
         * (1.0 - math.exp(-delta_a * lambda_vec[a]))
     )
@@ -394,10 +384,7 @@ def _q2_integral_greater(a, b, boundaries, rho, lambda_vec):
             2.0
             * (1.0 - math.exp(-2.0 * lambda_vec[g] * delta_g))
             / (2.0 * lambda_vec[g])
-            * _integrate_lambda(
-                boundaries[g + 1], mean_t, g + 1, b,
-                lambda_vec, boundaries, 2.0
-            )
+            * _integrate_lambda(boundaries[g + 1], mean_t, g + 1, b, lambda_vec, boundaries, 2.0)
         )
         total += term
 
@@ -407,19 +394,14 @@ def _q2_integral_greater(a, b, boundaries, rho, lambda_vec):
         / (2.0 * lambda_vec[b])
     )
 
-    result = (
-        integ
-        * (1.0 - math.exp(-rho * 2.0 * mean_t))
-        / (mean_t * 2.0)
-        * lambda_vec[a]
-        * total
-    )
+    result = integ * (1.0 - math.exp(-rho * 2.0 * mean_t)) / (mean_t * 2.0) * lambda_vec[a] * total
     return result
 
 
 # ---------------------------------------------------------------------------
 # 5. Equilibrium probability
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def equilibrium_prob(boundaries, lambda_vec):
@@ -441,9 +423,8 @@ def equilibrium_prob(boundaries, lambda_vec):
     eq = np.empty(n, dtype=np.float64)
     for a in range(n):
         delta_a = boundaries[a + 1] - boundaries[a]
-        eq[a] = (
-            _integrate_lambda(0.0, boundaries[a], 0, a, lambda_vec, boundaries)
-            * (1.0 - math.exp(-delta_a * lambda_vec[a]))
+        eq[a] = _integrate_lambda(0.0, boundaries[a], 0, a, lambda_vec, boundaries) * (
+            1.0 - math.exp(-delta_a * lambda_vec[a])
         )
     return eq
 
@@ -451,6 +432,7 @@ def equilibrium_prob(boundaries, lambda_vec):
 # ---------------------------------------------------------------------------
 # 6. Emission probabilities
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def emission_probs(boundaries, lambda_vec, mu):
@@ -486,19 +468,11 @@ def emission_probs(boundaries, lambda_vec, mu):
             # Last interval (extends to infinity)
             hom_prob = math.exp(-2.0 * mu * tb) * lb / (2.0 * mu + lb)
         else:
-            second_term = math.exp(-2.0 * mu * tb) * (
-                1.0 - math.exp(-(2.0 * mu + lb) * delta)
-            )
+            second_term = math.exp(-2.0 * mu * tb) * (1.0 - math.exp(-(2.0 * mu + lb) * delta))
             if lb < 0.001:
                 hom_prob = 1.0 / (delta * 2.0 * mu) * second_term
             else:
-                hom_prob = (
-                    1.0
-                    / (1.0 - math.exp(-delta * lb))
-                    * lb
-                    / (lb + 2.0 * mu)
-                    * second_term
-                )
+                hom_prob = 1.0 / (1.0 - math.exp(-delta * lb)) * lb / (lb + 2.0 * mu) * second_term
 
         if hom_prob < 0.0:
             hom_prob = 0.0
@@ -514,6 +488,7 @@ def emission_probs(boundaries, lambda_vec, mu):
 # ---------------------------------------------------------------------------
 # 7. Precomputed propagators
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def precompute_forward_propagators(trans, emission_hom, max_distance):
@@ -640,6 +615,7 @@ def precompute_all_propagators(trans, emission_hom, max_distance):
 # 8. Segment chopping
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
 def chop_segments(seg_pos, seg_obs, max_distance):
     """Chop segments so no gap between consecutive positions exceeds maxDistance.
@@ -714,14 +690,12 @@ def _emission_prob(obs, emission_matrix, state):
     if obs <= 1.0:
         if obs == 1.0:
             return emission_matrix[1, state]
-        return ((1.0 - obs) * emission_matrix[0, state]
-                + obs * emission_matrix[1, state])
+        return (1.0 - obs) * emission_matrix[0, state] + obs * emission_matrix[1, state]
     if obs >= 2.0:
         return emission_matrix[2, state]
 
     frac = obs - 1.0
-    return ((1.0 - frac) * emission_matrix[1, state]
-            + frac * emission_matrix[2, state])
+    return (1.0 - frac) * emission_matrix[1, state] + frac * emission_matrix[2, state]
 
 
 @numba.njit(cache=True)
@@ -742,6 +716,7 @@ def _obs_class_weights(obs):
 # ---------------------------------------------------------------------------
 # 9. Forward algorithm with propagators
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def _compute_full_emission(obs, emission_matrix, n_states):
@@ -768,8 +743,9 @@ def _compute_full_emission(obs, emission_matrix, n_states):
 
 
 @numba.njit(cache=True)
-def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
-                 fwd_props, fwd_props_miss, n_states):
+def msmc_forward(
+    seg_pos, seg_obs, trans, emission_matrix, eq_prob, fwd_props, fwd_props_miss, n_states
+):
     """Forward pass using precomputed propagators.
 
     Mirrors ``PSMC_hmm.runForward()`` from the D code.
@@ -831,9 +807,7 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
                 dot = 0.0
                 for b in range(n_states):
                     dot += trans[a, b] * forward_states[idx - 1, b]
-                forward_states[idx, a] = dot * _emission_prob(
-                    obs_cur, emission_matrix, a
-                )
+                forward_states[idx, a] = dot * _emission_prob(obs_cur, emission_matrix, a)
         else:
             # Multi-step propagation
             dist = pos_cur - pos_prev
@@ -873,9 +847,7 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
                 dot = 0.0
                 for b in range(n_states):
                     dot += trans[a, b] * tmp[b]
-                forward_states[idx, a] = dot * _emission_prob(
-                    obs_cur, emission_matrix, a
-                )
+                forward_states[idx, a] = dot * _emission_prob(obs_cur, emission_matrix, a)
 
         # Scale
         total = 0.0
@@ -894,12 +866,22 @@ def msmc_forward(seg_pos, seg_obs, trans, emission_matrix, eq_prob,
 # 10. Backward algorithm with propagators
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
-def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
-                               forward_states, scaling_factors,
-                               fwd_props, fwd_props_miss,
-                               bwd_props, bwd_props_miss,
-                               n_states, hmm_stride_width):
+def msmc_backward_expectations(
+    seg_pos,
+    seg_obs,
+    trans,
+    emission_matrix,
+    forward_states,
+    scaling_factors,
+    fwd_props,
+    fwd_props_miss,
+    bwd_props,
+    bwd_props_miss,
+    n_states,
+    hmm_stride_width,
+):
     """Backward pass with on-the-fly expected sufficient statistics.
 
     Mirrors ``PSMC_hmm.runBackward()`` from the D code.  Instead of
@@ -973,10 +955,23 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
 
         # Get backward state at right_idx
         _get_backward_state_at_index(
-            right_idx, current_bwd_index, bwd, bwd_e,
-            seg_pos, seg_obs, trans, emission_matrix,
-            scaling_factors, bwd_props, bwd_props_miss,
-            n_states, L, bwd_next, bwd_next_e, tmp, tmp_e
+            right_idx,
+            current_bwd_index,
+            bwd,
+            bwd_e,
+            seg_pos,
+            seg_obs,
+            trans,
+            emission_matrix,
+            scaling_factors,
+            bwd_props,
+            bwd_props_miss,
+            n_states,
+            L,
+            bwd_next,
+            bwd_next_e,
+            tmp,
+            tmp_e,
         )
         current_bwd_index = right_idx
 
@@ -986,15 +981,33 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
                 bwd_at_pos[a] = bwd[a]
         else:
             # Need to interpolate - propagate backward from right_idx to pos
-            _backward_to_pos(pos, right_idx, bwd, bwd_e,
-                             seg_pos, seg_obs, trans, emission_matrix,
-                             bwd_props, bwd_props_miss, n_states,
-                             bwd_at_pos)
+            _backward_to_pos(
+                pos,
+                right_idx,
+                bwd,
+                bwd_e,
+                seg_pos,
+                seg_obs,
+                trans,
+                emission_matrix,
+                bwd_props,
+                bwd_props_miss,
+                n_states,
+                bwd_at_pos,
+            )
 
         # Get forward state at pos - 1
-        _forward_at_pos(pos - 1, seg_pos, seg_obs, forward_states,
-                        fwd_props, fwd_props_miss, n_states, L,
-                        fwd_at_prev)
+        _forward_at_pos(
+            pos - 1,
+            seg_pos,
+            seg_obs,
+            forward_states,
+            fwd_props,
+            fwd_props_miss,
+            n_states,
+            L,
+            fwd_at_prev,
+        )
 
         # Get the observation at pos
         site_obs = _get_obs_at_pos(seg_pos, seg_obs, pos, L)
@@ -1007,9 +1020,17 @@ def msmc_backward_expectations(seg_pos, seg_obs, trans, emission_matrix,
 
         # Emission expectation at pos
         fwd_at_pos_vec = np.empty(n_states, dtype=np.float64)
-        _forward_at_pos(pos, seg_pos, seg_obs, forward_states,
-                        fwd_props, fwd_props_miss, n_states, L,
-                        fwd_at_pos_vec)
+        _forward_at_pos(
+            pos,
+            seg_pos,
+            seg_obs,
+            forward_states,
+            fwd_props,
+            fwd_props_miss,
+            n_states,
+            L,
+            fwd_at_pos_vec,
+        )
 
         _, hom_w, het_w = _obs_class_weights(site_obs)
         if hom_w > 0.0 or het_w > 0.0:
@@ -1055,9 +1076,9 @@ def _get_obs_at_pos(seg_pos, seg_obs, pos, L):
 
 
 @numba.njit(cache=True)
-def _forward_at_pos(pos, seg_pos, seg_obs, forward_states,
-                    fwd_props, fwd_props_miss, n_states, L,
-                    out):
+def _forward_at_pos(
+    pos, seg_pos, seg_obs, forward_states, fwd_props, fwd_props_miss, n_states, L, out
+):
     """Get the forward state vector at a given position.
 
     If pos coincides with a segment boundary, copies the stored forward state.
@@ -1089,10 +1110,20 @@ def _forward_at_pos(pos, seg_pos, seg_obs, forward_states,
 
 
 @numba.njit(cache=True)
-def _backward_to_pos(pos, right_idx, bwd, bwd_e,
-                     seg_pos, seg_obs, trans, emission_matrix,
-                     bwd_props, bwd_props_miss, n_states,
-                     out):
+def _backward_to_pos(
+    pos,
+    right_idx,
+    bwd,
+    bwd_e,
+    seg_pos,
+    seg_obs,
+    trans,
+    emission_matrix,
+    bwd_props,
+    bwd_props_miss,
+    n_states,
+    out,
+):
     """Propagate backward state from right_idx to pos."""
     # From D code:
     # if pos == segsites[index].pos - 1: propagateSingleBackward
@@ -1103,7 +1134,6 @@ def _backward_to_pos(pos, right_idx, bwd, bwd_e,
     if pos == pos_right - 1:
         # Single backward step
         # from.vec[b] = sum_a trans[a, b] * bwd_e[a]
-        site_obs = _get_obs_at_pos(seg_pos, seg_obs, pos, right_idx + 1)
         for b in range(n_states):
             dot = 0.0
             for a in range(n_states):
@@ -1140,11 +1170,25 @@ def _backward_to_pos(pos, right_idx, bwd, bwd_e,
 
 
 @numba.njit(cache=True)
-def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
-                                 seg_pos, seg_obs, trans, emission_matrix,
-                                 scaling_factors, bwd_props, bwd_props_miss,
-                                 n_states, L,
-                                 bwd_next, bwd_next_e, tmp, tmp_e):
+def _get_backward_state_at_index(
+    target_idx,
+    current_idx,
+    bwd,
+    bwd_e,
+    seg_pos,
+    seg_obs,
+    trans,
+    emission_matrix,
+    scaling_factors,
+    bwd_props,
+    bwd_props_miss,
+    n_states,
+    L,
+    bwd_next,
+    bwd_next_e,
+    tmp,
+    tmp_e,
+):
     """Advance the backward state from current_idx down to target_idx.
 
     Updates bwd and bwd_e in-place and returns current_idx = target_idx.
@@ -1173,9 +1217,7 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
                 bwd_next[b] = dot
             # bwd_next_e[b] = bwd_next[b] * emission[obs_prev, b]
             for b in range(n_states):
-                bwd_next_e[b] = bwd_next[b] * _emission_prob(
-                    obs_prev, emission_matrix, b
-                )
+                bwd_next_e[b] = bwd_next[b] * _emission_prob(obs_prev, emission_matrix, b)
         else:
             # Multi backward step
             # Step 1: single backward from ci to ci.pos - 1
@@ -1203,7 +1245,7 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
                     prop = bwd_props[prop_idx]
                 # propagateMultiBackward uses CblasTrans:
                 # from.vec[b] = sum_a prop^T[b, a] * to.vec[a]
-                # but in the D code it's: gsl_blas_dgemv(CblasTrans, 1.0, prop, to.vec, 0.0, from.vec)
+                # The D implementation uses gsl_blas_dgemv with CblasTrans.
                 # so from[b] = sum_a prop[a, b] * to[a]
                 for b in range(n_states):
                     dot = 0.0
@@ -1216,9 +1258,7 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
 
             # Apply emission at prev site
             for b in range(n_states):
-                bwd_next_e[b] = bwd_next[b] * _emission_prob(
-                    obs_prev, emission_matrix, b
-                )
+                bwd_next_e[b] = bwd_next[b] * _emission_prob(obs_prev, emission_matrix, b)
 
         # Copy bwd_next -> bwd, scale
         for b in range(n_states):
@@ -1239,11 +1279,21 @@ def _get_backward_state_at_index(target_idx, current_idx, bwd, bwd_e,
 # 11. Single-chromosome expectation
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
-def _single_chromosome_expectation(seg_pos, seg_obs, trans, emission_matrix,
-                                   eq_prob, fwd_props, bwd_props,
-                                   fwd_props_miss, bwd_props_miss,
-                                   n_states, hmm_stride_width):
+def _single_chromosome_expectation(
+    seg_pos,
+    seg_obs,
+    trans,
+    emission_matrix,
+    eq_prob,
+    fwd_props,
+    bwd_props,
+    fwd_props_miss,
+    bwd_props_miss,
+    n_states,
+    hmm_stride_width,
+):
     """Run forward + backward on a single chromosome and return expectations.
 
     Parameters
@@ -1269,16 +1319,22 @@ def _single_chromosome_expectation(seg_pos, seg_obs, trans, emission_matrix,
     log_likelihood : float
     """
     forward_states, scaling_factors = msmc_forward(
-        seg_pos, seg_obs, trans, emission_matrix, eq_prob,
-        fwd_props, fwd_props_miss, n_states
+        seg_pos, seg_obs, trans, emission_matrix, eq_prob, fwd_props, fwd_props_miss, n_states
     )
 
     transitions, emissions, log_lik = msmc_backward_expectations(
-        seg_pos, seg_obs, trans, emission_matrix,
-        forward_states, scaling_factors,
-        fwd_props, fwd_props_miss,
-        bwd_props, bwd_props_miss,
-        n_states, hmm_stride_width
+        seg_pos,
+        seg_obs,
+        trans,
+        emission_matrix,
+        forward_states,
+        scaling_factors,
+        fwd_props,
+        fwd_props_miss,
+        bwd_props,
+        bwd_props_miss,
+        n_states,
+        hmm_stride_width,
     )
 
     return transitions, emissions, log_lik
@@ -1287,6 +1343,7 @@ def _single_chromosome_expectation(seg_pos, seg_obs, trans, emission_matrix,
 # ---------------------------------------------------------------------------
 # 12. Log-likelihood for parameter optimization (M-step)
 # ---------------------------------------------------------------------------
+
 
 @numba.njit(cache=True)
 def _msmc_log_likelihood(transitions, emissions, boundaries, rho, lambda_vec, mu):
@@ -1342,10 +1399,25 @@ def _msmc_log_likelihood(transitions, emissions, boundaries, rho, lambda_vec, mu
 # 13. Powell's method for M-step
 # ---------------------------------------------------------------------------
 
+
 @numba.njit(cache=True)
-def _brent_minimize(ax, bx, cx, p, xi, transitions, emissions, boundaries,
-                    mu, n_params, n_intervals, par_map, fixed_rho, init_rho,
-                    tol=3.0e-8):
+def _brent_minimize(
+    ax,
+    bx,
+    cx,
+    p,
+    xi,
+    transitions,
+    emissions,
+    boundaries,
+    mu,
+    n_params,
+    n_intervals,
+    par_map,
+    fixed_rho,
+    init_rho,
+    tol=3.0e-8,
+):
     """Brent's method for 1D minimization along a direction.
 
     Parameters
@@ -1390,8 +1462,9 @@ def _brent_minimize(ax, bx, cx, p, xi, transitions, emissions, boundaries,
     # Evaluate at x
     for j in range(n_params):
         xt[j] = p[j] + x * xi[j]
-    fx = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                      n_intervals, par_map, fixed_rho, init_rho)
+    fx = _eval_neg_ll(
+        xt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+    )
     fv = fx
     fw = fx
 
@@ -1429,8 +1502,9 @@ def _brent_minimize(ax, bx, cx, p, xi, transitions, emissions, boundaries,
 
         for j in range(n_params):
             xt[j] = p[j] + u * xi[j]
-        fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                          n_intervals, par_map, fixed_rho, init_rho)
+        fu = _eval_neg_ll(
+            xt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+        )
 
         if fu <= fx:
             if u >= x:
@@ -1469,8 +1543,21 @@ def _sign(a, b):
 
 
 @numba.njit(cache=True)
-def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
-             mu, n_params, n_intervals, par_map, fixed_rho, init_rho):
+def _bracket(
+    ax_in,
+    bx_in,
+    p,
+    xi,
+    transitions,
+    emissions,
+    boundaries,
+    mu,
+    n_params,
+    n_intervals,
+    par_map,
+    fixed_rho,
+    init_rho,
+):
     """Bracket a minimum along direction xi."""
     GOLD = 1.618034
     GLIMIT = 100.0
@@ -1483,12 +1570,14 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
 
     for j in range(n_params):
         xt[j] = p[j] + ax * xi[j]
-    fa = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                      n_intervals, par_map, fixed_rho, init_rho)
+    fa = _eval_neg_ll(
+        xt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+    )
     for j in range(n_params):
         xt[j] = p[j] + bx * xi[j]
-    fb = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                      n_intervals, par_map, fixed_rho, init_rho)
+    fb = _eval_neg_ll(
+        xt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+    )
 
     if fb > fa:
         ax, bx = bx, ax
@@ -1497,22 +1586,30 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
     cx = bx + GOLD * (bx - ax)
     for j in range(n_params):
         xt[j] = p[j] + cx * xi[j]
-    fc = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                      n_intervals, par_map, fixed_rho, init_rho)
+    fc = _eval_neg_ll(
+        xt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+    )
 
     while fb > fc:
         r = (bx - ax) * (fb - fc)
         q = (bx - cx) * (fb - fa)
-        u = bx - ((bx - cx) * q - (bx - ax) * r) / (
-            2.0 * _sign(max(abs(q - r), TINY), q - r)
-        )
+        u = bx - ((bx - cx) * q - (bx - ax) * r) / (2.0 * _sign(max(abs(q - r), TINY), q - r))
         ulim = bx + GLIMIT * (cx - bx)
 
         if (bx - u) * (u - cx) > 0.0:
             for j in range(n_params):
                 xt[j] = p[j] + u * xi[j]
-            fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                              n_intervals, par_map, fixed_rho, init_rho)
+            fu = _eval_neg_ll(
+                xt,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
             if fu < fc:
                 ax = bx
                 bx = u
@@ -1526,15 +1623,32 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
             u = cx + GOLD * (cx - bx)
             for j in range(n_params):
                 xt[j] = p[j] + u * xi[j]
-            fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                              n_intervals, par_map, fixed_rho, init_rho)
+            fu = _eval_neg_ll(
+                xt,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
         elif (cx - u) * (u - ulim) > 0.0:
             for j in range(n_params):
                 xt[j] = p[j] + u * xi[j]
-            fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                              n_intervals, par_map, fixed_rho, init_rho)
+            fu = _eval_neg_ll(
+                xt,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
             if fu < fc:
-                old_bx = bx
                 old_cx = cx
                 old_u = u
                 fb = fc
@@ -1544,20 +1658,47 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
                 u = old_u + GOLD * (old_u - old_cx)
                 for j in range(n_params):
                     xt[j] = p[j] + u * xi[j]
-                fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                                  n_intervals, par_map, fixed_rho, init_rho)
+                fu = _eval_neg_ll(
+                    xt,
+                    transitions,
+                    emissions,
+                    boundaries,
+                    mu,
+                    n_intervals,
+                    par_map,
+                    fixed_rho,
+                    init_rho,
+                )
         elif (u - ulim) * (ulim - cx) >= 0.0:
             u = ulim
             for j in range(n_params):
                 xt[j] = p[j] + u * xi[j]
-            fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                              n_intervals, par_map, fixed_rho, init_rho)
+            fu = _eval_neg_ll(
+                xt,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
         else:
             u = cx + GOLD * (cx - bx)
             for j in range(n_params):
                 xt[j] = p[j] + u * xi[j]
-            fu = _eval_neg_ll(xt, transitions, emissions, boundaries, mu,
-                              n_intervals, par_map, fixed_rho, init_rho)
+            fu = _eval_neg_ll(
+                xt,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
 
         ax = bx
         bx = cx
@@ -1570,8 +1711,9 @@ def _bracket(ax_in, bx_in, p, xi, transitions, emissions, boundaries,
 
 
 @numba.njit(cache=True)
-def _eval_neg_ll(x, transitions, emissions, boundaries, mu,
-                 n_intervals, par_map, fixed_rho, init_rho):
+def _eval_neg_ll(
+    x, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+):
     """Evaluate negative log-likelihood from parameter vector x.
 
     x contains log(lambda) values for each segment group, and optionally
@@ -1590,15 +1732,23 @@ def _eval_neg_ll(x, transitions, emissions, boundaries, mu,
     if rho <= 0.0:
         rho = 1e-10
 
-    ll = _msmc_log_likelihood(transitions, emissions, boundaries, rho,
-                              lambda_vec, mu)
+    ll = _msmc_log_likelihood(transitions, emissions, boundaries, rho, lambda_vec, mu)
     return -ll
 
 
 @numba.njit(cache=True)
-def _powell_minimize(x0, transitions, emissions, boundaries, mu,
-                     n_intervals, par_map, fixed_rho, init_rho,
-                     ftol=3.0e-8):
+def _powell_minimize(
+    x0,
+    transitions,
+    emissions,
+    boundaries,
+    mu,
+    n_intervals,
+    par_map,
+    fixed_rho,
+    init_rho,
+    ftol=3.0e-8,
+):
     """Powell's method for multidimensional minimization of -Q.
 
     Parameters
@@ -1635,8 +1785,9 @@ def _powell_minimize(x0, transitions, emissions, boundaries, mu,
     pt = np.empty(n, dtype=np.float64)
     ptt = np.empty(n, dtype=np.float64)
 
-    fret = _eval_neg_ll(p, transitions, emissions, boundaries, mu,
-                        n_intervals, par_map, fixed_rho, init_rho)
+    fret = _eval_neg_ll(
+        p, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+    )
 
     for j in range(n):
         pt[j] = p[j]
@@ -1652,13 +1803,37 @@ def _powell_minimize(x0, transitions, emissions, boundaries, mu,
             fptt = fret
 
             # Line minimization along xi
-            ax, bx, cx = _bracket(0.0, 1.0, p, xi, transitions, emissions,
-                                  boundaries, mu, n, n_intervals, par_map,
-                                  fixed_rho, init_rho)
-            xmin, fret = _brent_minimize(ax, bx, cx, p, xi, transitions,
-                                         emissions, boundaries, mu, n,
-                                         n_intervals, par_map, fixed_rho,
-                                         init_rho)
+            ax, bx, cx = _bracket(
+                0.0,
+                1.0,
+                p,
+                xi,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
+            xmin, fret = _brent_minimize(
+                ax,
+                bx,
+                cx,
+                p,
+                xi,
+                transitions,
+                emissions,
+                boundaries,
+                mu,
+                n,
+                n_intervals,
+                par_map,
+                fixed_rho,
+                init_rho,
+            )
 
             for j in range(n):
                 xi[j] *= xmin
@@ -1676,18 +1851,46 @@ def _powell_minimize(x0, transitions, emissions, boundaries, mu,
             xi[j] = p[j] - pt[j]
             pt[j] = p[j]
 
-        fptt = _eval_neg_ll(ptt, transitions, emissions, boundaries, mu,
-                            n_intervals, par_map, fixed_rho, init_rho)
+        fptt = _eval_neg_ll(
+            ptt, transitions, emissions, boundaries, mu, n_intervals, par_map, fixed_rho, init_rho
+        )
         if fptt < fp:
-            t = 2.0 * (fp - 2.0 * fret + fptt) * (fp - fret - delta) ** 2 - delta * (fp - fptt) ** 2
+            t = (
+                2.0 * (fp - 2.0 * fret + fptt) * (fp - fret - delta) ** 2
+                - delta * (fp - fptt) ** 2
+            )
             if t < 0.0:
-                ax, bx, cx = _bracket(0.0, 1.0, p, xi, transitions, emissions,
-                                      boundaries, mu, n, n_intervals, par_map,
-                                      fixed_rho, init_rho)
-                xmin, fret = _brent_minimize(ax, bx, cx, p, xi, transitions,
-                                             emissions, boundaries, mu, n,
-                                             n_intervals, par_map, fixed_rho,
-                                             init_rho)
+                ax, bx, cx = _bracket(
+                    0.0,
+                    1.0,
+                    p,
+                    xi,
+                    transitions,
+                    emissions,
+                    boundaries,
+                    mu,
+                    n,
+                    n_intervals,
+                    par_map,
+                    fixed_rho,
+                    init_rho,
+                )
+                xmin, fret = _brent_minimize(
+                    ax,
+                    bx,
+                    cx,
+                    p,
+                    xi,
+                    transitions,
+                    emissions,
+                    boundaries,
+                    mu,
+                    n,
+                    n_intervals,
+                    par_map,
+                    fixed_rho,
+                    init_rho,
+                )
                 for j in range(n):
                     xi[j] *= xmin
                     p[j] += xi[j]
@@ -1702,6 +1905,7 @@ def _powell_minimize(x0, transitions, emissions, boundaries, mu,
 # ---------------------------------------------------------------------------
 # 14. EM step
 # ---------------------------------------------------------------------------
+
 
 def _msmc_em_step(
     segments_list: list[dict],
@@ -1758,8 +1962,8 @@ def _msmc_em_step(
 
     # Precompute propagators
     emission_hom = e[1, :].copy()
-    fwd_props, bwd_props, fwd_props_miss, bwd_props_miss = (
-        precompute_all_propagators(trans, emission_hom, max_distance)
+    fwd_props, bwd_props, fwd_props_miss, bwd_props_miss = precompute_all_propagators(
+        trans, emission_hom, max_distance
     )
 
     # E-step: accumulate expectations over all pairs and chromosomes
@@ -1780,9 +1984,7 @@ def _msmc_em_step(
             pair_obs = obs_dict[pair_key]
 
             # Build segment representation for this pair on this chromosome
-            seg_pos, seg_obs = _build_segments_for_pair(
-                positions, n_called, pair_obs
-            )
+            seg_pos, seg_obs = _build_segments_for_pair(positions, n_called, pair_obs)
 
             if seg_pos.shape[0] < 2:
                 continue
@@ -1795,19 +1997,22 @@ def _msmc_em_step(
 
             # Run forward-backward
             tr, em, ll = _single_chromosome_expectation(
-                seg_pos_c, seg_obs_c, trans, e, eq,
-                fwd_props, bwd_props, fwd_props_miss, bwd_props_miss,
-                n_states, hmm_stride_width,
+                seg_pos_c,
+                seg_obs_c,
+                trans,
+                e,
+                eq,
+                fwd_props,
+                bwd_props,
+                fwd_props_miss,
+                bwd_props_miss,
+                n_states,
+                hmm_stride_width,
             )
 
             total_transitions += tr
             total_emissions += em
             total_ll += ll
-
-    # Q before maximization
-    q_before = _msmc_log_likelihood(
-        total_transitions, total_emissions, boundaries, rho, lambda_vec, mu
-    )
 
     n_free = par_map.max() + 1
     n_opt_params = n_free + (0 if fixed_rho else 1)
@@ -1923,6 +2128,7 @@ def _build_segments_for_pair(positions, n_called, pair_obs):
 # 15. Theta estimation from data
 # ---------------------------------------------------------------------------
 
+
 def _estimate_theta(segments_list, pairs):
     """Estimate theta from expanded segments, matching D code's getTheta.
 
@@ -1948,9 +2154,7 @@ def _estimate_theta(segments_list, pairs):
             pair_obs = obs_dict[pair_key]
 
             # Expand segments like the D code's readSegSites
-            seg_pos, seg_obs = _build_segments_for_pair(
-                positions, n_called, pair_obs
-            )
+            seg_pos, seg_obs = _build_segments_for_pair(positions, n_called, pair_obs)
 
             # Now compute theta on expanded segments (matches D getTheta)
             last_pos = 0
@@ -1976,14 +2180,15 @@ def _estimate_theta(segments_list, pairs):
 # 16. Public API
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Msmc2Result:
     """Results from an MSMC2 run."""
 
-    time_boundaries: np.ndarray   # (n+1,) time boundaries
-    lambda_vec: np.ndarray        # (n,) coalescence rates per interval
-    ne: np.ndarray                # (n,) N_e(t) = 1 / (2 * mu * lambda)
-    time_years: np.ndarray        # (n,) left boundary in years
+    time_boundaries: np.ndarray  # (n+1,) time boundaries
+    lambda_vec: np.ndarray  # (n,) coalescence rates per interval
+    ne: np.ndarray  # (n,) N_e(t) = 1 / (2 * mu * lambda)
+    time_years: np.ndarray  # (n,) left boundary in years
     mu: float = 0.0
     rho: float = 0.0
     log_likelihood: float = 0.0
@@ -2004,6 +2209,10 @@ def msmc2(
     max_distance: int = 1000,
     quantile_bounds: bool = False,
     time_factor: float = 1.0,
+    internal_mu: float | None = None,
+    initial_lambda: np.ndarray | list[float] | None = None,
+    n_threads: int | None = None,
+    output_prefix: str | Path | None = None,
     implementation: str = "auto",
     upstream_options: dict | None = None,
     native_options: dict | None = None,
@@ -2034,6 +2243,14 @@ def msmc2(
         Use quantile boundaries instead of Li & Durbin (default False).
     time_factor : float
         Multiplicative factor for time boundary computation (default 1.0).
+    internal_mu : float, optional
+        Fix the mutation parameter estimated from the multihetsep data.
+    initial_lambda : array-like, optional
+        Original MSMC2-scaled initial lambda value for every atomic time interval.
+    n_threads : int, optional
+        Thread count used by the preserved upstream executable.
+    output_prefix : str or Path, optional
+        Write original-compatible ``.final.txt``, ``.loop.txt``, and ``.log`` files.
     implementation : {"auto", "native", "upstream"}
         Algorithm provenance selector. ``"native"`` runs the in-repo MSMC2
         port. ``"upstream"`` currently raises because no public upstream bridge
@@ -2044,12 +2261,26 @@ def msmc2(
     SmcData
         Input data with results stored in ``data.results["msmc2"]``.
     """
+    started = time.perf_counter()
     implementation = normalize_implementation(implementation)
+    requested_capabilities = {
+        name
+        for name, enabled in {
+            "fixed_recombination": fixed_rho,
+            "quantile_boundaries": quantile_bounds,
+            "internal_mu": internal_mu is not None,
+            "initial_lambda": initial_lambda is not None,
+            "n_threads": n_threads is not None,
+            "output": output_prefix is not None,
+            "upstream_options": bool(upstream_options),
+        }.items()
+        if enabled
+    }
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("msmc2"),
         method_name="msmc2",
-        requested_capabilities={"upstream_options"} if upstream_options else None,
+        requested_capabilities=requested_capabilities or None,
     )
     warn_if_native_not_trusted("msmc2", implementation_used)
     if implementation_used == "upstream":
@@ -2061,12 +2292,24 @@ def msmc2(
             fixed_rho=fixed_rho,
             mu=mu,
             quantile_bounds=quantile_bounds,
+            generation_time=generation_time,
+            stride_width=stride_width,
+            time_factor=time_factor,
+            internal_mu=internal_mu,
+            initial_lambda=initial_lambda,
+            n_threads=n_threads,
+            output_prefix=output_prefix,
             implementation_requested=implementation,
             upstream_options=upstream_options,
         )
     if native_options:
         unsupported = ", ".join(sorted(native_options))
         raise TypeError(f"Unsupported msmc2 native_options keys: {unsupported}")
+    if n_threads is not None:
+        raise TypeError(
+            "n_threads is an upstream-only performance control; native MSMC2 "
+            "currently uses its deterministic compiled-kernel execution path."
+        )
 
     segments_list = data.uns["segments"]
     pairs = data.uns["pairs"]
@@ -2079,7 +2322,10 @@ def msmc2(
 
     logger.info(
         "MSMC2: n_intervals=%d, n_free=%d, n_pairs=%d, pattern=%s",
-        n_intervals, n_free, n_pairs, time_pattern,
+        n_intervals,
+        n_free,
+        n_pairs,
+        time_pattern,
     )
 
     # Compute time boundaries
@@ -2091,7 +2337,11 @@ def msmc2(
         boundaries = li_durbin_boundaries(n_intervals, time_constant)
 
     # Estimate mutation rate (theta) from data
-    theta = _estimate_theta(segments_list, pairs) / 2.0
+    theta = (
+        float(internal_mu)
+        if internal_mu is not None
+        else _estimate_theta(segments_list, pairs) / 2.0
+    )
     if theta <= 0.0:
         theta = mu  # fallback
 
@@ -2101,23 +2351,33 @@ def msmc2(
 
     logger.info(
         "MSMC2: estimated mu_internal=%.6e, rho_internal=%.6e",
-        mu_internal, rho_internal,
+        mu_internal,
+        rho_internal,
     )
 
-    # Initialize lambda_vec to all 1s
-    lambda_vec = np.ones(n_intervals, dtype=np.float64)
+    if initial_lambda is None:
+        lambda_vec = np.ones(n_intervals, dtype=np.float64)
+    else:
+        lambda_vec = np.asarray(initial_lambda, dtype=np.float64).copy()
+        if lambda_vec.shape != (n_intervals,):
+            raise ValueError(f"initial_lambda must contain exactly {n_intervals} values.")
+        if np.any(lambda_vec <= 0) or not np.all(np.isfinite(lambda_vec)):
+            raise ValueError("initial_lambda values must be finite and positive.")
+        lambda_vec *= mu_internal
 
     # EM loop
     rounds: list[dict] = []
 
     # Record initial state
-    rounds.append({
-        "round": 0,
-        "mu": mu_internal,
-        "rho": rho_internal,
-        "lambda": lambda_vec.copy(),
-        "boundaries": boundaries.copy(),
-    })
+    rounds.append(
+        {
+            "round": 0,
+            "mu": mu_internal,
+            "rho": rho_internal,
+            "lambda": lambda_vec.copy(),
+            "boundaries": boundaries.copy(),
+        }
+    )
 
     for iteration in range(n_iterations):
         logger.info("MSMC2: EM iteration %d/%d", iteration + 1, n_iterations)
@@ -2151,7 +2411,9 @@ def msmc2(
         rounds.append(rd)
         logger.info(
             "  LL=%.2f Q=%.4f rho=%.6e",
-            ll, q_after, rho_internal,
+            ll,
+            q_after,
+            rho_internal,
         )
 
     # Final results
@@ -2193,20 +2455,102 @@ def msmc2(
         rounds=rounds,
     )
 
-    data.results["msmc2"] = annotate_result({
-        "time_boundaries": result.time_boundaries,
-        "left_boundary": boundaries[:n_intervals] * mu_internal,
-        "right_boundary": boundaries[1:] * mu_internal,
-        "lambda": lambda_vec / mu_internal,
-        "lambda_raw": lambda_vec.copy(),
-        "ne": result.ne,
-        "time_years": result.time_years,
-        "mu": mu_internal,
-        "rho": rho_internal,
-        "log_likelihood": result.log_likelihood,
-        "time_pattern": result.time_pattern,
-        "rounds": result.rounds,
-    }, method_name="msmc2", implementation_requested=implementation, implementation_used=implementation_used)
+    left_boundary = boundaries[:n_intervals] * mu_internal
+    right_boundary = boundaries[1:] * mu_internal
+    lambda_output = lambda_vec / mu_internal
+    artifacts: list[dict] = []
+    if output_prefix is not None:
+        prefix = Path(output_prefix)
+        prefix.parent.mkdir(parents=True, exist_ok=True)
+        final_path = Path(f"{prefix}.final.txt")
+        loop_path = Path(f"{prefix}.loop.txt")
+        log_path = Path(f"{prefix}.log")
+        write_msmc_output(
+            final_path,
+            left_boundary=left_boundary,
+            right_boundary=right_boundary,
+            lambda_values=lambda_output,
+        )
+        with loop_path.open("wt", encoding="utf-8") as handle:
+            for round_result in rounds[1:]:
+                round_boundaries = round_result["boundaries"] * round_result["mu"]
+                round_lambda = round_result["lambda"] / round_result["mu"]
+                handle.write(
+                    f"{round_result['rho']:.17g}\t"
+                    f"{round_result['log_likelihood']:.2f}\t"
+                    f"{','.join(f'{value:.17g}' for value in round_boundaries)}\t"
+                    f"{','.join(f'{value:.17g}' for value in round_lambda)}\n"
+                )
+        log_path.write_text(
+            "\n".join(
+                [
+                    "implementation: smckit-native",
+                    f"maxIterations: {n_iterations}",
+                    f"timeSegmentPattern: {time_pattern}",
+                    f"nrThreads: {n_threads or 1}",
+                    f"hmmStrideWidth: {stride_width}",
+                    f"fixedRecombination: {fixed_rho}",
+                    f"skipAmbiguous: {data.uns.get('skip_ambiguous', False)}",
+                    f"pairIndices: {_pair_indices_arg(pairs)}",
+                    f"time factor: {time_factor}",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        artifacts = [
+            {
+                "path": str(path),
+                "sha256": sha256_file(path),
+                "kind": kind,
+            }
+            for path, kind in [
+                (final_path, "msmc2-final"),
+                (loop_path, "msmc2-loop"),
+                (log_path, "msmc2-log"),
+            ]
+        ]
+    effective_args = {
+        "n_iterations": int(n_iterations),
+        "time_pattern": time_pattern,
+        "rho_over_mu": float(rho_over_mu),
+        "fixed_rho": bool(fixed_rho),
+        "stride_width": int(stride_width),
+        "max_distance": int(max_distance),
+        "quantile_bounds": bool(quantile_bounds),
+        "time_factor": float(time_factor),
+        "internal_mu": internal_mu,
+        "initial_lambda": (
+            np.asarray(initial_lambda).tolist() if initial_lambda is not None else None
+        ),
+        "n_threads": n_threads,
+    }
+    data.results["msmc2"] = annotate_result(
+        {
+            "time_boundaries": result.time_boundaries,
+            "left_boundary": left_boundary,
+            "right_boundary": right_boundary,
+            "lambda": lambda_output,
+            "lambda_raw": lambda_vec.copy(),
+            "ne": result.ne,
+            "time_years": result.time_years,
+            "mu": mu_internal,
+            "rho": rho_internal,
+            "log_likelihood": result.log_likelihood,
+            "time_pattern": result.time_pattern,
+            "rounds": result.rounds,
+            "pairs": pairs,
+            "chromosomes": [segment["chr"] for segment in segments_list],
+            "skip_ambiguous": bool(data.uns.get("skip_ambiguous", False)),
+        },
+        method_name="msmc2",
+        implementation_requested=implementation,
+        implementation_used=implementation_used,
+        effective_args=effective_args,
+        input_paths=data.uns.get("source_paths"),
+        runtime_seconds=time.perf_counter() - started,
+        artifacts=artifacts,
+    )
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
 
@@ -2242,6 +2586,13 @@ def _msmc2_upstream(
     fixed_rho: bool,
     mu: float,
     quantile_bounds: bool,
+    generation_time: float,
+    stride_width: int,
+    time_factor: float,
+    internal_mu: float | None,
+    initial_lambda: np.ndarray | list[float] | None,
+    n_threads: int | None,
+    output_prefix: str | Path | None,
     implementation_requested: str,
     upstream_options: dict | None,
 ) -> SmcData:
@@ -2261,11 +2612,20 @@ def _msmc2_upstream(
         "pairIndices": _pair_indices_arg(data.uns.get("pairs")),
         "fixedRecombination": bool(fixed_rho),
         "quantileBoundaries": bool(quantile_bounds),
+        "skipAmbiguous": bool(data.uns.get("skip_ambiguous", False)),
+        "hmmStrideWidth": int(stride_width),
+        "time_factor": float(time_factor),
+        "theta": internal_mu,
+        "initialLambdaVec": (
+            np.asarray(initial_lambda).tolist() if initial_lambda is not None else None
+        ),
+        "nrThreads": n_threads,
     }
     if upstream_options:
         effective_args.update(upstream_options)
     with tempfile.TemporaryDirectory(prefix="smckit-msmc2-") as tmpdir:
-        out_prefix = Path(tmpdir) / "msmc2"
+        out_prefix = Path(output_prefix) if output_prefix is not None else Path(tmpdir) / "msmc2"
+        out_prefix.parent.mkdir(parents=True, exist_ok=True)
         cmd = [
             str(binary),
             "-i",
@@ -2284,21 +2644,55 @@ def _msmc2_upstream(
             cmd.append("-R")
         if quantile_bounds:
             cmd.append("--quantileBoundaries")
+        if data.uns.get("skip_ambiguous", False):
+            cmd.append("-s")
+        if stride_width != 1000:
+            cmd.extend(["--hmmStrideWidth", str(int(stride_width))])
+        if time_factor != 1.0:
+            cmd.extend(["--time_factor", repr(float(time_factor))])
+        if internal_mu is not None:
+            cmd.extend(["-m", repr(float(internal_mu))])
+        if initial_lambda is not None:
+            initial = np.asarray(initial_lambda, dtype=np.float64)
+            n_intervals = sum(parse_time_segment_pattern(time_pattern))
+            if initial.shape != (n_intervals,):
+                raise ValueError(f"initial_lambda must contain exactly {n_intervals} values.")
+            cmd.extend(
+                [
+                    "--initialLambdaVec",
+                    ",".join(repr(float(value)) for value in initial),
+                ]
+            )
+        if n_threads is not None:
+            if n_threads <= 0:
+                raise ValueError("n_threads must be positive.")
+            cmd.extend(["-t", str(int(n_threads))])
         cmd.extend([str(Path(p)) for p in input_paths])
         proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
         if proc.returncode != 0:
             raise RuntimeError(
-                "Upstream MSMC2 backend failed.\n"
-                f"stdout:\n{proc.stdout}\n"
-                f"stderr:\n{proc.stderr}"
+                f"Upstream MSMC2 backend failed.\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
             )
-        final_path = out_prefix.with_suffix(".final.txt")
+        final_path = Path(f"{out_prefix}.final.txt")
         parsed = read_msmc_output(final_path)
         left = np.asarray(parsed["left_boundary"], dtype=np.float64)
         right = np.asarray(parsed["right_boundary"], dtype=np.float64)
         lam = np.asarray(parsed["lambda"], dtype=np.float64)
         ne = 1.0 / np.maximum(lam, 1e-300) / max(2.0 * mu, 1e-300)
-        time_years = left / max(mu, 1e-300)
+        time_years = left / max(mu, 1e-300) * generation_time
+        persistent_artifacts: list[dict] = []
+        if output_prefix is not None:
+            for artifact_path in sorted(out_prefix.parent.glob(f"{out_prefix.name}.*")):
+                if artifact_path.is_file():
+                    persistent_artifacts.append(
+                        {
+                            "path": str(artifact_path),
+                            "sha256": sha256_file(artifact_path),
+                            "kind": (
+                                f"msmc2-{artifact_path.name.removeprefix(out_prefix.name + '.')}"
+                            ),
+                        }
+                    )
         data.results["msmc2"] = annotate_result(
             {
                 "time_index": np.asarray(parsed["time_index"], dtype=np.int64),
@@ -2309,6 +2703,9 @@ def _msmc2_upstream(
                 "time": left,
                 "time_years": time_years,
                 "backend": "upstream",
+                "pairs": data.uns.get("pairs"),
+                "chromosomes": [segment["chr"] for segment in data.uns.get("segments", [])],
+                "skip_ambiguous": bool(data.uns.get("skip_ambiguous", False)),
                 "upstream": standard_upstream_metadata(
                     "msmc2",
                     effective_args=effective_args,
@@ -2324,6 +2721,10 @@ def _msmc2_upstream(
             method_name="msmc2",
             implementation_requested=implementation_requested,
             implementation_used="upstream",
+            effective_args=effective_args,
+            input_paths=[str(path) for path in input_paths],
+            artifacts=persistent_artifacts,
         )
     data.params["mu"] = mu
+    data.params["generation_time"] = generation_time
     return data

@@ -15,8 +15,58 @@
     }
   },
   "methods": {
-    "psmc": {"fixtures": ["tiny synthetic", "NA12878 chromosome 22"], "status": "draft"},
-    "msmc2": {"fixtures": ["bundled multihetsep", "multi-chromosome synthetic"], "status": "draft"},
+    "psmc": {
+      "fixtures": [
+        "tiny synthetic with missing windows",
+        "multi-record synthetic",
+        "NA12878 chromosome 22"
+      ],
+      "intermediates": [
+        "time boundaries",
+        "transition and emission matrices",
+        "posterior state probabilities",
+        "recombination probabilities"
+      ],
+      "final_metrics": [
+        "theta",
+        "rho",
+        "lambda trajectory",
+        "per-site log likelihood"
+      ],
+      "workflows": [
+        "explicit parameters and time intervals",
+        "posterior and full decoding",
+        "transition capping",
+        "split-and-resample bootstrap",
+        "consensus FASTA and FASTQ preprocessing",
+        "mutation-class and interval masks",
+        "sequence-probability output and HMM simulation",
+        "original-compatible result output"
+      ],
+      "status": "enforced_partial"
+    },
+    "msmc2": {
+      "fixtures": [
+        "bundled multihetsep",
+        "selected-pair input",
+        "skip-ambiguous input",
+        "multi-chromosome synthetic"
+      ],
+      "workflows": [
+        "all and explicit pair selection",
+        "Li-Durbin and quantile boundaries",
+        "fixed and estimated recombination",
+        "multi-file chromosomes",
+        "original-compatible final, loop, and log artifacts"
+      ],
+      "final_metrics": [
+        "mutation rate",
+        "recombination rate",
+        "lambda trajectory",
+        "log likelihood"
+      ],
+      "status": "enforced"
+    },
     "esmc2": {"fixtures": ["psmcfa", "multihetsep", "selfing", "dormancy"], "status": "enforced_partial"},
     "asmc": {"fixtures": ["synthetic decode", "published example"], "status": "draft"},
     "msmc_im": {"fixtures": ["Yoruba/French", "simulated split-migration"], "status": "enforced_partial"},

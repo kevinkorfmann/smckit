@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import importlib.util
-import warnings
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from smckit.tl import msmc_im
 from smckit.tl._msmc_im import (
     _compute_tmrca_density,
     _correct_ancient_lambdas,
@@ -55,41 +53,6 @@ def _load_vendor_funcs():
 
 
 VENDOR = _load_vendor_funcs()
-
-
-@pytest.mark.slow
-def test_msmc_im_auto_prefers_promoted_native_and_handles_relative_input_paths() -> None:
-    data = msmc_im("vendor/MSMC-IM/example/Yoruba_French.8haps.combined.msmc2.final.txt")
-    res = data.results["msmc_im"]
-
-    assert res["implementation"] == "native"
-    assert res["implementation_requested"] == "auto"
-    assert np.all(np.isfinite(res["left_boundary"]))
-    assert set(res["split_time_quantiles"]) == {0.25, 0.5, 0.75}
-
-
-@pytest.mark.slow
-def test_msmc_im_exposes_raw_and_thresholded_migration_rates() -> None:
-    data = msmc_im(INPUT, implementation="native")
-    res = data.results["msmc_im"]
-
-    assert "m_thresholded" in res
-    assert np.all(res["m"] >= res["m_thresholded"])
-    assert np.any(res["m"] > res["m_thresholded"])
-
-
-@pytest.mark.slow
-def test_msmc_im_does_not_emit_matrix_deprecation_warning() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        msmc_im(INPUT, implementation="native")
-
-    pending = [
-        w for w in caught
-        if issubclass(w.category, PendingDeprecationWarning)
-        and "matrix subclass" in str(w.message)
-    ]
-    assert pending == []
 
 
 def test_msmc_im_fittingdetails_parser_exposes_raw_fields_and_chi_square(

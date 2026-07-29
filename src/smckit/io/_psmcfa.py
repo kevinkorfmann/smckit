@@ -47,13 +47,15 @@ def read_psmcfa(path: str | Path) -> SmcData:
             raw = b"".join(current_seq)
             codes = _CONV_TABLE[np.frombuffer(raw, dtype=np.uint8)]
             callable_mask = codes < 2
-            records.append({
-                "name": current_name,
-                "codes": codes,
-                "L": len(codes),
-                "L_e": int(callable_mask.sum()),
-                "n_e": int((codes == 1).sum()),
-            })
+            records.append(
+                {
+                    "name": current_name,
+                    "codes": codes,
+                    "L": len(codes),
+                    "L_e": int(callable_mask.sum()),
+                    "n_e": int((codes == 1).sum()),
+                }
+            )
 
     with opener(path, "rb") as f:
         for line in f:
@@ -83,3 +85,30 @@ def read_psmcfa(path: str | Path) -> SmcData:
     data.uns["source_path"] = str(path)
 
     return data
+
+
+def write_psmcfa(
+    data: SmcData | list[dict],
+    path: str | Path,
+    *,
+    line_width: int = 60,
+) -> Path:
+    """Write records in the original FASTA-like PSMC input format."""
+    if line_width <= 0:
+        raise ValueError("line_width must be positive.")
+    records = data.uns["records"] if isinstance(data, SmcData) else data
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    opener = gzip.open if path.suffix == ".gz" else open
+    decode = np.array(["T", "K", "N"], dtype=object)
+    with opener(path, "wt", encoding="utf-8") as handle:
+        for index, record in enumerate(records):
+            name = record.get("name", f"sequence_{index + 1}")
+            codes = np.asarray(record["codes"], dtype=np.int8)
+            sequence = "".join(
+                decode[int(value)] if 0 <= int(value) < len(decode) else "N" for value in codes
+            )
+            handle.write(f">{name}\n")
+            for start in range(0, len(sequence), line_width):
+                handle.write(sequence[start : start + line_width] + "\n")
+    return path

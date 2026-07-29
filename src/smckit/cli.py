@@ -83,6 +83,7 @@ def _upstream_command(namespace: argparse.Namespace) -> int:
 
     output_dir = namespace.output_dir
     timeout = namespace.timeout
+    entrypoint = namespace.entrypoint
     option_index = 0
     while option_index < len(option_tokens):
         option = option_tokens[option_index]
@@ -94,6 +95,10 @@ def _upstream_command(namespace: argparse.Namespace) -> int:
             timeout = float(option_tokens[option_index + 1])
             option_index += 2
             continue
+        if option == "--entrypoint" and option_index + 1 < len(option_tokens):
+            entrypoint = option_tokens[option_index + 1]
+            option_index += 2
+            continue
         raise ValueError(
             f"Unknown smckit upstream option {option!r}; put original-tool "
             "arguments after an explicit '--' delimiter."
@@ -102,12 +107,10 @@ def _upstream_command(namespace: argparse.Namespace) -> int:
     if output_dir is None:
         stamp = time.strftime("%Y%m%d-%H%M%S")
         output_dir = f".smckit-runs/{namespace.tool}-{stamp}"
-    result = smckit.upstream.run(
-        namespace.tool,
-        raw_args,
-        output_dir=output_dir,
-        timeout=timeout,
-    )
+    run_options = {"output_dir": output_dir, "timeout": timeout}
+    if entrypoint is not None:
+        run_options["entrypoint"] = entrypoint
+    result = smckit.upstream.run(namespace.tool, raw_args, **run_options)
     _print_json(result.to_dict())
     return result.returncode
 
@@ -152,6 +155,10 @@ def build_parser() -> argparse.ArgumentParser:
     upstream_parser.add_argument("tool", choices=sorted(smckit.upstream.status()))
     upstream_parser.add_argument("--output-dir")
     upstream_parser.add_argument("--timeout", type=float)
+    upstream_parser.add_argument(
+        "--entrypoint",
+        help="Original helper executable (for example, fq2psmcfa or splitfa).",
+    )
     upstream_parser.add_argument("raw_args", nargs=argparse.REMAINDER)
     upstream_parser.set_defaults(handler=_upstream_command)
     return parser

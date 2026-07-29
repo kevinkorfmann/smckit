@@ -1,7 +1,10 @@
 """Tests for MSMC2 helpers."""
 
 import numpy as np
+import pytest
 
+from smckit.io import read_msmc_output, read_multihetsep
+from smckit.tl import msmc2
 from smckit.tl._msmc import (
     _build_segments_for_pair,
     _emission_prob,
@@ -79,3 +82,44 @@ def test_emission_probs_are_clamped_to_valid_probabilities():
     assert np.all(e[1] <= 1.0)
     assert np.all(e[2] >= 0.0)
     assert np.all(e[2] <= 1.0)
+
+
+def test_native_msmc2_writes_original_artifact_set_and_round_trips(tmp_path):
+    source = tmp_path / "chr1.multihetsep"
+    source.write_text(
+        "chr1\t10\t10\tAAAA\nchr1\t20\t10\tAAAT\nchr1\t30\t10\tAATT\n",
+        encoding="utf-8",
+    )
+    prefix = tmp_path / "native"
+    initial = np.array([1000.0, 1200.0, 1400.0, 1600.0])
+
+    result = msmc2(
+        read_multihetsep(source, pair_indices=[(0, 1), (2, 3)]),
+        n_iterations=0,
+        time_pattern="1+1+1+1",
+        internal_mu=1e-4,
+        initial_lambda=initial,
+        output_prefix=prefix,
+        implementation="native",
+    ).results["msmc2"]
+
+    parsed = read_msmc_output(tmp_path / "native.final.txt")
+    np.testing.assert_allclose(parsed["lambda"], initial)
+    assert (tmp_path / "native.loop.txt").is_file()
+    assert (tmp_path / "native.log").is_file()
+    assert len(result["provenance"]["artifacts"]) == 3
+    assert result["pairs"] == [(0, 1), (2, 3)]
+
+
+def test_native_msmc2_rejects_upstream_thread_control(tmp_path):
+    source = tmp_path / "chr1.multihetsep"
+    source.write_text("chr1\t10\t10\tAA\n", encoding="utf-8")
+
+    with pytest.raises(TypeError, match="upstream-only performance control"):
+        msmc2(
+            read_multihetsep(source),
+            n_iterations=0,
+            time_pattern="1+1",
+            n_threads=2,
+            implementation="native",
+        )

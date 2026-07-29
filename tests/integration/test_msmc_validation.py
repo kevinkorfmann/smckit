@@ -7,7 +7,6 @@ import numpy as np
 from smckit.io import read_multihetsep
 from smckit.tl import msmc2
 
-
 DATA = Path(__file__).resolve().parents[2] / "data" / "msmc2_test.multihetsep"
 
 EXPECTED_LEFT_ALL_1 = np.array([
@@ -412,7 +411,14 @@ EXPECTED_LAMBDA_MULTI_1 = np.array([
 ])
 
 
-def _assert_matches_reference(res, expected_left, expected_lambda, expected_mu, expected_rho, expected_ll):
+def _assert_matches_reference(
+    res,
+    expected_left,
+    expected_lambda,
+    expected_mu,
+    expected_rho,
+    expected_ll,
+):
     np.testing.assert_allclose(res["left_boundary"], expected_left, rtol=1e-4, atol=1e-10)
     np.testing.assert_allclose(res["lambda"], expected_lambda, rtol=2e-3, atol=1e-6)
     assert np.corrcoef(res["lambda"], expected_lambda)[0, 1] > 0.999999
@@ -513,3 +519,17 @@ def test_msmc2_matches_upstream_multi_file_run(tmp_path):
     assert abs(res["mu"] - 5.42286e-05) < 1e-8
     assert abs(res["rho"] - 1.32145e-05) < 1e-8
     assert abs(res["log_likelihood"] - (-2894.83)) < 1e-2
+
+
+def test_msmc2_fixed_recombination_keeps_initial_rate():
+    data = read_multihetsep(DATA, pair_indices=[(0, 1)])
+    res = msmc2(
+        data,
+        n_iterations=1,
+        time_pattern="1*2+2*1",
+        rho_over_mu=0.5,
+        fixed_rho=True,
+        implementation="native",
+    ).results["msmc2"]
+
+    assert res["rho"] == res["mu"] * 0.5

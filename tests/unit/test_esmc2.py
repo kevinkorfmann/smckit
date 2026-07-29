@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from smckit._core import SmcData
 from smckit.backends._numba_esmc2 import (
     esmc2_backward,
     esmc2_build_emission_matrix,
@@ -15,7 +16,7 @@ from smckit.backends._numba_esmc2 import (
     esmc2_forward,
     esmc2_forward_loglik,
 )
-from smckit.tl._esmc2 import _zip_sequence_to_upstream_numeric
+from smckit.tl._esmc2 import _zip_sequence_to_upstream_numeric, esmc2
 
 # ---------------------------------------------------------------------------
 # Time boundaries
@@ -379,6 +380,40 @@ class TestZipEncoding:
 
 
 class TestEsmc2Integration:
+    def test_writes_original_compatible_result_tables(self, tmp_path):
+        seq = np.array([0, 0, 1, 0, 0, 0, 1, 0] * 4, dtype=np.int8)
+        data = SmcData(
+            uns={
+                "records": [{"codes": seq}],
+                "sum_L": len(seq),
+                "sum_n": int((seq == 1).sum()),
+            }
+        )
+
+        result = esmc2(
+            data,
+            n_states=4,
+            n_iterations=0,
+            estimate_rho=False,
+            output_dir=tmp_path,
+            implementation="native",
+        ).results["esmc2"]
+
+        assert {
+            "Tc.txt",
+            "Xi.txt",
+            "rho.txt",
+            "beta.txt",
+            "sigma.txt",
+            "mu.txt",
+            "LH.txt",
+            "t.txt",
+            "ne.txt",
+            "time_years.txt",
+        } <= {path.name for path in tmp_path.iterdir()}
+        np.testing.assert_allclose(np.loadtxt(tmp_path / "Xi.txt"), result["Xi"])
+        assert len(result["provenance"]["artifacts"]) == 10
+
     def test_runs_on_psmcfa_data(self):
         """eSMC2 should run without errors on PSMC-style input."""
         from smckit._core import SmcData

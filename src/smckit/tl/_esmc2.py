@@ -14,6 +14,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -22,6 +23,7 @@ from scipy.optimize import minimize
 
 from smckit import upstream as upstream_registry
 from smckit._core import SmcData
+from smckit._provenance import sha256_file
 from smckit.backends._numba_esmc2 import (
     HMM_TINY,
     esmc2_build_hmm,
@@ -175,18 +177,10 @@ def _build_zip_cache(Q: np.ndarray, e: np.ndarray) -> dict[str, object]:
     n = Q.shape[0]
     identity = np.eye(n, dtype=np.complex128)
 
-    c_mats: dict[int, np.ndarray] = {
-        sym: np.diag(g[:, sym]) @ Q for sym in (0, 1, 2)
-    }
-    to_mats: dict[int, np.ndarray] = {
-        sym: Q.T @ np.diag(g[:, sym]) for sym in (0, 1, 2)
-    }
-    q_prime: dict[int, np.ndarray] = {
-        sym: identity.copy() for sym in (0, 1, 2)
-    }
-    q_power: dict[int, np.ndarray] = {
-        sym: identity.copy() for sym in (0, 1, 2)
-    }
+    c_mats: dict[int, np.ndarray] = {sym: np.diag(g[:, sym]) @ Q for sym in (0, 1, 2)}
+    to_mats: dict[int, np.ndarray] = {sym: Q.T @ np.diag(g[:, sym]) for sym in (0, 1, 2)}
+    q_prime: dict[int, np.ndarray] = {sym: identity.copy() for sym in (0, 1, 2)}
+    q_power: dict[int, np.ndarray] = {sym: identity.copy() for sym in (0, 1, 2)}
     eig_cache: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
 
     for base_symbol in (0, 2):
@@ -313,15 +307,8 @@ def _zip_expected_counts(
             beta_scaled = beta[:, 1] / scales[1]
             outer = np.outer(alpha[:, 0], beta_scaled)
             transformed = w.T @ outer @ w_inv.T
-            n_counts += (
-                w_inv.T
-                @ (transformed * q_power[sym])
-                @ w.T
-                @ np.diag(g[:, base_symbol])
-            )
-            m_counts[:, base_symbol] += np.diag(
-                w_inv.T @ (transformed * q_prime[sym]) @ w.T
-            )
+            n_counts += w_inv.T @ (transformed * q_power[sym]) @ w.T @ np.diag(g[:, base_symbol])
+            m_counts[:, base_symbol] += np.diag(w_inv.T @ (transformed * q_prime[sym]) @ w.T)
 
     middle_symbols = np.unique(symbols[1:-1]) if len(symbols) > 2 else np.array([], dtype=np.int64)
     for sym in middle_symbols:
@@ -343,12 +330,8 @@ def _zip_expected_counts(
         _, w, w_inv = eig_cache[base_symbol]
         beta_scaled = beta[:, pos] / scales[pos]
         transformed = w.T @ alpha[:, pos - 1] @ beta_scaled.T @ w_inv.T
-        m_counts[:, base_symbol] += np.diag(
-            w_inv.T @ (transformed * q_prime[int(sym)]) @ w.T
-        )
-        n_counts += (
-            w_inv.T @ (transformed * q_power[int(sym)]) @ w.T @ np.diag(g[:, base_symbol])
-        )
+        m_counts[:, base_symbol] += np.diag(w_inv.T @ (transformed * q_prime[int(sym)]) @ w.T)
+        n_counts += w_inv.T @ (transformed * q_power[int(sym)]) @ w.T @ np.diag(g[:, base_symbol])
 
     last_symbol = int(symbols[-1])
     gamma_last = alpha[:, -1] * beta[:, -1]
@@ -484,9 +467,12 @@ def _run_upstream_esmc2(
         )
     sequences_all = _sequences_from_smcdata(data)
     input_metadata = _input_family_metadata(data, sequences_all)
-    sequences, theta_terms, sequence_lengths, used_sequence_indices = _select_vendor_usable_sequences(
-        sequences_all
-    )
+    (
+        sequences,
+        theta_terms,
+        sequence_lengths,
+        used_sequence_indices,
+    ) = _select_vendor_usable_sequences(sequences_all)
     reference_length = int(sequence_lengths[0])
 
     repo_root = Path(__file__).resolve().parents[3]
@@ -771,14 +757,14 @@ if (capture_sufficient_statistics && !is.null(res$q_)) {
         )
         if proc.returncode != 0:
             raise RuntimeError(
-                "Upstream eSMC2 backend failed.\n"
-                f"stdout:\n{proc.stdout}\n"
-                f"stderr:\n{proc.stderr}"
+                f"Upstream eSMC2 backend failed.\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
             )
 
         Tc_raw = np.loadtxt(out_dir / "Tc.txt", dtype=np.float64)
         Xi = np.loadtxt(out_dir / "Xi.txt", dtype=np.float64)
-        rho_raw = np.atleast_1d(np.loadtxt(out_dir / "rho.txt", dtype=np.float64)).astype(np.float64)
+        rho_raw = np.atleast_1d(np.loadtxt(out_dir / "rho.txt", dtype=np.float64)).astype(
+            np.float64
+        )
         rho_public = float(rho_raw[0])
         beta_final = float(np.loadtxt(out_dir / "beta.txt", dtype=np.float64))
         sigma_final = float(np.loadtxt(out_dir / "sigma.txt", dtype=np.float64))
@@ -918,22 +904,27 @@ def _store_esmc2_result(
     generation_time: float,
 ) -> SmcData:
     """Write a normalized eSMC2 result payload back into SmcData."""
-    data.results["esmc2"] = annotate_result({
-        "Tc": result_obj.Tc,
-        "t": result_obj.t,
-        "Xi": result_obj.Xi,
-        "ne": result_obj.ne,
-        "time_years": result_obj.time_years,
-        "beta": result_obj.beta,
-        "sigma": result_obj.sigma,
-        "mu": result_obj.mu,
-        "rho": result_obj.rho,
-        "rho_per_sequence": result_obj.rho_per_sequence,
-        "theta": result_obj.theta,
-        "log_likelihood": result_obj.log_likelihood,
-        "rounds": result_obj.rounds,
-        "backend": implementation_used,
-    }, method_name="esmc2", implementation_requested=implementation_requested, implementation_used=implementation_used)
+    data.results["esmc2"] = annotate_result(
+        {
+            "Tc": result_obj.Tc,
+            "t": result_obj.t,
+            "Xi": result_obj.Xi,
+            "ne": result_obj.ne,
+            "time_years": result_obj.time_years,
+            "beta": result_obj.beta,
+            "sigma": result_obj.sigma,
+            "mu": result_obj.mu,
+            "rho": result_obj.rho,
+            "rho_per_sequence": result_obj.rho_per_sequence,
+            "theta": result_obj.theta,
+            "log_likelihood": result_obj.log_likelihood,
+            "rounds": result_obj.rounds,
+            "backend": implementation_used,
+        },
+        method_name="esmc2",
+        implementation_requested=implementation_requested,
+        implementation_used=implementation_used,
+    )
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     return data
@@ -1086,13 +1077,13 @@ def _xi_from_unit_params(
 ) -> np.ndarray:
     """Convert unit Xi parameters (0–1) into group-level Xi scalings."""
     scaled = xi_params * sum(box_p) - box_p[0]
-    return 10.0 ** scaled
+    return 10.0**scaled
 
 
 def _rho_from_unit(unit: float, rho_base: float, box_r: tuple[float, float]) -> float:
     """Convert a [0,1] unit rho parameter into the per-sequence recombination rate."""
     scaled = unit * sum(box_r) - box_r[0]
-    return rho_base * 10.0 ** scaled
+    return rho_base * 10.0**scaled
 
 
 def _beta_from_unit(unit: float, box_b: tuple[float, float]) -> float:
@@ -1159,9 +1150,7 @@ def _shared_mu_from_theta_terms(
     lengths = np.asarray(lengths, dtype=np.float64)
     if theta_terms.shape != lengths.shape:
         raise ValueError("theta_terms and lengths must have the same shape.")
-    theta_vals = theta_terms * (beta**2) * 2.0 / (
-        (2.0 - sigma) * (beta + (1.0 - beta) * mu_b)
-    )
+    theta_vals = theta_terms * (beta**2) * 2.0 / ((2.0 - sigma) * (beta + (1.0 - beta) * mu_b))
     mu_vals = theta_vals / (2.0 * lengths)
     return float(np.mean(mu_vals))
 
@@ -1221,7 +1210,9 @@ def _input_family_metadata(data: SmcData, sequences: list[np.ndarray]) -> dict[s
         if source_paths is not None:
             metadata["source_paths"] = [str(path) for path in source_paths]
             metadata["n_source_paths"] = int(len(source_paths))
-        metadata["has_missing"] = bool(any(np.any(np.asarray(seq, dtype=np.int8) == 2) for seq in sequences))
+        metadata["has_missing"] = bool(
+            any(np.any(np.asarray(seq, dtype=np.int8) == 2) for seq in sequences)
+        )
         metadata["has_skip_ambiguous_missing"] = bool(
             any(
                 np.any(np.asarray(obs, dtype=np.float64) < 0.0)
@@ -1414,11 +1405,7 @@ def _spg_box(
         elif method == 2:
             lam = lmax if (sty < 0.0 or yty == 0.0) else min(lmax, max(lmin, sty / yty))
         else:
-            lam = (
-                lmax
-                if (sts == 0.0 or yty == 0.0)
-                else min(lmax, max(lmin, np.sqrt(sts / yty)))
-            )
+            lam = lmax if (sts == 0.0 or yty == 0.0) else min(lmax, max(lmin, np.sqrt(sts / yty)))
 
         param = candidate
         grad = grad_new
@@ -2327,21 +2314,23 @@ def _esmc2_native(
                 sigma_hidden=sigma_hidden,
             )
 
-            rounds.append({
-                "round": len(rounds) + 1,
-                "outer_round": bit,
-                "inner_round": inner_it,
-                "log_likelihood": ll_round,
-                "beta": current_beta,
-                "sigma": current_sigma,
-                "rho": _public_rho_from_sequence_rho(current_rho, reference_length),
-                "rho_per_sequence": current_rho,
-                "mu": mu_run,
-                "theta": mu_run * 2.0 * reference_length,
-                "Xi": Xi_round.copy(),
-                "Tc": Tc_round.copy(),
-                "t": t_round.copy(),
-            })
+            rounds.append(
+                {
+                    "round": len(rounds) + 1,
+                    "outer_round": bit,
+                    "inner_round": inner_it,
+                    "log_likelihood": ll_round,
+                    "beta": current_beta,
+                    "sigma": current_sigma,
+                    "rho": _public_rho_from_sequence_rho(current_rho, reference_length),
+                    "rho_per_sequence": current_rho,
+                    "mu": mu_run,
+                    "theta": mu_run * 2.0 * reference_length,
+                    "Xi": Xi_round.copy(),
+                    "Tc": Tc_round.copy(),
+                    "t": t_round.copy(),
+                }
+            )
 
             logger.info(
                 "  LL=%.2f beta=%.4f sigma=%.4f rho=%.4f",
@@ -2563,6 +2552,7 @@ def esmc2(
     box_r: tuple[float, float] = (0.0, 3.0),
     rp: tuple[float, float] = (0.0, 0.0),
     rho_penalty: float = 0.0,
+    output_dir: str | Path | None = None,
     implementation: str = "auto",
     backend: str | None = None,
     upstream_options: dict | None = None,
@@ -2575,6 +2565,7 @@ def esmc2(
     prefers upstream when an executable R environment is available. ``backend``
     is a deprecated compatibility alias.
     """
+    started = time.perf_counter()
     implementation = normalize_implementation(
         implementation,
         backend=backend,
@@ -2583,12 +2574,18 @@ def esmc2(
         implementation,
         upstream_available=method_upstream_available("esmc2"),
         method_name="esmc2",
-        requested_capabilities={"upstream_options"} if upstream_options else None,
+        requested_capabilities=(
+            {
+                *({"output"} if output_dir is not None else set()),
+                *({"upstream_options"} if upstream_options else set()),
+            }
+            or None
+        ),
     )
     warn_if_native_not_trusted("esmc2", implementation_used)
 
     if implementation_used == "upstream":
-        return _esmc2_upstream(
+        result_data = _esmc2_upstream(
             data,
             n_states=n_states,
             rho_over_theta=rho_over_theta,
@@ -2611,12 +2608,17 @@ def esmc2(
             implementation_requested=implementation,
             upstream_options=upstream_options,
         )
+        return _finalize_esmc2_public_result(
+            result_data,
+            output_dir=output_dir,
+            runtime_seconds=time.perf_counter() - started,
+        )
 
     if native_options:
         unsupported = ", ".join(sorted(native_options))
         raise TypeError(f"Unsupported esmc2 native_options keys: {unsupported}")
 
-    return _esmc2_native(
+    result_data = _esmc2_native(
         data,
         n_states=n_states,
         rho_over_theta=rho_over_theta,
@@ -2638,3 +2640,48 @@ def esmc2(
         rho_penalty=rho_penalty,
         implementation_requested=implementation,
     )
+    return _finalize_esmc2_public_result(
+        result_data,
+        output_dir=output_dir,
+        runtime_seconds=time.perf_counter() - started,
+    )
+
+
+def _finalize_esmc2_public_result(
+    data: SmcData,
+    *,
+    output_dir: str | Path | None,
+    runtime_seconds: float,
+) -> SmcData:
+    result = data.results["esmc2"]
+    artifacts: list[dict[str, object]] = []
+    if output_dir is not None:
+        directory = Path(output_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        output_values = {
+            "Tc.txt": result["Tc"],
+            "Xi.txt": result["Xi"],
+            "rho.txt": [result["rho"]],
+            "beta.txt": [result["beta"]],
+            "sigma.txt": [result["sigma"]],
+            "mu.txt": [result["mu"]],
+            "LH.txt": [result["log_likelihood"]],
+            "t.txt": result["t"],
+            "ne.txt": result["ne"],
+            "time_years.txt": result["time_years"],
+        }
+        for name, values in output_values.items():
+            path = directory / name
+            np.savetxt(path, np.atleast_1d(np.asarray(values, dtype=np.float64)), fmt="%.17g")
+            artifacts.append(
+                {
+                    "path": str(path),
+                    "sha256": sha256_file(path),
+                    "kind": f"esmc2-{path.stem}",
+                }
+            )
+    provenance = result["provenance"]
+    provenance["runtime_seconds"] = runtime_seconds
+    provenance["arguments"]["output_dir"] = str(output_dir) if output_dir is not None else None
+    provenance["artifacts"] = artifacts
+    return data

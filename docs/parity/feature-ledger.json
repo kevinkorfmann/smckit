@@ -9,11 +9,20 @@
         "core_inference": "native",
         "psmcfa_input": "native",
         "parameter_patterns": "native",
-        "missing_data_and_masks": "upstream_only",
-        "multi_record": "upstream_only",
-        "decoding": "upstream_only",
-        "bootstrap_workflow": "upstream_only",
-        "original_compatible_output": "upstream_only"
+        "missing_data_and_masks": "native",
+        "multi_record": "native",
+        "explicit_parameters_and_intervals": "native",
+        "divergence_model": "native",
+        "transition_capping": "native",
+        "decoding": "native",
+        "bootstrap_workflow": "native",
+        "original_compatible_output": "native",
+        "consensus_fasta_fastq_preprocessing": "native",
+        "quality_and_interval_masks": "native",
+        "mutation_class_filters": "native",
+        "sequence_probability": "native",
+        "hmm_simulation": "native",
+        "original_helper_utilities": "upstream_only"
       }
     },
     "msmc2": {
@@ -21,11 +30,15 @@
       "features": {
         "core_inference": "native",
         "multihetsep_input": "native",
-        "pair_selection": "upstream_only",
-        "multiple_chromosomes": "upstream_only",
-        "masks_and_missing_data": "upstream_only",
-        "fixed_recombination": "upstream_only",
-        "original_compatible_output": "upstream_only"
+        "pair_selection": "native",
+        "multiple_chromosomes": "native",
+        "masks_and_missing_data": "native",
+        "ambiguous_phasing": "native",
+        "fixed_recombination": "native",
+        "quantile_boundaries": "native",
+        "explicit_initialization": "native",
+        "original_compatible_output": "native",
+        "native_multithreading": "blocked"
       }
     },
     "esmc2": {
@@ -36,7 +49,8 @@
         "fixed_and_estimated_recombination": "native",
         "multi_record_and_multi_file": "native",
         "complete_r_helper_surface": "upstream_only",
-        "original_compatible_output": "upstream_only"
+        "preserved_r_helper_execution": "native",
+        "original_compatible_output": "native"
       }
     },
     "asmc": {
