@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import gzip
 import logging
-import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -21,6 +20,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Decoding quantities container
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DecodingQuantities:
@@ -81,8 +81,12 @@ class DecodingQuantities:
     D_vectors: dict[float, np.ndarray] = field(default_factory=dict)
     row_ratio_vectors: dict[float, np.ndarray] = field(default_factory=dict)
 
-    classic_emission: np.ndarray = field(default_factory=lambda: np.empty((0, 0), dtype=np.float32))
-    compressed_emission: np.ndarray = field(default_factory=lambda: np.empty((0, 0), dtype=np.float32))
+    classic_emission: np.ndarray = field(
+        default_factory=lambda: np.empty((0, 0), dtype=np.float32)
+    )
+    compressed_emission: np.ndarray = field(
+        default_factory=lambda: np.empty((0, 0), dtype=np.float32)
+    )
 
     csfs_map: list[np.ndarray] = field(default_factory=list)
     folded_csfs_map: list[np.ndarray] = field(default_factory=list)
@@ -269,9 +273,10 @@ def read_decoding_quantities(path: str | Path) -> DecodingQuantities:
                     dq.homozygous_emission_map[key] = vals
 
     logger.info(
-        "Loaded decoding quantities: states=%d, csfs_samples=%d, "
-        "%d transition distances",
-        dq.states, dq.csfs_samples, len(dq.D_vectors),
+        "Loaded decoding quantities: states=%d, csfs_samples=%d, %d transition distances",
+        dq.states,
+        dq.csfs_samples,
+        len(dq.D_vectors),
     )
     return dq
 
@@ -279,6 +284,7 @@ def read_decoding_quantities(path: str | Path) -> DecodingQuantities:
 # ---------------------------------------------------------------------------
 # Haplotype data (Oxford .hap format)
 # ---------------------------------------------------------------------------
+
 
 def read_hap(
     path: str | Path,
@@ -317,13 +323,41 @@ def read_hap(
     positions = []
 
     with opener(path, "rt") as f:
-        for line in f:
+        expected_haplotypes: int | None = None
+        for line_number, line in enumerate(f, start=1):
             parts = line.split()
+            if not parts:
+                continue
+            if len(parts) < 7:
+                raise ValueError(
+                    f"Malformed ASMC haplotype row {line_number} in {path}: "
+                    "expected at least 7 columns."
+                )
             # chr snpID pos alleleA alleleB hap0 hap1 ...
             snp_ids.append(parts[1])
             positions.append(int(parts[2]))
-            genotypes = [int(x) for x in parts[5:]]
+            try:
+                genotypes = [int(x) for x in parts[5:]]
+            except ValueError as exc:
+                raise ValueError(
+                    f"Non-binary ASMC haplotype value on row {line_number} in {path}."
+                ) from exc
+            if any(value not in (0, 1) for value in genotypes):
+                raise ValueError(
+                    f"ASMC haplotype row {line_number} in {path} contains values "
+                    "other than 0 or 1."
+                )
+            if expected_haplotypes is None:
+                expected_haplotypes = len(genotypes)
+            elif len(genotypes) != expected_haplotypes:
+                raise ValueError(
+                    f"Inconsistent haplotype count on row {line_number} in {path}: "
+                    f"expected {expected_haplotypes}, found {len(genotypes)}."
+                )
             hap_rows.append(genotypes)
+
+    if not hap_rows:
+        raise ValueError(f"ASMC haplotype file is empty: {path}")
 
     # hap_rows is (n_sites, n_haps) -> transpose to (n_haps, n_sites)
     haplotypes = np.array(hap_rows, dtype=np.uint8).T
@@ -356,19 +390,22 @@ def read_samples(path: str | Path) -> list[dict[str, str]]:
     path = Path(path)
     samples = []
 
-    with open(path, "rt") as f:
+    opener = gzip.open if path.name.endswith(".gz") else open
+    with opener(path, "rt") as f:
         # Skip header lines (2 header lines in Oxford format)
         next(f, None)
         next(f, None)
         for line in f:
             parts = line.strip().split()
             if len(parts) >= 3:
-                samples.append({
-                    "fam_id": parts[0],
-                    "ind_id": parts[1],
-                    "missing": parts[2] if len(parts) > 2 else "0",
-                    "sex": parts[3] if len(parts) > 3 else "NA",
-                })
+                samples.append(
+                    {
+                        "fam_id": parts[0],
+                        "ind_id": parts[1],
+                        "missing": parts[2] if len(parts) > 2 else "0",
+                        "sex": parts[3] if len(parts) > 3 else "NA",
+                    }
+                )
     return samples
 
 
@@ -395,7 +432,11 @@ def read_map(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
     with opener(path, "rt") as f:
         for line in f:
             parts = line.split()
-            gen_pos.append(float(parts[2]) / 100.0)  # cM -> Morgans
+            # Upstream parses map coordinates into float32 before converting
+            # cM to Morgans; preserving that order matters for long WGS HMMs.
+            gen_pos.append(
+                np.float32(parts[2]) / np.float32(100.0)
+            )
             phys_pos.append(int(parts[3]))
 
     return (
@@ -408,10 +449,15 @@ def read_map(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
 # Undistinguished counts (for CSFS emission model)
 # ---------------------------------------------------------------------------
 
+
 def compute_undistinguished_counts(
     haplotypes: np.ndarray,
     csfs_samples: int,
     fold_to_minor: bool = True,
+    *,
+    strategy: str = "expected",
+    random_seed: int | None = None,
+    allow_undersampled: bool = False,
 ) -> np.ndarray:
     """Compute undistinguished allele counts for CSFS emissions.
 
@@ -419,8 +465,10 @@ def compute_undistinguished_counts(
     "undistinguished" (non-focal) lineages, for each of the 3 observation
     types (0 = both ancestral, 1 = heterozygous, 2 = both derived).
 
-    Uses the hypergeometric expected value (deterministic) rather than
-    random sampling, giving reproducible results independent of RNG state.
+    ``strategy="expected"`` uses the rounded hypergeometric expectation and
+    is deterministic. ``strategy="sample"`` draws from the same
+    hypergeometric distribution used by upstream ASMC; ``random_seed``
+    controls reproducibility.
 
     Parameters
     ----------
@@ -429,6 +477,13 @@ def compute_undistinguished_counts(
         Total number of CSFS samples (from decoding quantities).
     fold_to_minor : bool
         Whether to fold allele counts to minor allele.
+    strategy : {"expected", "sample"}
+        Deterministic expected count or a stochastic hypergeometric draw.
+    random_seed : int, optional
+        Seed used by ``strategy="sample"``.
+    allow_undersampled : bool
+        Return unavailable counts instead of failing when the CSFS sample
+        requirement exceeds the input. This supports compressed decoding.
 
     Returns
     -------
@@ -436,7 +491,22 @@ def compute_undistinguished_counts(
         Undistinguished counts for obs types 0, 1, 2. Value of -1 means
         the count is invalid (out of range).
     """
+    if strategy not in {"expected", "sample"}:
+        raise ValueError("strategy must be one of: expected, sample")
+
     n_haps, n_sites = haplotypes.shape
+    if n_haps < 2:
+        raise ValueError("ASMC requires at least two haplotypes.")
+    if csfs_samples < 2:
+        # Compressed test fixtures can omit CSFS tables entirely.
+        return np.full((n_sites, 3), -1, dtype=np.int32)
+    if csfs_samples > n_haps:
+        if allow_undersampled:
+            return np.full((n_sites, 3), -1, dtype=np.int32)
+        raise ValueError(
+            f"CSFS requires {csfs_samples} haplotypes but input contains only {n_haps}."
+        )
+    rng = np.random.default_rng(random_seed)
 
     # Derived allele count per site
     derived_counts = haplotypes.sum(axis=0).astype(np.int32)
@@ -467,9 +537,17 @@ def compute_undistinguished_counts(
                 undistinguished[site, distinguished] = -1
                 continue
 
-            # Deterministic: expected value of hypergeometric, rounded
-            # E[X] = sample_size * successes / pop_size
-            sample = round(sample_size * successes / pop_size)
+            if strategy == "sample":
+                sample = int(
+                    rng.hypergeometric(
+                        successes,
+                        pop_size - successes,
+                        sample_size,
+                    )
+                )
+            else:
+                # Deterministic expected value: E[X] = n * K / N.
+                sample = round(sample_size * successes / pop_size)
 
             if fold_to_minor and (sample + distinguished > csfs_samples // 2):
                 sample = sample_size - sample
@@ -483,9 +561,15 @@ def compute_undistinguished_counts(
 # High-level loader
 # ---------------------------------------------------------------------------
 
+
 def read_asmc(
     file_root: str | Path,
     dq_file: str | Path,
+    *,
+    map_file: str | Path | None = None,
+    fold_to_minor: bool = True,
+    undistinguished_strategy: str = "expected",
+    random_seed: int | None = None,
 ) -> SmcData:
     """Load ASMC input data from standard file set.
 
@@ -498,6 +582,15 @@ def read_asmc(
         Common prefix for hap/samples/map files.
     dq_file : str or Path
         Path to ``.decodingQuantities.gz`` file.
+    map_file : str or Path, optional
+        Explicit genetic map path instead of ``{file_root}.map[.gz]``.
+    fold_to_minor : bool
+        Match the default upstream behavior by coding the minor allele as 1.
+        Set to false when ancestral alleles are already coded as 1.
+    undistinguished_strategy : {"expected", "sample"}
+        Method for constructing CSFS undistinguished counts.
+    random_seed : int, optional
+        Seed used for stochastic hypergeometric sampling.
 
     Returns
     -------
@@ -509,21 +602,61 @@ def read_asmc(
     # Find haplotype file
     hap_path = _find_file(file_root, [".hap.gz", ".hap", ".haps.gz", ".haps"])
     samples_path = _find_file(file_root, [".samples", ".sample"])
-    map_path = _find_file(file_root, [".map.gz", ".map"])
+    map_path = (
+        Path(map_file) if map_file is not None else _find_file(file_root, [".map.gz", ".map"])
+    )
+    if not map_path.is_file():
+        raise FileNotFoundError(f"ASMC genetic map does not exist: {map_path}")
 
-    haplotypes, snp_ids, _, flipped = read_hap(hap_path, fold_to_minor=True)
+    haplotypes, snp_ids, hap_positions, flipped = read_hap(
+        hap_path,
+        fold_to_minor=fold_to_minor,
+    )
     samples = read_samples(samples_path)
     genetic_positions, physical_positions = read_map(map_path)
     dq = read_decoding_quantities(dq_file)
+    if haplotypes.shape[1] != genetic_positions.size:
+        raise ValueError(
+            "ASMC haplotype and genetic-map site counts differ: "
+            f"{haplotypes.shape[1]} != {genetic_positions.size}."
+        )
+    if not np.array_equal(np.asarray(hap_positions), physical_positions):
+        raise ValueError("ASMC haplotype and map physical positions do not match.")
+    if len(samples) * 2 != haplotypes.shape[0]:
+        raise ValueError(
+            "ASMC sample and haplotype counts differ: "
+            f"{len(samples)} diploid samples imply {2 * len(samples)} haplotypes, "
+            f"found {haplotypes.shape[0]}."
+        )
+    if np.any(np.diff(genetic_positions) < 0):
+        raise ValueError("ASMC genetic positions must be nondecreasing.")
+    if np.any(np.diff(physical_positions) < 0):
+        raise ValueError("ASMC physical positions must be nondecreasing.")
 
     # Compute recombination rates between markers
     rec_rates = np.zeros_like(genetic_positions)
-    rec_rates[1:] = genetic_positions[1:] - genetic_positions[:-1]
+    genetic_distances = np.diff(genetic_positions)
+    physical_distances = np.diff(physical_positions)
+    informative = genetic_distances >= np.finfo(np.float32).eps
+    np.divide(
+        genetic_distances,
+        physical_distances,
+        out=rec_rates[1:],
+        where=informative & (physical_distances != 0),
+    )
+    if rec_rates.size > 1:
+        rec_rates[0] = rec_rates[1]
 
     # Compute undistinguished counts for CSFS
     undist_counts = compute_undistinguished_counts(
-        haplotypes, dq.csfs_samples, fold_to_minor=True,
+        haplotypes,
+        dq.csfs_samples,
+        fold_to_minor=fold_to_minor,
+        strategy=undistinguished_strategy,
+        random_seed=random_seed,
+        allow_undersampled=True,
     )
+    data_has_csfs_sample_size = dq.csfs_samples <= haplotypes.shape[0]
 
     data = SmcData()
     data.sequences = haplotypes
@@ -536,12 +669,24 @@ def read_asmc(
     data.uns["decoding_quantities"] = dq
     data.uns["undistinguished_counts"] = undist_counts
     data.uns["site_was_flipped"] = flipped
+    data.uns["fold_to_minor"] = fold_to_minor
+    data.uns["undistinguished_strategy"] = undistinguished_strategy
+    data.uns["random_seed"] = random_seed
+    data.uns["csfs_sample_size_available"] = data_has_csfs_sample_size
     data.uns["input_file_root"] = str(file_root)
     data.uns["decoding_quantities_path"] = str(Path(dq_file))
+    data.uns["map_path"] = str(map_path)
+    data.uns["source_paths"] = [
+        str(hap_path),
+        str(samples_path),
+        str(map_path),
+        str(Path(dq_file)),
+    ]
 
     logger.info(
         "Loaded ASMC data: %d haplotypes, %d sites",
-        haplotypes.shape[0], haplotypes.shape[1],
+        haplotypes.shape[0],
+        haplotypes.shape[1],
     )
     return data
 
@@ -552,6 +697,48 @@ def _find_file(root: Path, suffixes: list[str]) -> Path:
         candidate = Path(str(root) + suffix)
         if candidate.exists():
             return candidate
-    raise FileNotFoundError(
-        f"Cannot find file with root '{root}' and suffixes {suffixes}"
-    )
+    raise FileNotFoundError(f"Cannot find file with root '{root}' and suffixes {suffixes}")
+
+
+def read_asmc_posterior_sums(path: str | Path) -> np.ndarray:
+    """Read an ASMC ``*.sumOverPairs[.gz]`` matrix."""
+    path = Path(path)
+    opener = gzip.open if path.name.endswith(".gz") else open
+    with opener(path, "rt") as handle:
+        values = np.loadtxt(handle, dtype=np.float64, ndmin=2)
+    return np.asarray(values)
+
+
+def write_asmc_posterior_sums(
+    path: str | Path,
+    values: np.ndarray,
+) -> Path:
+    """Write an original-compatible ASMC posterior-sum matrix."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    matrix = np.asarray(values)
+    if matrix.ndim != 2:
+        raise ValueError("ASMC posterior sums must be a two-dimensional matrix.")
+    opener = gzip.open if path.name.endswith(".gz") else open
+    with opener(path, "wt") as handle:
+        np.savetxt(handle, matrix, fmt="%.9g", delimiter="\t")
+    return path
+
+
+def merge_asmc_posterior_sums(
+    paths: list[str | Path],
+    *,
+    normalize: bool = False,
+) -> np.ndarray:
+    """Merge ASMC job outputs and optionally normalize each site."""
+    if not paths:
+        raise ValueError("At least one ASMC posterior-sum path is required.")
+    matrices = [read_asmc_posterior_sums(path) for path in paths]
+    shape = matrices[0].shape
+    if any(matrix.shape != shape for matrix in matrices[1:]):
+        raise ValueError("ASMC posterior-sum matrices must have identical shapes.")
+    merged = np.sum(matrices, axis=0, dtype=np.float64)
+    if normalize:
+        totals = merged.sum(axis=1, keepdims=True)
+        np.divide(merged, totals, out=merged, where=totals != 0)
+    return merged

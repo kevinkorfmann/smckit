@@ -29,8 +29,21 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
+    "native_promoted_capabilities": [
+      "ancestral",
+      "compressed",
+      "csfs_spacing",
+      "full_posteriors",
+      "interval_decode",
+      "job_partitioning",
+      "major_minor_sums",
+      "output",
+      "pair_selection",
+      "per_pair_outputs",
+      "sequence"
+    ],
     "tracked_agreement": "0.9984 MAP agreement",
-    "notes": "Public upstream path uses the documented ASMC executable outputs.",
+    "notes": "Native parity covers array and sequence decoding, folded or ancestral coding, CSFS spacing/compression, explicit pairs and interval burn-in, job partitioning, complete posterior summaries, and original-compatible artifacts.",
     "install_extra": "asmc",
     "native_warning": null
   },

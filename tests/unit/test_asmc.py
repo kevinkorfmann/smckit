@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import gzip
-import math
-import tempfile
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from smckit._core import SmcData
-from smckit.io._asmc import DecodingQuantities, read_decoding_quantities
+from smckit.io._asmc import (
+    DecodingQuantities,
+    merge_asmc_posterior_sums,
+    read_asmc_posterior_sums,
+    read_decoding_quantities,
+    write_asmc_posterior_sums,
+)
 from smckit.tl._asmc import (
-    AsmcResult,
-    PairObservations,
     asmc,
     backward,
     compute_posteriors,
@@ -26,10 +27,10 @@ from smckit.tl._asmc import (
     round_morgans,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def small_dq() -> DecodingQuantities:
@@ -56,10 +57,13 @@ def small_dq() -> DecodingQuantities:
     dq.D_vectors = {dist: D}
     dq.row_ratio_vectors = {dist: RR}
 
-    dq.classic_emission = np.array([
-        [0.95, 0.80, 0.60, 0.40],  # obs=0 (homozygous)
-        [0.05, 0.20, 0.40, 0.60],  # obs=1 (heterozygous)
-    ], dtype=np.float32)
+    dq.classic_emission = np.array(
+        [
+            [0.95, 0.80, 0.60, 0.40],  # obs=0 (homozygous)
+            [0.05, 0.20, 0.40, 0.60],  # obs=1 (heterozygous)
+        ],
+        dtype=np.float32,
+    )
     dq.compressed_emission = dq.classic_emission.copy()
 
     return dq
@@ -81,6 +85,7 @@ def small_genetic_positions() -> np.ndarray:
 # ---------------------------------------------------------------------------
 # round_morgans
 # ---------------------------------------------------------------------------
+
 
 class TestRoundMorgans:
     def test_small_value_returns_min(self):
@@ -112,6 +117,7 @@ class TestRoundMorgans:
 # ---------------------------------------------------------------------------
 # Pair encoding
 # ---------------------------------------------------------------------------
+
 
 class TestEncodePair:
     def test_shape(self, small_haplotypes):
@@ -161,10 +167,13 @@ class TestEncodePair:
 # Emission preparation
 # ---------------------------------------------------------------------------
 
+
 class TestPrepareEmissions:
     def test_shapes(self, small_dq, small_genetic_positions):
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, 10,
+            small_dq,
+            small_genetic_positions,
+            10,
             use_csfs=False,
         )
         assert e1.shape == (10, 4)
@@ -174,7 +183,9 @@ class TestPrepareEmissions:
     def test_non_csfs_emission2_is_zero(self, small_dq, small_genetic_positions):
         """When not using CSFS, emission2 - emission0 = 0."""
         _, _, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, 10,
+            small_dq,
+            small_genetic_positions,
+            10,
             use_csfs=False,
         )
         np.testing.assert_array_equal(e2m0, 0.0)
@@ -182,8 +193,11 @@ class TestPrepareEmissions:
     def test_emission_consistency(self, small_dq, small_genetic_positions):
         """e1 + e0m1 should equal the classic emission[0] (homozygous)."""
         e1, e0m1, _ = prepare_emissions(
-            small_dq, small_genetic_positions, 10,
-            use_csfs=False, decoding_sequence=True,
+            small_dq,
+            small_genetic_positions,
+            10,
+            use_csfs=False,
+            decoding_sequence=True,
         )
         np.testing.assert_allclose(
             e1[0] + e0m1[0],
@@ -196,17 +210,26 @@ class TestPrepareEmissions:
 # Forward algorithm
 # ---------------------------------------------------------------------------
 
+
 class TestForward:
     def test_output_shape(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert alpha.shape == (n_sites, 4)
@@ -214,13 +237,21 @@ class TestForward:
     def test_non_negative(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert np.all(alpha >= 0)
@@ -228,13 +259,21 @@ class TestForward:
     def test_finite(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert np.all(np.isfinite(alpha))
@@ -243,13 +282,21 @@ class TestForward:
         """Alpha at position 0 should be proportional to prior * emission."""
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         # alpha[0] should be normalized (sums to 1 after scaling)
@@ -260,17 +307,26 @@ class TestForward:
 # Backward algorithm
 # ---------------------------------------------------------------------------
 
+
 class TestBackward:
     def test_output_shape(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert beta.shape == (n_sites, 4)
@@ -278,13 +334,21 @@ class TestBackward:
     def test_non_negative(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert np.all(beta >= 0)
@@ -292,13 +356,21 @@ class TestBackward:
     def test_finite(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         assert np.all(np.isfinite(beta))
@@ -307,18 +379,28 @@ class TestBackward:
         """Beta at last position should be uniform (scaled)."""
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         # All states should have the same beta at last position
         np.testing.assert_allclose(
-            beta[-1], beta[-1, 0] * np.ones(4), atol=1e-6,
+            beta[-1],
+            beta[-1, 0] * np.ones(4),
+            atol=1e-6,
         )
 
 
@@ -326,21 +408,35 @@ class TestBackward:
 # Posterior computation
 # ---------------------------------------------------------------------------
 
+
 class TestPosteriors:
     def test_normalized(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         posteriors = compute_posteriors(alpha, beta)
@@ -352,17 +448,30 @@ class TestPosteriors:
     def test_non_negative(self, small_dq, small_genetic_positions):
         n_sites = 10
         e1, e0m1, e2m0 = prepare_emissions(
-            small_dq, small_genetic_positions, n_sites, use_csfs=False,
+            small_dq,
+            small_genetic_positions,
+            n_sites,
+            use_csfs=False,
         )
         obs_zero = np.ones(n_sites, dtype=np.float32)
         obs_two = np.zeros(n_sites, dtype=np.float32)
 
         alpha = forward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         beta = backward(
-            small_dq, e1, e0m1, e2m0, obs_zero, obs_two,
+            small_dq,
+            e1,
+            e0m1,
+            e2m0,
+            obs_zero,
+            obs_two,
             small_genetic_positions,
         )
         posteriors = compute_posteriors(alpha, beta)
@@ -385,20 +494,25 @@ class TestPosteriorMean:
 class TestPosteriorMAP:
     def test_returns_state_index(self, small_dq):
         posteriors = np.array([[0.1, 0.2, 0.6, 0.1]], dtype=np.float32)
-        maps = posterior_map_tmrca(posteriors, small_dq.expected_times, small_dq.initial_state_prob)
+        maps = posterior_map_tmrca(
+            posteriors, small_dq.expected_times, small_dq.initial_state_prob
+        )
         # Upstream perPairMAP stores the plain posterior argmax state index.
         assert maps[0] == 2
         assert np.issubdtype(maps.dtype, np.integer)
 
     def test_shape(self, small_dq):
         posteriors = np.ones((5, 4), dtype=np.float32) / 4
-        maps = posterior_map_tmrca(posteriors, small_dq.expected_times, small_dq.initial_state_prob)
+        maps = posterior_map_tmrca(
+            posteriors, small_dq.expected_times, small_dq.initial_state_prob
+        )
         assert maps.shape == (5,)
 
 
 # ---------------------------------------------------------------------------
 # Decoding quantities I/O
 # ---------------------------------------------------------------------------
+
 
 class TestDecodingQuantitiesIO:
     def test_roundtrip_minimal(self, tmp_path):
@@ -459,6 +573,7 @@ RowRatios
 # End-to-end ASMC
 # ---------------------------------------------------------------------------
 
+
 class TestAsmcEndToEnd:
     def test_basic_run(self, small_dq, small_haplotypes, small_genetic_positions):
         """Run ASMC on synthetic data and check result structure."""
@@ -471,7 +586,7 @@ class TestAsmcEndToEnd:
         data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
         data.uns["decoding_quantities"] = small_dq
 
-        result = asmc(data, pairs=[(0, 1)])
+        asmc(data, pairs=[(0, 1)])
 
         assert "asmc" in data.results
         res = data.results["asmc"]
@@ -490,7 +605,7 @@ class TestAsmcEndToEnd:
         data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
         data.uns["decoding_quantities"] = small_dq
 
-        result = asmc(data, pairs=[(0, 1), (0, 2), (1, 3)])
+        asmc(data, pairs=[(0, 1), (0, 2), (1, 3)])
 
         assert data.results["asmc"]["n_pairs_decoded"] == 3
         assert len(data.results["asmc"]["per_pair_posterior_means"]) == 3
@@ -509,3 +624,189 @@ class TestAsmcEndToEnd:
         sop = data.results["asmc"]["sum_of_posteriors"]
         assert np.all(sop >= 0)
         assert np.all(np.isfinite(sop))
+
+    def test_complete_posterior_surface(
+        self,
+        small_dq,
+        small_haplotypes,
+        small_genetic_positions,
+    ):
+        n_sites = small_haplotypes.shape[1]
+        data = SmcData()
+        data.sequences = small_haplotypes
+        data.uns["haplotypes"] = small_haplotypes
+        data.uns["genetic_positions"] = small_genetic_positions
+        data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
+        data.uns["decoding_quantities"] = small_dq
+
+        asmc(
+            data,
+            pairs=[(0, 1), (0, 2), (1, 3)],
+            store_per_pair_posterior=True,
+            store_per_pair_map=True,
+            major_minor_posterior_sums=True,
+            implementation="native",
+        )
+        result = data.results["asmc"]
+        assert len(result["per_pair_posteriors"]) == 3
+        assert result["per_pair_posteriors"][0].shape == (n_sites, small_dq.states)
+        assert result["min_posterior_means"].shape == (n_sites,)
+        assert result["argmin_posterior_means"].shape == (n_sites,)
+        assert result["min_maps"].shape == (n_sites,)
+        assert result["argmin_maps"].shape == (n_sites,)
+        partitioned = sum(result["sum_of_posteriors_major_minor"].values())
+        np.testing.assert_allclose(partitioned, result["sum_of_posteriors"], atol=1e-6)
+
+    def test_job_partitions_merge_to_all_pairs(
+        self,
+        small_dq,
+        small_haplotypes,
+        small_genetic_positions,
+    ):
+        n_sites = small_haplotypes.shape[1]
+
+        def run(**kwargs):
+            data = SmcData()
+            data.sequences = small_haplotypes
+            data.uns["haplotypes"] = small_haplotypes
+            data.uns["genetic_positions"] = small_genetic_positions
+            data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
+            data.uns["decoding_quantities"] = small_dq
+            asmc(
+                data,
+                store_per_pair_posterior_mean=False,
+                implementation="native",
+                **kwargs,
+            )
+            return data.results["asmc"]
+
+        complete = run()
+        first = run(jobs=2, job_index=1)
+        second = run(jobs=2, job_index=2)
+        assert first["n_pairs_decoded"] + second["n_pairs_decoded"] == 6
+        np.testing.assert_allclose(
+            first["sum_of_posteriors"] + second["sum_of_posteriors"],
+            complete["sum_of_posteriors"],
+            atol=1e-6,
+        )
+
+    def test_interval_decode_and_burn_in(
+        self,
+        small_dq,
+        small_haplotypes,
+        small_genetic_positions,
+    ):
+        n_sites = small_haplotypes.shape[1]
+        data = SmcData()
+        data.sequences = small_haplotypes
+        data.uns["haplotypes"] = small_haplotypes
+        data.uns["genetic_positions"] = small_genetic_positions
+        data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
+        data.uns["decoding_quantities"] = small_dq
+
+        asmc(
+            data,
+            pairs=[(0, 1)],
+            from_pos=2,
+            to_pos=7,
+            cm_burn_in=0.01,
+            implementation="native",
+        )
+        result = data.results["asmc"]
+        assert result["site_slice"] == (2, 7)
+        assert result["sum_of_posteriors"].shape == (5, small_dq.states)
+        assert result["decode_slice"][0] <= 2
+        assert result["decode_slice"][1] >= 7
+
+    def test_sequence_mode_uses_inter_marker_emissions(
+        self,
+        small_dq,
+        small_haplotypes,
+        small_genetic_positions,
+    ):
+        n_sites = small_haplotypes.shape[1]
+        small_dq.homozygous_emission_map[999] = np.array(
+            [0.99, 0.9, 0.7, 0.5],
+            dtype=np.float32,
+        )
+
+        def run(mode):
+            data = SmcData()
+            data.sequences = small_haplotypes
+            data.uns["haplotypes"] = small_haplotypes
+            data.uns["genetic_positions"] = small_genetic_positions
+            data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
+            data.uns["decoding_quantities"] = small_dq
+            asmc(
+                data,
+                pairs=[(0, 1)],
+                mode=mode,
+                skip_csfs_distance=float("inf"),
+                implementation="native",
+            )
+            return data.results["asmc"]["sum_of_posteriors"]
+
+        array_result = run("array")
+        sequence_result = run("sequence")
+        assert np.all(np.isfinite(sequence_result))
+        assert not np.allclose(sequence_result, array_result)
+
+    def test_original_compatible_artifacts(
+        self,
+        small_dq,
+        small_haplotypes,
+        small_genetic_positions,
+        tmp_path,
+    ):
+        n_sites = small_haplotypes.shape[1]
+        data = SmcData()
+        data.sequences = small_haplotypes
+        data.uns["haplotypes"] = small_haplotypes
+        data.uns["genetic_positions"] = small_genetic_positions
+        data.uns["physical_positions"] = np.arange(n_sites, dtype=np.int32) * 1000
+        data.uns["decoding_quantities"] = small_dq
+        prefix = tmp_path / "decode"
+
+        asmc(
+            data,
+            pairs=[(0, 1)],
+            major_minor_posterior_sums=True,
+            store_per_pair_map=True,
+            output_prefix=prefix,
+            implementation="native",
+        )
+        result = data.results["asmc"]
+        expected = [
+            tmp_path / "decode.sumOverPairs.gz",
+            tmp_path / "decode.00.sumOverPairs.gz",
+            tmp_path / "decode.01.sumOverPairs.gz",
+            tmp_path / "decode.11.sumOverPairs.gz",
+            tmp_path / "decode.perPairPosteriorMeans.gz",
+            tmp_path / "decode.perPairMAP.gz",
+            tmp_path / "decode.pairs.tsv",
+        ]
+        assert all(path.is_file() for path in expected)
+        np.testing.assert_allclose(
+            read_asmc_posterior_sums(expected[0]),
+            result["sum_of_posteriors"],
+            rtol=1e-7,
+        )
+        assert len(result["provenance"]["artifacts"]) == len(expected)
+
+
+class TestAsmcPosteriorSumIO:
+    def test_write_read_and_merge(self, tmp_path):
+        first = np.arange(12, dtype=np.float64).reshape(3, 4)
+        second = np.ones((3, 4), dtype=np.float64)
+        first_path = write_asmc_posterior_sums(tmp_path / "first.gz", first)
+        second_path = write_asmc_posterior_sums(tmp_path / "second.gz", second)
+        np.testing.assert_allclose(read_asmc_posterior_sums(first_path), first)
+        np.testing.assert_allclose(
+            merge_asmc_posterior_sums([first_path, second_path]),
+            first + second,
+        )
+        normalized = merge_asmc_posterior_sums(
+            [first_path, second_path],
+            normalize=True,
+        )
+        np.testing.assert_allclose(normalized.sum(axis=1), 1.0)
