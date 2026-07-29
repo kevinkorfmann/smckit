@@ -41,14 +41,10 @@ def test_uv_built_wheel_installs_and_runs_packaged_native_psmc(tmp_path: Path) -
     wheel = next(dist_dir.glob("smckit-*.whl"))
 
     venv_dir = tmp_path / "venv"
-    subprocess.run(
-        [sys.executable, "-m", "venv", "--system-site-packages", str(venv_dir)],
-        check=True,
-        cwd=ROOT,
-    )
+    subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True, cwd=ROOT)
     python = venv_dir / "bin" / "python"
     subprocess.run(
-        [str(python), "-m", "pip", "install", "--no-deps", str(wheel)],
+        ["uv", "pip", "install", "--python", str(python), str(wheel)],
         check=True,
         cwd=ROOT,
         env=env,

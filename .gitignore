@@ -18,5 +18,3 @@ env/
 x.final.json
 docs/_build/html/.doctrees/
 docs/_build/html/.buildinfo.bak
-vendor/psmc/
-vendor/msmc2/

@@ -84,6 +84,18 @@
     "native_warning": "The native diCal2 path is available for packaged examples, but it is not yet trusted enough to recommend over upstream. Prefer the upstream Java path when the result matters."
   },
   {
+    "method": "phlash",
+    "display_name": "PHLASH",
+    "upstream": "✓",
+    "native": "n/a",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "tracked_agreement": "external package integration",
+    "notes": "Normalized adapter for the maintained PHLASH 1.0.6 Python package; no independent rewrite is planned for 1.0.",
+    "install_extra": "phlash",
+    "native_warning": null
+  },
+  {
     "method": "ssm",
     "display_name": "SSM",
     "upstream": "n/a",

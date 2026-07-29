@@ -8,10 +8,9 @@ import numpy as np
 import pytest
 
 from smckit._core import SmcData
-from smckit.tl import asmc, dical2, esmc2, msmc2, msmc_im, psmc, smcpp
+from smckit.tl import dical2, esmc2, psmc, smcpp
 from smckit.tl._implementation import (
     choose_implementation,
-    method_upstream_available,
     normalize_implementation,
 )
 
@@ -30,10 +29,12 @@ def _tiny_psmc_data() -> SmcData:
 def _tiny_smcpp_data() -> SmcData:
     return SmcData(
         uns={
-            "records": [{
-                "name": "synthetic",
-                "observations": [(10, 0, 0), (1, 0, 1), (10, 0, 0), (1, 1, 0)],
-            }],
+            "records": [
+                {
+                    "name": "synthetic",
+                    "observations": [(10, 0, 0), (1, 0, 1), (10, 0, 0), (1, 1, 0)],
+                }
+            ],
             "n_undist": 5,
         },
     )
@@ -68,9 +69,43 @@ def test_normalize_implementation_supports_backend_alias() -> None:
     assert any(issubclass(w.category, DeprecationWarning) for w in caught)
 
 
-def test_choose_implementation_auto_prefers_upstream_when_available() -> None:
+def test_choose_implementation_legacy_call_prefers_upstream_when_available() -> None:
     assert choose_implementation("auto", upstream_available=True) == "upstream"
     assert choose_implementation("auto", upstream_available=False) == "native"
+
+
+def test_choose_implementation_auto_prefers_promoted_native_method() -> None:
+    assert (
+        choose_implementation(
+            "auto",
+            upstream_available=True,
+            method_name="psmc",
+        )
+        == "native"
+    )
+
+
+def test_auto_falls_back_for_unpromoted_requested_capability() -> None:
+    assert (
+        choose_implementation(
+            "auto",
+            upstream_available=True,
+            method_name="psmc",
+            requested_capabilities={"upstream_options"},
+        )
+        == "upstream"
+    )
+
+
+def test_choose_implementation_auto_keeps_unpromoted_method_upstream() -> None:
+    assert (
+        choose_implementation(
+            "auto",
+            upstream_available=True,
+            method_name="dical2",
+        )
+        == "upstream"
+    )
 
 
 def test_dical2_upstream_requires_path_backed_inputs() -> None:
@@ -78,6 +113,7 @@ def test_dical2_upstream_requires_path_backed_inputs() -> None:
         dical2(SmcData(), implementation="upstream")
 
 
+@pytest.mark.slow
 def test_dical2_auto_uses_native_for_array_inputs() -> None:
     data = SmcData(
         sequences=np.array([[0, 1, 0, 0], [0, 0, 1, 0]], dtype=np.int8),
@@ -95,10 +131,13 @@ def test_dical2_auto_uses_native_for_array_inputs() -> None:
 
 
 def test_psmc_records_requested_and_used_implementation() -> None:
-    res = psmc(_tiny_psmc_data(), pattern="1+1+1", n_iterations=0, implementation="auto").results["psmc"]
+    res = psmc(_tiny_psmc_data(), pattern="1+1+1", n_iterations=0, implementation="auto").results[
+        "psmc"
+    ]
     assert res["implementation_requested"] == "auto"
-    expected = "upstream" if method_upstream_available("psmc") else "native"
-    assert res["implementation"] == expected
+    assert res["implementation"] == "native"
+    assert res["provenance"]["schema_version"] == "1.0"
+    assert res["provenance"]["selection_reason"] == "native capability promoted"
 
 
 def test_smcpp_implementation_alias_and_metadata() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 
+import smckit
 from smckit._method_status import method_status, method_statuses
 from smckit.tl._implementation import NativeTrustWarning, warn_if_native_not_trusted
 
@@ -40,3 +41,15 @@ def test_method_status_entries_include_docs_trust_flag() -> None:
     msmc_im_status = method_status("msmc_im")
     assert msmc_im_status["native_trusted_for_docs"] is True
     assert msmc_im_status["install_extra"] == "msmc_im"
+
+
+def test_public_capability_registry_is_machine_readable() -> None:
+    psmc = smckit.capabilities("psmc")
+    assert psmc["schema_version"] == 1
+    assert psmc["native"]["default_eligible"] is True
+    assert psmc["native"]["promoted"] == ["standard"]
+    assert psmc["upstream"]["tool"] == "psmc"
+
+    dical2 = smckit.capabilities("dical2")
+    assert dical2["native"]["default_eligible"] is False
+    assert dical2["native"]["promoted"] == []

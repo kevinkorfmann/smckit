@@ -57,16 +57,18 @@ def _load_vendor_funcs():
 VENDOR = _load_vendor_funcs()
 
 
-def test_msmc_im_auto_prefers_upstream_and_handles_relative_input_paths() -> None:
+@pytest.mark.slow
+def test_msmc_im_auto_prefers_promoted_native_and_handles_relative_input_paths() -> None:
     data = msmc_im("vendor/MSMC-IM/example/Yoruba_French.8haps.combined.msmc2.final.txt")
     res = data.results["msmc_im"]
 
-    assert res["implementation"] == "upstream"
+    assert res["implementation"] == "native"
     assert res["implementation_requested"] == "auto"
     assert np.all(np.isfinite(res["left_boundary"]))
     assert set(res["split_time_quantiles"]) == {0.25, 0.5, 0.75}
 
 
+@pytest.mark.slow
 def test_msmc_im_exposes_raw_and_thresholded_migration_rates() -> None:
     data = msmc_im(INPUT, implementation="native")
     res = data.results["msmc_im"]
@@ -76,6 +78,7 @@ def test_msmc_im_exposes_raw_and_thresholded_migration_rates() -> None:
     assert np.any(res["m"] > res["m_thresholded"])
 
 
+@pytest.mark.slow
 def test_msmc_im_does_not_emit_matrix_deprecation_warning() -> None:
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

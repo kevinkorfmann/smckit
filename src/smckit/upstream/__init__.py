@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from smckit.upstream._install import install_help as _install_help
 from smckit.upstream._registry import (
     bootstrap_tool,
     get_tool,
@@ -11,7 +12,7 @@ from smckit.upstream._registry import (
     repo_root,
     tool_names,
 )
-from smckit.upstream._install import install_help as _install_help
+from smckit.upstream._run import UpstreamRunResult, command_prefix, run
 
 
 def status(tool: str | None = None) -> dict[str, Any]:
@@ -57,10 +58,13 @@ def method_status(method_name: str) -> dict[str, Any] | None:
 
 __all__ = [
     "bootstrap",
+    "command_prefix",
     "get_tool",
     "install_help",
     "is_ready",
     "method_status",
     "repo_root",
+    "run",
     "status",
+    "UpstreamRunResult",
 ]

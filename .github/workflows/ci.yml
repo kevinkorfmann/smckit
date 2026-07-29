@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run pytest -q tests/unit -m "unit and not slow"
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --extra dev --extra docs
+      - name: Check formatting of production-contract files
+        run: |
+          uv run ruff format --check \
+            src/smckit/_capabilities.py \
+            src/smckit/_provenance.py \
+            src/smckit/cli.py \
+            src/smckit/tl/_phlash.py \
+            src/smckit/upstream/_run.py \
+            scripts/verify_upstreams.py
+          uv run ruff check \
+            src/smckit/_capabilities.py \
+            src/smckit/_provenance.py \
+            src/smckit/cli.py \
+            src/smckit/tl/_phlash.py \
+            src/smckit/upstream/_run.py \
+            scripts/verify_upstreams.py
+      - run: uv run python -m build
+      - run: uv run pytest -q tests/integration/test_build_install_smoke.py
+      - run: uv run sphinx-build -W -b html docs docs/_build/html

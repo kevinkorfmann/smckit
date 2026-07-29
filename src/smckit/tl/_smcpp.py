@@ -1879,7 +1879,7 @@ def _compute_onepop_transition_and_pi(
 
     phi = np.maximum(phi, 1e-20)
     beta = 1e-5
-    phi = phi * (1.0 - beta) + beta / (m + 1)
+    phi = phi * (1.0 - beta) + beta / m
     return phi, pi
 
 
@@ -3579,7 +3579,7 @@ def _smcpp_native(
         "native_hidden_states": native_hidden_states,
         "preprocessing": preprocessing,
         "observation_scale": float(observation_scale),
-    }, implementation_requested=implementation_requested, implementation_used="native")
+    }, method_name="smcpp", implementation_requested=implementation_requested, implementation_used="native")
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     data.params["recombination_rate"] = recombination_rate
@@ -3657,7 +3657,7 @@ def _smcpp_upstream(
                 "hidden_states": payload["hidden_states"],
             },
         ),
-    }, implementation_requested=implementation_requested, implementation_used="upstream")
+    }, method_name="smcpp", implementation_requested=implementation_requested, implementation_used="upstream")
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     data.params["recombination_rate"] = recombination_rate
@@ -3683,8 +3683,8 @@ def smcpp(
     """Run SMC++ demographic inference.
 
     Parameters are the same as the native implementation. ``implementation``
-    may be ``"native"``, ``"upstream"``, or ``"auto"``. ``"auto"`` currently
-    prefers upstream when the controlled side environment is available.
+    may be ``"native"``, ``"upstream"``, or ``"auto"``. ``"auto"`` selects
+    native only after the requested capability has passed its promotion gate.
     ``backend`` is a deprecated compatibility alias.
     """
     implementation = normalize_implementation(
@@ -3694,6 +3694,8 @@ def smcpp(
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("smcpp"),
+        method_name="smcpp",
+        requested_capabilities={"upstream_options"} if upstream_options else None,
     )
     warn_if_native_not_trusted("smcpp", implementation_used)
 

@@ -9,3 +9,9 @@
 	path = vendor/MSMC-IM
 	url = https://github.com/wangke16/MSMC-IM.git
 	ignore = untracked
+[submodule "vendor/psmc"]
+	path = vendor/psmc
+	url = https://github.com/lh3/psmc.git
+[submodule "vendor/msmc2"]
+	path = vendor/msmc2
+	url = https://github.com/stschiff/msmc2.git

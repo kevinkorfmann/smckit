@@ -1,0 +1,35 @@
+"""Frozen publication workflow entrypoint.
+
+Rules intentionally refuse to invent empirical accession manifests. Add the
+reviewed manifests before enabling empirical and full publication targets.
+"""
+
+configfile: "config.yaml"
+
+SCENARIOS = config["scenarios"]
+REPLICATES = range(1, config["replicates"] + 1)
+
+
+rule all:
+    input:
+        "results/protocol.json",
+        expand("results/simulations/{scenario}/{replicate}.json", scenario=SCENARIOS, replicate=REPLICATES),
+
+
+rule protocol:
+    input:
+        "config.yaml"
+    output:
+        "results/protocol.json"
+    shell:
+        "python scripts/freeze_protocol.py {input} {output}"
+
+
+rule simulate:
+    output:
+        "results/simulations/{scenario}/{replicate}.json"
+    params:
+        seed=lambda wildcards: config["seed"] + int(wildcards.replicate)
+    shell:
+        "python scripts/simulate.py --scenario {wildcards.scenario} "
+        "--replicate {wildcards.replicate} --seed {params.seed} --output {output}"

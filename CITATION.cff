@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use smckit, cite the software and the original methods you ran."
+title: "smckit: a preservation-first interface for SMC methods"
+type: software
+authors:
+  - family-names: Korfmann
+    given-names: Kevin
+repository-code: "https://github.com/kevinkorfmann/smckit"
+url: "https://github.com/kevinkorfmann/smckit"
+license: MIT
+version: 0.0.1b2
+date-released: 2026-07-29

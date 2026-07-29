@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "updated": "2026-07-29",
+  "statuses": ["native", "upstream_only", "blocked", "obsolete"],
+  "methods": {
+    "psmc": {
+      "wave": "A",
+      "features": {
+        "core_inference": "native",
+        "psmcfa_input": "native",
+        "parameter_patterns": "native",
+        "missing_data_and_masks": "upstream_only",
+        "multi_record": "upstream_only",
+        "decoding": "upstream_only",
+        "bootstrap_workflow": "upstream_only",
+        "original_compatible_output": "upstream_only"
+      }
+    },
+    "msmc2": {
+      "wave": "A",
+      "features": {
+        "core_inference": "native",
+        "multihetsep_input": "native",
+        "pair_selection": "upstream_only",
+        "multiple_chromosomes": "upstream_only",
+        "masks_and_missing_data": "upstream_only",
+        "fixed_recombination": "upstream_only",
+        "original_compatible_output": "upstream_only"
+      }
+    },
+    "esmc2": {
+      "wave": "A",
+      "features": {
+        "psmcfa_and_multihetsep": "native",
+        "selfing_and_dormancy": "native",
+        "fixed_and_estimated_recombination": "native",
+        "multi_record_and_multi_file": "native",
+        "complete_r_helper_surface": "upstream_only",
+        "original_compatible_output": "upstream_only"
+      }
+    },
+    "asmc": {
+      "wave": "B",
+      "features": {
+        "pairwise_decoding": "native",
+        "hap_map_samples_input": "native",
+        "all_decoding_modes": "upstream_only",
+        "input_tables": "upstream_only",
+        "diagnostic_outputs": "upstream_only",
+        "plotting_and_export": "upstream_only"
+      }
+    },
+    "msmc_im": {
+      "wave": "B",
+      "features": {
+        "yoruba_french_fit": "native",
+        "migration_outputs": "native",
+        "pattern_controls": "native",
+        "all_documented_fitting_controls": "upstream_only",
+        "diverse_oracle_families": "blocked",
+        "plotting_and_export": "upstream_only"
+      }
+    },
+    "smcpp": {
+      "wave": "C",
+      "features": {
+        "one_population_smc_input": "native",
+        "vcf_to_smc_preparation": "upstream_only",
+        "masks_and_compressed_inputs": "upstream_only",
+        "multi_population": "blocked",
+        "split_workflows": "blocked",
+        "cross_validation": "upstream_only",
+        "model_serialization": "upstream_only",
+        "plotting_and_export": "upstream_only"
+      }
+    },
+    "dical2": {
+      "wave": "C",
+      "features": {
+        "packaged_examples": "native",
+        "configuration_language": "upstream_only",
+        "population_structure": "upstream_only",
+        "migration_and_growth": "upstream_only",
+        "composite_likelihood_modes": "upstream_only",
+        "meta_start_strategies": "upstream_only",
+        "exact_likelihood_semantics": "blocked",
+        "output_files": "upstream_only"
+      }
+    },
+    "phlash": {
+      "wave": "modern",
+      "features": {
+        "external_python_interface": "upstream_only",
+        "psmcfa_input": "upstream_only",
+        "vcf_bcf_and_tree_sequence_input": "upstream_only",
+        "posterior_samples": "upstream_only",
+        "credible_intervals": "upstream_only",
+        "native_rewrite": "obsolete"
+      }
+    }
+  }
+}

@@ -2048,6 +2048,8 @@ def msmc2(
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("msmc2"),
+        method_name="msmc2",
+        requested_capabilities={"upstream_options"} if upstream_options else None,
     )
     warn_if_native_not_trusted("msmc2", implementation_used)
     if implementation_used == "upstream":
@@ -2204,7 +2206,7 @@ def msmc2(
         "log_likelihood": result.log_likelihood,
         "time_pattern": result.time_pattern,
         "rounds": result.rounds,
-    }, implementation_requested=implementation, implementation_used=implementation_used)
+    }, method_name="msmc2", implementation_requested=implementation, implementation_used=implementation_used)
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
 
@@ -2319,6 +2321,7 @@ def _msmc2_upstream(
                     },
                 ),
             },
+            method_name="msmc2",
             implementation_requested=implementation_requested,
             implementation_used="upstream",
         )

@@ -3,7 +3,7 @@
    <div class="smckit-hero">
     <h1>smckit: A home for SMC algorithms.</h1>
      <p>smckit keeps classic Sequentially Markovian Coalescent methods usable now while native Python implementations mature method by method.</p>
-     <p>The core contract is simple: <code>implementation="upstream"</code> runs the original tool when ready, <code>implementation="native"</code> runs the in-repo port, and <code>implementation="auto"</code> prefers upstream fidelity. Use <code>smckit.upstream.status()</code> to see exactly which runtimes and bootstraps are ready on your machine.</p>
+     <p>The core contract is simple: <code>implementation="upstream"</code> runs the original tool when ready, <code>implementation="native"</code> runs the in-repo port, and <code>implementation="auto"</code> uses native only for promoted capabilities before falling back to upstream. Use <code>smckit.capabilities()</code> and <code>smckit.upstream.status()</code> to inspect that decision.</p>
      <div class="smckit-pill-row">
        <span class="smckit-pill">Unified <code>SmcData</code> workflow</span>
        <span class="smckit-pill">Dual implementation API</span>
@@ -275,6 +275,7 @@ Quickstarts
    methods/esmc2
    methods/smcpp
    methods/dical2
+   methods/phlash
    methods/ssm
 
 .. toctree::
@@ -287,6 +288,8 @@ Quickstarts
    developer/adding-a-method
    developer/testing
    developer/parity
+   developer/method-review
+   developer/release-policy
    developer/internals
    developer/internals-dical2
    developer/internals-psmc

@@ -123,4 +123,13 @@ def install_help(tool: str, *, source_present: bool) -> str:
         )
         return _join_lines(sections)
 
+    if tool == "phlash":
+        sections.append(
+            "Install the pinned external PHLASH package on Python 3.12 or newer:\n"
+            '  pip install "smckit[phlash]"\n'
+            "Use smckit.tl.phlash for normalized results or import phlash directly "
+            "for its complete original Python interface."
+        )
+        return _join_lines(sections)
+
     return _join_lines(sections)

@@ -1109,6 +1109,8 @@ def msmc_im(
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("msmc_im"),
+        method_name="msmc_im",
+        requested_capabilities={"upstream_options"} if upstream_options else None,
     )
     warn_if_native_not_trusted("msmc_im", implementation_used)
     if implementation_used == "upstream":
@@ -1252,6 +1254,7 @@ def msmc_im(
             pattern=result.pattern,
             beta=result.beta,
         ),
+        method_name="msmc_im",
         implementation_requested=implementation,
         implementation_used=implementation_used,
     )
@@ -1466,6 +1469,7 @@ def _msmc_im_upstream(
                         ),
                     },
                 ),
+                method_name="msmc_im",
                 implementation_requested=implementation_requested,
                 implementation_used="upstream",
             )

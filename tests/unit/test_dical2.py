@@ -793,6 +793,7 @@ class TestForwardBackward:
 
 
 class TestDical2EndToEnd:
+    @pytest.mark.slow
     def test_runs_synthetic_pcl(self):
         rng = np.random.default_rng(7)
         seqs = (rng.random((4, 200)) < 0.02).astype(np.int8)
@@ -811,6 +812,7 @@ class TestDical2EndToEnd:
         assert np.all(res["ne"] > 0)
         assert np.all(np.isfinite(res["ne"]))
 
+    @pytest.mark.slow
     def test_runs_synthetic_pac(self):
         rng = np.random.default_rng(8)
         seqs = (rng.random((5, 150)) < 0.02).astype(np.int8)
@@ -826,6 +828,7 @@ class TestDical2EndToEnd:
         assert np.isfinite(res["log_likelihood"])
         assert len(res["ne"]) >= 3
 
+    @pytest.mark.slow
     def test_runs_synthetic_lol(self):
         rng = np.random.default_rng(9)
         seqs = (rng.random((4, 150)) < 0.02).astype(np.int8)
