@@ -49,12 +49,14 @@ def _two_population_data() -> SmcData:
             ],
             "smcpp_header": {
                 "pids": ["pop-a", "pop-b"],
-                "dist": [[], []],
+                "dist": [[["pop-a-distinguished", 0], ["pop-a-distinguished", 1]], []],
                 "undist": [
                     [["pop-a", index] for index in range(4)],
                     [["pop-b", index] for index in range(4)],
                 ],
             },
+            "n_distinguished_by_population": [2, 0],
+            "n_undist_by_population": [4, 4],
         }
     )
 
@@ -78,10 +80,10 @@ def test_smcpp_output_prefix_writes_reloadable_artifacts(tmp_path) -> None:
     assert model["model"]["spline_class"] == "Piecewise"
     assert model["hidden_states"] == {"ALL": [0.0, float("inf")]}
     assert len(model["model"]["knots"]) == len(data.results["smcpp"]["time"])
-    assert {
-        artifact["kind"]
-        for artifact in data.results["smcpp"]["provenance"]["artifacts"]
-    } == {"model", "normalized_result"}
+    assert {artifact["kind"] for artifact in data.results["smcpp"]["provenance"]["artifacts"]} == {
+        "model",
+        "normalized_result",
+    }
     on_disk = json.loads(result_path.read_text(encoding="utf-8"))
     assert on_disk["provenance"]["artifacts"][0]["kind"] == "model"
 
@@ -144,11 +146,37 @@ def test_model_reader_rejects_invalid_knots(tmp_path) -> None:
         read_smcpp_model(path)
 
 
-def test_native_split_failure_is_explicit() -> None:
-    data = _small_data()
-    data.uns["n_populations"] = 2
-    with pytest.raises(NotImplementedError, match="split inference"):
-        smcpp(data, implementation="native")
+def test_native_split_returns_normalized_clean_split_result() -> None:
+    def marginal(population: str, eta: list[float]) -> dict:
+        return {
+            "model": {
+                "class": "SMCModel",
+                "knots": [0.01, 0.5, 1.5],
+                "N0": 10_000.0,
+                "spline_class": "Piecewise",
+                "y": np.log(eta).tolist(),
+                "pid": population,
+            },
+            "theta": 2.5e-4,
+            "rho": 2.0e-4,
+        }
+
+    result = smcpp(
+        _two_population_data(),
+        implementation="native",
+        split_models=(
+            marginal("pop-a", [1.0, 1.5, 0.8]),
+            marginal("pop-b", [1.2, 0.9, 0.8]),
+        ),
+        max_iterations=50,
+    ).results["smcpp"]
+
+    assert result["analysis"] == "split"
+    assert result["implementation"] == "native"
+    assert 0.0 <= result["split"] <= 1.5
+    assert result["split_generations"] == pytest.approx(result["split"] * 20_000.0)
+    assert result["joint_emission_sum"] == pytest.approx(1.0)
+    assert result["model"]["class"] == "SMCTwoPopulationModel"
 
 
 def test_upstream_split_routes_two_population_data(monkeypatch) -> None:

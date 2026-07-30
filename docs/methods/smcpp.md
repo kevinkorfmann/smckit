@@ -21,7 +21,7 @@ when PSMC is too sample-limited at recent times.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | Defaults to the upstream-style one-pop interpretation and preprocessing path, and now clears the tracked one-pop parity matrix against upstream. |
+| `implementation="native"` | Available | Covers the upstream-style one-pop path and exact two-population clean-split fitting. The split path is available but remains unpromoted while its broader oracle/performance matrix is completed. |
 | `implementation="upstream"` | Available | Runs the vendored upstream source through the controlled side environment, including two-population split inference. |
 | `implementation="auto"` | Available | Uses native for promoted one-population workflows and routes two-population split requests to upstream. |
 
@@ -102,7 +102,7 @@ smoke-test-scale fixture, not a realistic data volume.
 | `regularization` | Smoothness penalty on the inferred history. | Increase to discourage noisy curves; decrease to allow more flexibility. | This is one of the first tuning knobs to learn. |
 | `seed` | Random seed for reproducibility. | Set for repeatable runs. | Good practice for examples and comparisons. |
 | `initial_model` | Reloadable SMC++ model path, mapping, or `SmcData`. | Resume from or compare a frozen history. | Omit for data-driven initialization. |
-| `split_models` | Two fitted marginal histories for a joint two-population input. | Run preserved upstream split inference after fitting each population. | Required only for split analysis; native split remains blocked. |
+| `split_models` | Two fitted marginal histories for a joint two-population input. | Fit a clean split after fitting each population. | Required only for split analysis; choose `native` explicitly until the split path is promoted. |
 | `output_prefix` | Prefix for normalized result and model JSON. | Use for reproducible analyses. | Artifacts are SHA-256 recorded in provenance. |
 
 ## VCF preparation, masks, and multi-population files
@@ -116,24 +116,31 @@ test requires the native observation stream to match preserved upstream
 
 {func}`smckit.io.read_smcpp_input` and
 {func}`smckit.io.write_smcpp_input` preserve every population triplet. Native
-two-population split inference is still a hard 1.0 blocker; requesting it fails
-explicitly rather than dropping the second population. The original split
-workflow is available through the typed upstream layer:
+two-population clean-split inference now uses an independently implemented,
+deterministic joint-SFS calculation. It fits the same shared marginal-history
+scale coordinate followed by split time used by the preserved workflow. The
+tracked oracle covers the five serialized upstream spline classes: Piecewise,
+CubicSpline, PChipSpline, AkimaSpline, and BSpline.
+
+Use `implementation="native"` to exercise that unpromoted path explicitly, or
+`implementation="auto"` to retain the preserved upstream fallback:
 
 ```python
 joint = smckit.io.read_smcpp_input("joint-populations.smc.gz")
 joint = smckit.tl.smcpp(
     joint,
-    implementation="upstream",
+    implementation="native",
     split_models=("population-a.model.json", "population-b.model.json"),
     output_prefix="results/joint",
 )
 print(joint.results["smcpp"]["split_years"])
 ```
 
-This writes `results/joint.smcpp.split.model.json` with the original
+This writes `results/joint.smcpp.split.model.json` with the reloadable
 two-population model and `results/joint.smcpp.split.json` with normalized
-population histories, split time, provenance, and hashes.
+population histories, split time, provenance, and hashes. Select
+`implementation="upstream"` to execute the original split implementation
+without native substitution.
 
 ## Cross-validation
 
@@ -197,6 +204,10 @@ simple EM loop; it uses a heavier optimization stack than PSMC.
 - Fixed-model one-pop `gamma0`, `xisum`, and log-likelihood also now match the
   upstream HMM on that same tracked matrix, so the native and upstream
   one-pop paths are interchangeable for the enforced fixtures shown in docs.
+- The native clean-split path matches the preserved optimizer's split time and
+  shared scale on its tracked end-to-end fixture. Its exact deterministic
+  joint-CSFS agrees with the preserved raw tensor within the upstream
+  Monte-Carlo estimator's sampling error.
 - Upstream remains the fidelity baseline for broader validation and for
   untracked fixtures; the tracked matrix should not be read as a blanket claim
   of parity for every possible future SMC++ input family.

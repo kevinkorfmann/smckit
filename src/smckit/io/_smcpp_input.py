@@ -12,9 +12,13 @@ from smckit._core import SmcData
 
 
 def _open_text(path: Path, mode: str):
-    return gzip.open(path, mode, encoding="utf-8") if path.suffix == ".gz" else path.open(
-        mode,
-        encoding="utf-8",
+    return (
+        gzip.open(path, mode, encoding="utf-8")
+        if path.suffix == ".gz"
+        else path.open(
+            mode,
+            encoding="utf-8",
+        )
     )
 
 
@@ -72,9 +76,7 @@ def read_smcpp_input(
             try:
                 values = [int(token) for token in line.split()]
             except ValueError as exc:
-                raise ValueError(
-                    f"Non-integer SMC++ row at {source}:{line_number}."
-                ) from exc
+                raise ValueError(f"Non-integer SMC++ row at {source}:{line_number}.") from exc
             if len(values) < 4 or (len(values) - 1) % 3:
                 raise ValueError(
                     f"SMC++ row at {source}:{line_number} must contain a span "
@@ -88,13 +90,9 @@ def read_smcpp_input(
     if len(row_populations) > 1:
         raise ValueError("All SMC++ rows must have the same number of population triplets.")
     row_n_populations = next(iter(row_populations), 1)
-    header_n_populations, header_n_distinguished, header_n_undist = _header_dimensions(
-        header_meta
-    )
+    header_n_populations, header_n_distinguished, header_n_undist = _header_dimensions(header_meta)
     if header_meta is not None and row_tokens and row_n_populations != header_n_populations:
-        raise ValueError(
-            "SMC++ header population count does not match the observation columns."
-        )
+        raise ValueError("SMC++ header population count does not match the observation columns.")
     n_populations = row_n_populations if row_tokens else header_n_populations
 
     modal_n_undist: list[int] = []
@@ -215,7 +213,9 @@ def write_smcpp_input(
             flattened = [int(span)]
             for a, b, n_observed in populations:
                 flattened.extend([int(a), int(b), int(n_observed)])
-            handle.write("\t".join(map(str, flattened)) + "\n")
+            # Upstream SMC++ uses ``pandas.read_csv(sep=" ")`` rather than
+            # generic whitespace parsing, so emit literal single spaces.
+            handle.write(" ".join(map(str, flattened)) + "\n")
     return target
 
 

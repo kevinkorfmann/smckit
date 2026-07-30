@@ -6,9 +6,11 @@ SMC++ environment, not by the main smckit interpreter.
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import sys
+import textwrap
 from argparse import Namespace
 from pathlib import Path
 
@@ -27,10 +29,29 @@ def _patch_parallel_filters() -> None:
     data_filter.ThreadParallelFilter.Pool = data_filter.DummyPool
 
 
+def _patch_bspline_alignment() -> None:
+    """Keep the preserved BSpline path working with modern NumPy.
+
+    SMC++ 1.15.4 compares breakpoint arrays before checking that their
+    shapes agree.  Modern NumPy raises for that broadcast instead of
+    returning ``False``. Patch that single comparison in the pinned
+    upstream function at runtime so its GPL implementation remains in the
+    preserved environment rather than being copied into native smckit.
+    """
+    import smcpp.spline.bspline as bspline
+
+    source = textwrap.dedent(inspect.getsource(bspline._align))
+    unsafe = "if np.all(p1.x == p2.x):"
+    safe = "if p1.x.shape == p2.x.shape and np.all(p1.x == p2.x):"
+    if source.count(unsafe) != 1:
+        raise RuntimeError("Pinned SMC++ BSpline alignment source has changed.")
+    namespace = dict(vars(bspline))
+    exec(compile(source.replace(unsafe, safe), bspline.__file__, "exec"), namespace)
+    bspline._align = namespace["_align"]
+
+
 def _to_stepwise_ne(model) -> list[float]:
-    return (
-        np.asarray(model.stepwise_values(), dtype=float) * 2.0 * float(model.N0)
-    ).tolist()
+    return (np.asarray(model.stepwise_values(), dtype=float) * 2.0 * float(model.N0)).tolist()
 
 
 def _to_model_vector(model) -> list[float]:
@@ -139,11 +160,13 @@ def _fixed_stats_one_mstep(
 
         def _wrapped_f(alpha_shift, x0, analysis_obj, _orig_f=orig_f):
             val = _orig_f(alpha_shift, x0, analysis_obj)
-            scale_trace.append({
-                "alpha": float(alpha_shift),
-                "objective": float(val),
-                "model_vector": _to_model_vector(analysis_obj.model),
-            })
+            scale_trace.append(
+                {
+                    "alpha": float(alpha_shift),
+                    "objective": float(val),
+                    "model_vector": _to_model_vector(analysis_obj.model),
+                }
+            )
             return val
 
         plugin._f = _wrapped_f
@@ -168,11 +191,13 @@ def _fixed_stats_one_mstep(
         optimizer.update_observers("post minimize", coords=coords, res=res, **kwargs)
         optimizer[coords] = res.x
         optimizer.update_observers("post mini M-step", coords=coords, res=res, **kwargs)
-        mini_steps.append({
-            "coords": [int(c) for c in coords],
-            "x": np.asarray(res.x, dtype=float).tolist(),
-            "fun": float(res.fun),
-        })
+        mini_steps.append(
+            {
+                "coords": [int(c) for c in coords],
+                "x": np.asarray(res.x, dtype=float).tolist(),
+                "fun": float(res.fun),
+            }
+        )
     optimizer.update_observers("post M-step", **kwargs)
     return {
         "plugins": [type(p).__name__ for p in optimizer._plugins],
@@ -352,14 +377,16 @@ def _build_trace_plugin(enabled: bool):
         def _append(self, phase: str, **kwargs) -> None:
             analysis = kwargs["analysis"]
             model = analysis.model
-            self.rows.append({
-                "phase": phase,
-                "iteration": int(kwargs["i"]),
-                "log_likelihood": float(analysis.loglik()),
-                "q": float(analysis.Q()),
-                "log_eta": _to_model_vector(model),
-                "stepwise_ne": _to_stepwise_ne(model),
-            })
+            self.rows.append(
+                {
+                    "phase": phase,
+                    "iteration": int(kwargs["i"]),
+                    "log_likelihood": float(analysis.loglik()),
+                    "q": float(analysis.Q()),
+                    "log_eta": _to_model_vector(model),
+                    "stepwise_ne": _to_stepwise_ne(model),
+                }
+            )
 
         def update(self, message, *args, **kwargs):
             if message == "post E-step":
@@ -414,6 +441,44 @@ def _split_result(analysis, payload: dict) -> dict:
     }
 
 
+def _joint_csfs_oracle(payload: dict) -> dict:
+    """Return the preserved upstream raw joint-CSFS tensor for one interval."""
+    from smcpp import _smcpp
+    from smcpp.model import SMCModel, SMCTwoPopulationModel
+
+    model1 = SMCModel.from_dict(payload["model1"])
+    model2 = SMCModel.from_dict(payload["model2"])
+    model = SMCTwoPopulationModel(model1, model2, float(payload["split"]))
+    tensor = np.asarray(
+        _smcpp.joint_csfs(
+            int(payload["n_undistinguished"][0]),
+            int(payload["n_undistinguished"][1]),
+            int(payload["n_distinguished"][0]),
+            int(payload["n_distinguished"][1]),
+            model,
+            [0.0, np.inf],
+            int(payload.get("quadrature_points", 10_000)),
+        )[0],
+        dtype=float,
+    )
+    return {
+        "shape": list(tensor.shape),
+        "tensor": tensor.tolist(),
+        "sum": float(tensor.sum()),
+    }
+
+
+def _model_stepwise_oracle(payload: dict) -> dict:
+    """Return upstream's spline-to-rate-function discretization."""
+    from smcpp.model import SMCModel
+
+    model = SMCModel.from_dict(payload["model"])
+    return {
+        "time": np.cumsum(model.s).astype(float).tolist(),
+        "eta": np.asarray(model.stepwise_values(), dtype=float).tolist(),
+    }
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         raise SystemExit("usage: _smcpp_upstream_runner.py <payload.json>")
@@ -422,11 +487,22 @@ def main(argv: list[str]) -> int:
     os.makedirs(Path(payload["output_json"]).parent, exist_ok=True)
 
     _patch_parallel_filters()
-
-    from smcpp.analysis.analysis import Analysis
+    if payload.get("mode") in {"joint_csfs_oracle", "model_stepwise_oracle", "split"}:
+        _patch_bspline_alignment()
 
     if payload["seed"] is not None:
         np.random.seed(int(payload["seed"]))
+
+    if payload.get("mode") == "joint_csfs_oracle":
+        result = _joint_csfs_oracle(payload)
+        Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
+        return 0
+    if payload.get("mode") == "model_stepwise_oracle":
+        result = _model_stepwise_oracle(payload)
+        Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
+        return 0
+
+    from smcpp.analysis.analysis import Analysis
 
     split_mode = payload.get("mode") == "split"
     split_mu = float(payload["mu"])
@@ -471,6 +547,10 @@ def main(argv: list[str]) -> int:
 
         analysis = SplitAnalysis(payload["input_paths"], args)
         analysis.run()
+        # Upstream performs its scale and split updates after the sole E-step.
+        # Refresh once so the normalized likelihood and emission diagnostics
+        # describe the final model rather than the pre-update initialization.
+        analysis.E_step()
         result = _split_result(analysis, payload)
         Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
         return 0

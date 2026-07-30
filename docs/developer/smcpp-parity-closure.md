@@ -1,8 +1,8 @@
 # SMC++ Parity Closure Notes
 
-This note records what actually closed the tracked native-vs-upstream SMC++
-one-pop gap, why those changes mattered, and which earlier changes were
-necessary but not sufficient.
+This note records what closed the tracked native-vs-upstream SMC++ gaps, why
+those changes mattered, and which earlier changes were necessary but not
+sufficient.
 
 ## Scope
 
@@ -15,7 +15,15 @@ smckit:
 - the strict small control fixture
 - the bundled larger `tests/data/smcpp_onepop_larger.smc` fixture
 
-It is not a blanket claim about every possible future SMC++ input family.
+The tracked clean-split contract additionally covers:
+
+- two populations with one distinguished lineage in each
+- a deterministic expected joint SFS and resulting joint-CSFS emissions
+- the shared marginal-history scale coordinate followed by split-time fitting
+- Piecewise, CubicSpline, PChipSpline, AkimaSpline, and BSpline histories
+
+These are enforced fixtures, not a blanket claim about every possible future
+SMC++ input family.
 
 ## Final state
 
@@ -31,6 +39,37 @@ Fixed-model HMM statistics also now match upstream tightly on both fixtures:
 - `gamma0_rel <= 4.4e-08`
 - `xisum_rel <= 6.9e-06`
 - log-likelihood absolute error `<= 2.3e-05`
+
+For the tracked clean-split fit, native and preserved upstream return the same
+split (`5.526022037850897e-06`) and shared log scale
+(`-0.9999959801362373`). Native raw joint-CSFS entries agree with the
+preserved estimator to about `1.5e-3` or better; the residual is expected
+because upstream averages Monte-Carlo histories while native evaluates the
+expectation deterministically.
+
+## Two-population clean-split closure
+
+Upstream split inference uses hidden states `[0, infinity]`. Under that
+contract, the joint conditioned SFS reduces to the expected two-population
+joint SFS, followed by hypergeometric allocation to the two distinguished
+lineages. Native computes that expectation directly from lineage-count
+transition matrices on the two marginal histories and their common ancestral
+history.
+
+The implementation then:
+
+1. converts each serialized marginal spline to the same 100 right-endpoint
+   stepwise history used upstream;
+2. applies one shared bounded log-scale coordinate to both marginal histories;
+3. fits the clean split with a bounded scalar search; and
+4. returns the reloadable joint model, normalized histories, split time,
+   likelihood, and complete provenance.
+
+The preserved SMC++ BSpline implementation performs an unsafe unequal-shape
+NumPy comparison. A narrowly scoped upstream-runner compatibility shim retains
+the original alignment algorithm on modern NumPy without changing vendored
+source. Native spline evaluation is independent and has an oracle test for
+every supported spline class.
 
 ## What was actually wrong
 
@@ -227,4 +266,5 @@ That should be the first debugging path if tracked one-pop parity drifts again.
 - upstream runner / oracle hooks: `src/smckit/tl/_smcpp_upstream_runner.py`
 - vendored upstream source: `vendor/smcpp/`
 - tracked parity gate: `tests/integration/test_smcpp_parity_matrix.py`
+- clean-split parity gate: `tests/integration/test_smcpp_split_validation.py`
 - quick metric report: `scripts/compare_smcpp_backends.py`

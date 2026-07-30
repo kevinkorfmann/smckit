@@ -42,7 +42,7 @@
      - ✓
      - ✓
      - `>= 0.999125 tracked one-pop log-Ne corr`
-     - The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Two-population inputs now have a typed, normalized preserved-upstream split workflow with exact model artifacts; native split inference remains blocked.
+     - The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Native two-population clean-split inference now matches upstream joint-CSFS intermediates and the scale/split coordinate updates across all five serialized spline classes; broader fixture and performance validation remains before promotion.
    * - diCal2
      - ✓
      - ✓

@@ -561,7 +561,11 @@ class TestPsmcStyleTransition:
         assert hp.a.shape == (7, 7)
         assert hp.e.shape == (observation_space_size(n_undist, 2), 7)
         np.testing.assert_allclose(hp.a0.sum(), 1.0, atol=1e-10)
-        np.testing.assert_allclose(hp.a.sum(axis=1), 1.0, atol=1e-8)
+        # Preserve upstream's beta / (m + 1) smoothing contract. Unlike
+        # conventional beta / m smoothing, it intentionally leaves each row
+        # very slightly sub-stochastic.
+        expected_row_mass = 1.0 - 1e-5 / (hp.a.shape[0] + 1)
+        np.testing.assert_allclose(hp.a.sum(axis=1), expected_row_mass, atol=1e-12)
 
     @pytest.mark.skipif(
         _resolve_upstream_smcpp_python() is None,

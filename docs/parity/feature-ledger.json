@@ -88,8 +88,8 @@
         "vcf_to_smc_preparation": "native",
         "masks_and_compressed_inputs": "native",
         "multi_population_input_preservation": "native",
-      "multi_population": "upstream_only",
-      "split_workflows": "upstream_only",
+        "multi_population": "native_unpromoted",
+        "split_workflows": "native_unpromoted",
         "cross_validation": "native",
         "model_serialization": "native",
         "plotting_and_export": "native"

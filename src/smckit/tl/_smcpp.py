@@ -13,11 +13,12 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.interpolate import BSpline, PchipInterpolator
 from scipy.linalg import expm
 from scipy.optimize import minimize, minimize_scalar
 from scipy.special import comb
@@ -25,7 +26,11 @@ from scipy.special import comb
 from smckit._core import SmcData
 from smckit._provenance import sha256_file
 from smckit.io._smcpp_input import write_smcpp_input
-from smckit.io._smcpp_model import read_smcpp_model, write_smcpp_model
+from smckit.io._smcpp_model import (
+    read_smcpp_model,
+    smcpp_model_payload,
+    write_smcpp_model,
+)
 from smckit.tl._implementation import (
     annotate_result,
     choose_implementation,
@@ -640,6 +645,518 @@ def _compute_onepop_raw_csfs_tensor(
     return csfs
 
 
+# ---------------------------------------------------------------------------
+# Two-population clean-split SFS
+# ---------------------------------------------------------------------------
+
+
+def _evaluate_smcpp_log_spline(
+    knots: np.ndarray,
+    values: np.ndarray,
+    spline_class: str,
+    points: np.ndarray,
+) -> np.ndarray:
+    """Evaluate an upstream SMC++ spline using independent numerical formulas."""
+    x = np.log(knots)
+    query = np.log(points)
+    if spline_class == "Piecewise":
+        indices = np.searchsorted(x, query, side="right") - 1
+        return values[np.clip(indices, 0, len(values) - 1)]
+    if spline_class == "PChipSpline":
+        return np.asarray(PchipInterpolator(x, values, extrapolate=True)(query), dtype=float)
+    if spline_class == "BSpline":
+        knot_vector = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
+        spline = BSpline(knot_vector, values, 3, extrapolate=True)
+        output = np.asarray(spline(query), dtype=float)
+        # Upstream's generic evaluator treats the final knot as outside the
+        # fitted range and returns the constant term of the last polynomial
+        # piece.  For BSpline that is its value at the penultimate knot.
+        output[query < x[0]] = float(spline(x[0]))
+        output[query >= x[-1]] = float(spline(x[-2]))
+        return output
+    if spline_class == "AkimaSpline":
+        h = np.diff(x)
+        slopes = np.diff(values) / h
+        extended = np.r_[
+            3.0 * slopes[0] - 2.0 * slopes[1],
+            2.0 * slopes[0] - slopes[1],
+            slopes,
+            2.0 * slopes[-1] - slopes[-2],
+            3.0 * slopes[-1] - 2.0 * slopes[-2],
+        ]
+        delta_weights = np.sqrt(np.diff(extended) ** 2 + 1e-3)
+        right_weights = delta_weights[2 : len(x) + 2]
+        left_weights = delta_weights[: len(x)]
+        total_weights = right_weights + left_weights
+        # Keep the view: the historical Akima implementation updates the
+        # extended slope workspace in place, which is part of its serialized
+        # model-to-rate numerical contract.
+        derivatives = extended[1 : len(x) + 1]
+        active = total_weights > 1e-9 * np.max(total_weights)
+        derivatives[active] = (
+            right_weights[active] * extended[active + 1]
+            + left_weights[active] * extended[active + 2]
+        ) / total_weights[active]
+        quadratic = (3.0 * slopes - 2.0 * derivatives[:-1] - derivatives[1:]) / h
+        cubic = (derivatives[:-1] + derivatives[1:] - 2.0 * slopes) / h**2
+    elif spline_class == "CubicSpline":
+        h = np.diff(x)
+        slopes = np.diff(values) / h
+        dimension = len(x)
+        system = np.zeros((dimension, dimension), dtype=np.float64)
+        rhs = np.zeros(dimension, dtype=np.float64)
+        system[0, 0] = 2.0 * h[0]
+        system[0, 1] = h[0]
+        rhs[0] = 3.0 * slopes[0]
+        for index in range(1, dimension - 1):
+            system[index, index - 1] = h[index - 1] / 3.0
+            system[index, index] = 2.0 * (h[index - 1] + h[index]) / 3.0
+            system[index, index + 1] = h[index] / 3.0
+            rhs[index] = slopes[index] - slopes[index - 1]
+        system[-1, -2] = h[-1]
+        system[-1, -1] = 2.0 * h[-1]
+        rhs[-1] = -3.0 * slopes[-1]
+        quadratic_coefficients = np.linalg.solve(system, rhs)
+        cubic = np.diff(quadratic_coefficients) / h / 3.0
+        quadratic = quadratic_coefficients[:-1]
+        derivatives = (
+            slopes - h * (2.0 * quadratic_coefficients[:-1] + quadratic_coefficients[1:]) / 3.0
+        )
+    else:
+        raise NotImplementedError(
+            f"Native SMC++ split does not recognize spline class {spline_class!r}."
+        )
+
+    interval = np.searchsorted(x, query, side="right") - 1
+    output = np.empty_like(query, dtype=np.float64)
+    output[interval < 0] = values[0]
+    output[interval >= len(x) - 1] = values[-1]
+    active = (interval >= 0) & (interval < len(x) - 1)
+    selected = interval[active]
+    dx = query[active] - x[selected]
+    output[active] = (
+        (cubic[selected] * dx + quadratic[selected]) * dx + derivatives[selected]
+    ) * dx + values[selected]
+    return output
+
+
+def _piecewise_model_history(model: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+    """Return upstream-compatible stepwise rates for any SMCModel spline.
+
+    Upstream evaluates the fitted log-size spline at 100 logarithmically spaced
+    right endpoints and constructs a piecewise-constant rate function from
+    those values.  Reproducing that conversion is essential for split parity.
+    """
+    if model.get("class") != "SMCModel":
+        raise ValueError("SMC++ split requires two one-population SMCModel inputs.")
+    spline_class = str(model.get("spline_class", ""))
+    knots = np.asarray(model.get("knots", []), dtype=np.float64)
+    log_eta = np.asarray(model.get("y", []), dtype=np.float64)
+    expected_values = len(knots) + 2 if spline_class == "BSpline" else len(knots)
+    if (
+        knots.ndim != 1
+        or knots.size == 0
+        or log_eta.shape != (expected_values,)
+        or np.any(knots <= 0)
+        or np.any(np.diff(knots) <= 0)
+        or not np.all(np.isfinite(log_eta))
+    ):
+        raise ValueError("Invalid SMC++ marginal model knots or population sizes.")
+    if spline_class in {"AkimaSpline", "CubicSpline", "PChipSpline"} and len(knots) < 3:
+        raise ValueError(f"{spline_class} requires at least three SMC++ knots.")
+    piece_points = np.logspace(
+        np.log10(knots[0]),
+        np.log10(knots[-1]),
+        SMCPP_INTERNAL_PIECES,
+    )
+    stepwise_log_eta = _evaluate_smcpp_log_spline(
+        knots,
+        log_eta,
+        spline_class,
+        piece_points,
+    )
+    eta = np.exp(stepwise_log_eta)
+    if np.any(~np.isfinite(eta)) or np.any(eta <= 0):
+        raise ValueError("SMC++ marginal population sizes must be positive and finite.")
+    starts = np.r_[0.0, piece_points[:-1]]
+    keep = np.r_[True, np.diff(eta) != 0.0]
+    compressed_eta = eta[keep]
+    starts = starts[keep]
+    return starts[1:].copy(), compressed_eta.copy()
+
+
+def _history_value(
+    change_times: np.ndarray,
+    values: np.ndarray,
+    time: float,
+) -> float:
+    index = int(np.searchsorted(change_times, time, side="right"))
+    return float(values[min(index, len(values) - 1)])
+
+
+def _lineage_interval(
+    probability: np.ndarray,
+    generator: np.ndarray,
+    duration: float,
+    eta: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Propagate lineage counts and integrate their occupation exactly."""
+    if duration <= 0:
+        return probability.copy(), np.zeros_like(probability)
+    dimension = generator.shape[0]
+    scaled = generator / eta
+    block = np.zeros((2 * dimension, 2 * dimension), dtype=np.float64)
+    block[:dimension, :dimension] = scaled
+    block[:dimension, dimension:] = np.eye(dimension, dtype=np.float64)
+    block_exp = expm(block * duration)
+    transition = block_exp[:dimension, :dimension]
+    integral = block_exp[:dimension, dimension:]
+    return probability @ transition, probability @ integral
+
+
+def _expected_sfs_on_history(
+    sample_size: int,
+    change_times: np.ndarray,
+    values: np.ndarray,
+    *,
+    start: float,
+    end: float,
+    include_root_branch: bool,
+) -> np.ndarray:
+    """Expected branch length by derived count on a piecewise size history.
+
+    The returned array is indexed from zero through ``sample_size``.  A finite
+    descendant interval includes the population-specific root branch because a
+    mutation there remains polymorphic after the populations join.  The
+    infinite ancestral interval excludes the globally fixed root branch.
+    """
+    if sample_size < 1:
+        return np.zeros(1, dtype=np.float64)
+    if start < 0 or end < start:
+        raise ValueError("SMC++ SFS history bounds must satisfy 0 <= start <= end.")
+    if end == start:
+        return np.zeros(sample_size + 1, dtype=np.float64)
+
+    generator = _lineage_rate_matrix(sample_size)
+    probability = np.zeros(sample_size, dtype=np.float64)
+    probability[-1] = 1.0
+    occupation = np.zeros(sample_size, dtype=np.float64)
+    current = float(start)
+
+    finite_changes = change_times[(change_times > start) & (change_times < end)]
+    for boundary in np.r_[finite_changes, end] if np.isfinite(end) else finite_changes:
+        boundary = float(boundary)
+        eta = _history_value(change_times, values, current)
+        probability, increment = _lineage_interval(
+            probability,
+            generator,
+            boundary - current,
+            eta,
+        )
+        occupation += increment
+        current = boundary
+
+    if np.isinf(end) and sample_size >= 2:
+        eta = _history_value(change_times, values, current)
+        transient = generator[1:, 1:] / eta
+        occupation[1:] += probability[1:] @ (-np.linalg.inv(transient))
+
+    spectrum = np.zeros(sample_size + 1, dtype=np.float64)
+    weights = _sfs_weights(sample_size)
+    for lineages in range(2, sample_size + 1):
+        spectrum[1 : sample_size + 1] += (
+            occupation[lineages - 1] * lineages * weights[lineages - 1]
+        )
+    if include_root_branch:
+        spectrum[sample_size] += occupation[0]
+    else:
+        spectrum[sample_size] = 0.0
+    spectrum[0] = 0.0
+    return np.maximum(spectrum, 0.0)
+
+
+@cache
+def _moran_rate_matrix_numeric(sample_size: int) -> np.ndarray:
+    """Standard neutral Moran generator on derived counts."""
+    matrix = np.zeros((sample_size + 1, sample_size + 1), dtype=np.float64)
+    for derived in range(sample_size + 1):
+        rate = 0.5 * derived * (sample_size - derived)
+        if derived > 0:
+            matrix[derived, derived - 1] = rate
+        if derived < sample_size:
+            matrix[derived, derived + 1] = rate
+        matrix[derived, derived] = -matrix[derived].sum()
+    return matrix
+
+
+def _cumulative_rate_to(
+    change_times: np.ndarray,
+    values: np.ndarray,
+    end: float,
+) -> float:
+    if end <= 0:
+        return 0.0
+    current = 0.0
+    total = 0.0
+    for boundary in np.r_[change_times[change_times < end], end]:
+        boundary = float(boundary)
+        total += (boundary - current) / _history_value(change_times, values, current)
+        current = boundary
+    return float(total)
+
+
+def _expected_joint_sfs_clean_split(
+    population_sizes: tuple[int, int],
+    model1: dict[str, Any],
+    model2: dict[str, Any],
+    split: float,
+) -> np.ndarray:
+    """Expected two-population SFS for the clean-split demographic model."""
+    n1, n2 = map(int, population_sizes)
+    if n1 < 1 or n2 < 1:
+        raise ValueError("SMC++ split requires at least one sampled lineage per population.")
+    if split < 0 or not np.isfinite(split):
+        raise ValueError("SMC++ split time must be non-negative and finite.")
+
+    changes1, eta1 = _piecewise_model_history(model1)
+    changes2, eta2 = _piecewise_model_history(model2)
+    below1 = _expected_sfs_on_history(
+        n1,
+        changes1,
+        eta1,
+        start=0.0,
+        end=split,
+        include_root_branch=True,
+    )
+    below2 = _expected_sfs_on_history(
+        n2,
+        changes2,
+        eta2,
+        start=0.0,
+        end=split,
+        include_root_branch=True,
+    )
+    total_n = n1 + n2
+    ancestral = _expected_sfs_on_history(
+        total_n,
+        changes1,
+        eta1,
+        start=split,
+        end=float("inf"),
+        include_root_branch=False,
+    )
+
+    transition1 = expm(_moran_rate_matrix_numeric(n1) * _cumulative_rate_to(changes1, eta1, split))
+    transition2 = expm(_moran_rate_matrix_numeric(n2) * _cumulative_rate_to(changes2, eta2, split))
+
+    joint = np.zeros((n1 + 1, n2 + 1), dtype=np.float64)
+    joint[1:, 0] += below1[1:]
+    joint[0, 1:] += below2[1:]
+    for ancestral_count in range(1, total_n):
+        branch_length = ancestral[ancestral_count]
+        if branch_length <= 0:
+            continue
+        lower = max(0, ancestral_count - n2)
+        upper = min(n1, ancestral_count)
+        for count1_at_split in range(lower, upper + 1):
+            count2_at_split = ancestral_count - count1_at_split
+            allocation = _hypergeom_pmf(
+                count1_at_split,
+                ancestral_count,
+                total_n - ancestral_count,
+                n1,
+            )
+            if allocation <= 0:
+                continue
+            joint += (
+                branch_length
+                * allocation
+                * np.outer(
+                    transition1[count1_at_split],
+                    transition2[count2_at_split],
+                )
+            )
+
+    joint[0, 0] = 0.0
+    joint[-1, -1] = 0.0
+    return np.maximum(joint, 0.0)
+
+
+def _joint_sfs_to_jcsfs(
+    joint_sfs: np.ndarray,
+    distinguished: tuple[int, int],
+) -> np.ndarray:
+    """Allocate a joint SFS to distinguished/undistinguished allele counts."""
+    a1, a2 = map(int, distinguished)
+    n1 = joint_sfs.shape[0] - 1
+    n2 = joint_sfs.shape[1] - 1
+    u1, u2 = n1 - a1, n2 - a2
+    if a1 + a2 != 2 or min(a1, a2, u1, u2) < 0:
+        raise ValueError(
+            "SMC++ split requires two distinguished lineages, either together "
+            "in one population or one in each population."
+        )
+    tensor = np.zeros((a1 + 1, u1 + 1, a2 + 1, u2 + 1), dtype=np.float64)
+    for total1 in range(n1 + 1):
+        for total2 in range(n2 + 1):
+            length = joint_sfs[total1, total2]
+            if length <= 0:
+                continue
+            for observed_a1 in range(a1 + 1):
+                b1 = total1 - observed_a1
+                if not 0 <= b1 <= u1:
+                    continue
+                p1 = _hypergeom_pmf(observed_a1, total1, n1 - total1, a1)
+                if p1 <= 0:
+                    continue
+                for observed_a2 in range(a2 + 1):
+                    b2 = total2 - observed_a2
+                    if not 0 <= b2 <= u2:
+                        continue
+                    p2 = _hypergeom_pmf(observed_a2, total2, n2 - total2, a2)
+                    tensor[observed_a1, b1, observed_a2, b2] += length * p1 * p2
+    tensor[(0, 0, 0, 0)] = 0.0
+    tensor[(a1, u1, a2, u2)] = 0.0
+    return np.maximum(tensor, 0.0)
+
+
+def _jcsfs_emission_tensor(raw: np.ndarray, theta: float) -> np.ndarray:
+    """Convert joint branch lengths into the one-mutation emission model."""
+    if theta <= 0 or not np.isfinite(theta):
+        raise ValueError("SMC++ theta must be positive and finite.")
+    total_length = float(raw.sum())
+    emission = np.zeros_like(raw, dtype=np.float64)
+    monomorphic = (0,) * raw.ndim
+    if total_length <= 0:
+        emission[monomorphic] = 1.0
+        return emission
+    scale = -np.expm1(-theta * total_length) / total_length
+    emission[:] = np.maximum(raw * scale, 0.0)
+    emission[monomorphic] = np.exp(-theta * total_length)
+    total = float(emission.sum())
+    if total <= 0 or not np.isfinite(total):
+        raise FloatingPointError("Invalid SMC++ joint emission normalization.")
+    emission /= total
+    return emission
+
+
+def _joint_observation_probability_unpolarized(
+    emission: np.ndarray,
+    observed: tuple[tuple[int, int, int], tuple[int, int, int]],
+    distinguished: tuple[int, int],
+    full_undistinguished: tuple[int, int],
+) -> float:
+    """Marginalize one joint observation over missing and downsampled alleles."""
+    probability = 0.0
+    for index in np.ndindex(emission.shape):
+        weight = 1.0
+        for population in range(2):
+            a_obs, b_obs, n_obs = observed[population]
+            a_full = index[2 * population]
+            b_full = index[2 * population + 1]
+            a_total = distinguished[population]
+            n_full = full_undistinguished[population]
+            if a_obs < 0:
+                continue
+            if not 0 <= a_obs <= a_total or not 0 <= n_obs <= n_full:
+                return 0.0
+            if a_full != a_obs:
+                weight = 0.0
+                break
+            weight *= _hypergeom_pmf(b_obs, b_full, n_full - b_full, n_obs)
+            if weight <= 0:
+                break
+        probability += float(emission[index]) * weight
+    return float(max(probability, 0.0))
+
+
+def _joint_observation_probability(
+    emission: np.ndarray,
+    observed: tuple[tuple[int, int, int], tuple[int, int, int]],
+    distinguished: tuple[int, int],
+    full_undistinguished: tuple[int, int],
+    *,
+    polarization_error: float,
+) -> float:
+    """Probability of a folded/missing two-population SMC++ observation."""
+    if not 0.0 <= polarization_error <= 1.0:
+        raise ValueError("SMC++ polarization_error must lie in [0, 1].")
+    if all(population[0] < 0 for population in observed):
+        return 1.0
+
+    recoded = [tuple(map(int, population)) for population in observed]
+    fully_derived = all(
+        a_obs >= 0 and a_obs == distinguished[population] and b_obs == n_obs
+        for population, (a_obs, b_obs, n_obs) in enumerate(recoded)
+    )
+    if fully_derived:
+        recoded = [
+            (0, 0, n_obs) if a_obs >= 0 else (a_obs, b_obs, n_obs)
+            for a_obs, b_obs, n_obs in recoded
+        ]
+
+    direct_observation = (recoded[0], recoded[1])
+    direct = _joint_observation_probability_unpolarized(
+        emission,
+        direct_observation,
+        distinguished,
+        full_undistinguished,
+    )
+    monomorphic = all(
+        a_obs >= 0 and a_obs == 0 and b_obs == 0 for a_obs, b_obs, _ in direct_observation
+    )
+    if monomorphic or polarization_error == 0.0:
+        return max(direct, 1e-300)
+
+    folded: list[tuple[int, int, int]] = []
+    for population, (a_obs, b_obs, n_obs) in enumerate(direct_observation):
+        if a_obs < 0:
+            folded.append((a_obs, b_obs, n_obs))
+        else:
+            folded.append(
+                (
+                    distinguished[population] - a_obs,
+                    n_obs - b_obs,
+                    n_obs,
+                )
+            )
+    reverse = _joint_observation_probability_unpolarized(
+        emission,
+        (folded[0], folded[1]),
+        distinguished,
+        full_undistinguished,
+    )
+    return max(
+        (1.0 - polarization_error) * direct + polarization_error * reverse,
+        1e-300,
+    )
+
+
+def _joint_split_log_likelihood(
+    observations: list[tuple[int, tuple[tuple[int, int, int], ...]]],
+    emission: np.ndarray,
+    distinguished: tuple[int, int],
+    full_undistinguished: tuple[int, int],
+    *,
+    polarization_error: float,
+) -> float:
+    log_likelihood = 0.0
+    for span, populations in observations:
+        if len(populations) != 2 or int(span) <= 0:
+            raise ValueError(
+                "SMC++ split observations require a positive span and two population triplets."
+            )
+        probability = _joint_observation_probability(
+            emission,
+            (tuple(populations[0]), tuple(populations[1])),
+            distinguished,
+            full_undistinguished,
+            polarization_error=polarization_error,
+        )
+        log_likelihood += int(span) * np.log(probability)
+    return float(log_likelihood)
+
+
 def _coalescent_antiderivative(t: np.ndarray, eta: np.ndarray) -> np.ndarray:
     rrng = np.zeros(len(eta) + 1, dtype=np.float64)
     for k in range(len(eta)):
@@ -883,7 +1400,7 @@ def _tjj_double_integral_above_grid(
     return c
 
 
-@lru_cache(maxsize=None)
+@cache
 def _onepop_matrix_cache(n: int) -> dict[str, np.ndarray]:
     U, Uinv = _compute_moran_eigensystem_numeric(n)
 
@@ -938,7 +1455,7 @@ def _modified_moran_rate_matrix_numeric(n: int, a: int = 0, na: int = 2) -> np.n
     return m
 
 
-@lru_cache(maxsize=None)
+@cache
 def _compute_moran_eigensystem_numeric(n: int) -> tuple[np.ndarray, np.ndarray]:
     m = _modified_moran_rate_matrix_numeric(n)
     evals, evecs = np.linalg.eig(m)
@@ -954,7 +1471,7 @@ def _compute_moran_eigensystem_numeric(n: int) -> tuple[np.ndarray, np.ndarray]:
     return U, Uinv
 
 
-@lru_cache(maxsize=None)
+@cache
 def _compute_below_coeffs(n: int) -> np.ndarray:
     mlast = None
     for nn in range(2, n + 3):
@@ -973,7 +1490,7 @@ def _compute_below_coeffs(n: int) -> np.ndarray:
     return np.asarray(mlast, dtype=np.float64)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _calculate_wnbj(n: int, b: int, j: int) -> float:
     if j == 2:
         return 6.0 / (n + 1.0)
@@ -987,12 +1504,12 @@ def _calculate_wnbj(n: int, b: int, j: int) -> float:
     return _calculate_wnbj(n, b, jj) * c1 + _calculate_wnbj(n, b, jj + 1) * c2
 
 
-@lru_cache(maxsize=None)
+@cache
 def _pnkb_dist(n: int, m: int, l1: int) -> float:
     return float(l1 * comb(n + 2 - l1, m + 1, exact=False) / comb(n + 3, m + 3, exact=False))
 
 
-@lru_cache(maxsize=None)
+@cache
 def _pnkb_undist(n: int, m: int, l3: int) -> float:
     return float(comb(n + 3 - l3, m + 2, exact=False) / comb(n + 3, m + 3, exact=False))
 
@@ -1884,7 +2401,7 @@ def _compute_onepop_transition_and_pi(
 
     phi = np.maximum(phi, 1e-20)
     beta = 1e-5
-    phi = phi * (1.0 - beta) + beta / m
+    phi = phi * (1.0 - beta) + beta / (m + 1)
     return phi, pi
 
 
@@ -2826,6 +3343,105 @@ def _resolve_upstream_smcpp_python() -> str | None:
     return None
 
 
+def _run_upstream_smcpp_joint_csfs_oracle(
+    *,
+    model1: dict[str, Any],
+    model2: dict[str, Any],
+    split: float,
+    n_undistinguished: tuple[int, int],
+    n_distinguished: tuple[int, int],
+    quadrature_points: int = 10_000,
+    seed: int = 0,
+) -> np.ndarray:
+    """Evaluate the preserved upstream raw joint-CSFS implementation."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create vendor/smcpp/.venv."
+        )
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-jcsfs-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        output_path = tmpdir_path / "joint_csfs.json"
+        payload = {
+            "mode": "joint_csfs_oracle",
+            "output_json": str(output_path),
+            "model1": copy.deepcopy(model1),
+            "model2": copy.deepcopy(model2),
+            "split": float(split),
+            "n_undistinguished": list(map(int, n_undistinguished)),
+            "n_distinguished": list(map(int, n_distinguished)),
+            "quadrature_points": int(quadrature_points),
+            "seed": int(seed),
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ joint-CSFS oracle failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        result = json.loads(output_path.read_text(encoding="utf-8"))
+        tensor = np.asarray(result["tensor"], dtype=np.float64)
+        if list(tensor.shape) != result["shape"]:
+            raise RuntimeError("Malformed upstream SMC++ joint-CSFS oracle output.")
+        return tensor
+
+
+def _run_upstream_smcpp_model_stepwise_oracle(
+    model: dict[str, Any],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return upstream's 100-piece rate approximation for one SMCModel."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError("Upstream SMC++ side environment is unavailable.")
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-spline-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        output_path = tmpdir_path / "stepwise.json"
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(
+            json.dumps(
+                {
+                    "mode": "model_stepwise_oracle",
+                    "output_json": str(output_path),
+                    "model": copy.deepcopy(model),
+                    "seed": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ spline oracle failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        result = json.loads(output_path.read_text(encoding="utf-8"))
+        return (
+            np.asarray(result["time"], dtype=np.float64),
+            np.asarray(result["eta"], dtype=np.float64),
+        )
+
+
 def _serialize_smcpp_record(
     record: dict,
     path: Path,
@@ -2942,15 +3558,20 @@ def _materialize_smcpp_marginal_model(
     """Write one marginal model in the JSON shape consumed by ``smc++ split``."""
     if isinstance(value, (str, Path)):
         payload = copy.deepcopy(read_smcpp_model(value))
-        payload["model"]["pid"] = population
-        payload["hidden_states"] = {population: [0.0, float("inf")]}
-        target.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        return payload
-    write_smcpp_model(value, target, population=population)
-    return read_smcpp_model(target)
+    elif isinstance(value, dict) and "model" in value:
+        payload = copy.deepcopy(value)
+    else:
+        write_smcpp_model(value, target, population=population)
+        return read_smcpp_model(target)
+    if payload["model"].get("class") != "SMCModel":
+        raise ValueError("SMC++ split marginal inputs must contain SMCModel objects.")
+    payload["model"]["pid"] = population
+    payload["hidden_states"] = {population: [0.0, float("inf")]}
+    target.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return payload
 
 
 def _run_upstream_smcpp_split(
@@ -3913,6 +4534,239 @@ def _smcpp_upstream(
     return data
 
 
+def _load_smcpp_marginal_payload(
+    value: SmcData | dict[str, Any] | str | Path,
+    *,
+    population: str,
+) -> dict[str, Any]:
+    if isinstance(value, (str, Path)):
+        payload = read_smcpp_model(value)
+    elif isinstance(value, SmcData):
+        payload = smcpp_model_payload(value, population=population)
+    elif isinstance(value, dict):
+        if "model" in value:
+            payload = copy.deepcopy(value)
+        else:
+            payload = smcpp_model_payload(value, population=population)
+    else:
+        raise TypeError("SMC++ marginal models must be SmcData, mappings, or JSON paths.")
+    model = payload.get("model")
+    if not isinstance(model, dict):
+        raise ValueError("SMC++ marginal model payload lacks a model object.")
+    model["pid"] = population
+    _piecewise_model_history(model)
+    return payload
+
+
+def _smcpp_native_split(
+    data: SmcData,
+    *,
+    marginal_models: tuple[
+        SmcData | dict[str, Any] | str | Path,
+        SmcData | dict[str, Any] | str | Path,
+    ],
+    generation_time: float,
+    regularization: float,
+    max_iterations: int,
+    seed: int | None,
+    implementation_requested: str,
+) -> SmcData:
+    """Fit the exact native SMC++ shared-scale and clean-split model."""
+    del seed  # The native matrix calculation and bounded search are deterministic.
+    if len(marginal_models) != 2:
+        raise ValueError("SMC++ split requires exactly two marginal population models.")
+    observations = list(data.uns.get("joint_observations") or [])
+    if not observations:
+        raise ValueError("SMC++ split requires joint two-population observations.")
+    populations = list(data.uns.get("populations") or data.uns.get("pids") or [])
+    if len(populations) != 2:
+        populations = ["population_1", "population_2"]
+
+    distinguished_values = data.uns.get("n_distinguished_by_population")
+    if distinguished_values is None:
+        header = data.uns.get("smcpp_header") or {}
+        distinguished_values = [len(value) for value in header.get("dist", [])]
+    distinguished = tuple(int(value) for value in distinguished_values or ())
+    if len(distinguished) != 2 or sum(distinguished) != 2:
+        raise ValueError(
+            "Native SMC++ split requires header metadata identifying the two "
+            "distinguished lineages."
+        )
+
+    undistinguished_values = list(data.uns.get("n_undist_by_population") or [])
+    if len(undistinguished_values) != 2:
+        undistinguished_values = [
+            max(int(population[index][2]) for _, population in observations) for index in range(2)
+        ]
+    full_undistinguished = tuple(int(value) for value in undistinguished_values)
+    if min(full_undistinguished) < 0:
+        raise ValueError("SMC++ undistinguished sample sizes must be non-negative.")
+    total_sample_sizes = tuple(
+        distinguished[index] + full_undistinguished[index] for index in range(2)
+    )
+
+    payloads = [
+        _load_smcpp_marginal_payload(
+            marginal_models[index],
+            population=populations[index],
+        )
+        for index in range(2)
+    ]
+    theta = [float(payload.get("theta", np.nan)) for payload in payloads]
+    rho = [float(payload.get("rho", np.nan)) for payload in payloads]
+    n0 = [float(payload["model"].get("N0", np.nan)) for payload in payloads]
+    if not np.isclose(theta[0], theta[1], rtol=0.0, atol=1e-15):
+        raise ValueError("SMC++ marginal models must have identical theta values.")
+    if not np.isclose(rho[0], rho[1], rtol=0.0, atol=1e-15):
+        raise ValueError("SMC++ marginal models must have identical rho values.")
+    if not np.isclose(n0[0], n0[1], rtol=0.0, atol=1e-12):
+        raise ValueError("SMC++ marginal models must have identical N0 values.")
+    if not all(np.isfinite(value) and value > 0 for value in theta + rho + n0):
+        raise ValueError("SMC++ marginal theta, rho, and N0 must be positive and finite.")
+    if generation_time <= 0 or max_iterations <= 0:
+        raise ValueError("generation_time and max_iterations must be positive.")
+
+    max_split = float(np.asarray(payloads[1]["model"]["knots"], dtype=float)[-1])
+    if max_split <= 0:
+        raise ValueError("SMC++ marginal model has no positive split-time search range.")
+    objective_history: list[dict[str, float | str]] = []
+    cache: dict[tuple[float, float], tuple[float, np.ndarray]] = {}
+    original_log_eta = [
+        np.asarray(payload["model"]["y"], dtype=np.float64).copy() for payload in payloads
+    ]
+
+    def evaluate(split: float, log_scale: float) -> tuple[float, np.ndarray]:
+        key = (float(split), float(log_scale))
+        cached = cache.get(key)
+        if cached is not None:
+            return cached
+        scaled_models = []
+        for payload, initial_y in zip(payloads, original_log_eta):
+            model = copy.deepcopy(payload["model"])
+            model["y"] = (initial_y + log_scale).tolist()
+            scaled_models.append(model)
+        joint_sfs = _expected_joint_sfs_clean_split(
+            total_sample_sizes,
+            scaled_models[0],
+            scaled_models[1],
+            float(split),
+        )
+        raw = _joint_sfs_to_jcsfs(joint_sfs, distinguished)
+        emission = _jcsfs_emission_tensor(raw, theta[0])
+        log_likelihood = _joint_split_log_likelihood(
+            observations,
+            emission,
+            distinguished,
+            full_undistinguished,
+            polarization_error=0.5,
+        )
+        cache[key] = (log_likelihood, emission)
+        objective_history.append(
+            {
+                "coordinate": "scale" if float(split) == 0.5 * max_split else "split",
+                "split": float(split),
+                "log_scale": float(log_scale),
+                "log_likelihood": float(log_likelihood),
+            }
+        )
+        return cache[key]
+
+    initial_split = 0.5 * max_split
+    initial_log_likelihood, _ = evaluate(initial_split, 0.0)
+    scale_result = minimize_scalar(
+        lambda log_scale: -evaluate(initial_split, float(log_scale))[0],
+        bounds=(-1.0, 1.0),
+        method="bounded",
+        options={
+            "xatol": 1e-5,
+            "maxiter": int(max_iterations),
+        },
+    )
+    log_scale = float(scale_result.x)
+    for payload, initial_y in zip(payloads, original_log_eta):
+        payload["model"]["y"] = (initial_y + log_scale).tolist()
+
+    result = minimize_scalar(
+        lambda split: -evaluate(float(split), log_scale)[0],
+        bounds=(0.0, max_split),
+        method="bounded",
+        options={
+            "xatol": 1e-5,
+            "maxiter": int(max_iterations),
+        },
+    )
+    split = float(result.x)
+    log_likelihood, emission = evaluate(split, log_scale)
+
+    population_models = []
+    for population, payload in zip(populations, payloads):
+        model = payload["model"]
+        model_time = np.asarray(model["knots"], dtype=np.float64)
+        model_log_eta = _evaluate_smcpp_log_spline(
+            model_time,
+            np.asarray(model["y"], dtype=np.float64),
+            str(model.get("spline_class", "Piecewise")),
+            model_time,
+        )
+        model_eta = np.exp(model_log_eta)
+        population_models.append(
+            {
+                "population": population,
+                "time": model_time,
+                "ne": model_eta * 2.0 * n0[0],
+            }
+        )
+    joint_model = {
+        "class": "SMCTwoPopulationModel",
+        "model1": copy.deepcopy(payloads[0]["model"]),
+        "model2": copy.deepcopy(payloads[1]["model"]),
+        "split": split,
+    }
+    data.results["smcpp"] = annotate_result(
+        {
+            "analysis": "split",
+            "backend": "native",
+            "populations": populations,
+            "population_models": population_models,
+            "split": split,
+            "split_generations": split * 2.0 * n0[0],
+            "split_years": split * 2.0 * n0[0] * generation_time,
+            "theta": theta[0],
+            "rho": rho[0],
+            "n0": n0[0],
+            "log_likelihood": log_likelihood,
+            "regularization": 0.0,
+            "regularization_requested": float(regularization),
+            "distinguished_by_population": distinguished,
+            "n_undist_by_population": full_undistinguished,
+            "optimization": {
+                "success": bool(result.success),
+                "message": str(result.message),
+                "algorithm": "bounded exact one-dimensional search",
+                "n_iterations": int(scale_result.nit + result.nit),
+                "n_function_evals": int(scale_result.nfev + result.nfev),
+                "max_split": max_split,
+                "initial_split": initial_split,
+                "initial_log_likelihood": initial_log_likelihood,
+                "shared_log_scale": log_scale,
+                "scale_success": bool(scale_result.success),
+                "history": objective_history,
+            },
+            "model": joint_model,
+            "hidden_states": {population: [0.0, float("inf")] for population in populations},
+            "joint_emission_shape": list(emission.shape),
+            "joint_emission_sum": float(emission.sum()),
+        },
+        method_name="smcpp",
+        implementation_requested=implementation_requested,
+        implementation_used="native",
+    )
+    data.params["generation_time"] = generation_time
+    data.params["mu"] = theta[0] / (2.0 * n0[0])
+    data.params["recombination_rate"] = rho[0] / (2.0 * n0[0])
+    return data
+
+
 def _smcpp_upstream_split(
     data: SmcData,
     *,
@@ -4013,8 +4867,9 @@ def smcpp(
     native only after the requested capability has passed its promotion gate.
     ``backend`` is a deprecated compatibility alias. For a two-population
     input, pass the two fitted marginal histories as ``split_models=(pop1,
-    pop2)``. The preserved upstream split workflow is available now; native
-    split inference remains an explicit unsupported capability.
+    pop2)``. Native split inference uses an exact deterministic joint-SFS
+    calculation for Piecewise marginal models; the preserved upstream workflow
+    remains available explicitly.
     """
     implementation = normalize_implementation(
         implementation,
@@ -4039,26 +4894,30 @@ def smcpp(
     if n_populations != 1:
         if n_populations != 2:
             raise NotImplementedError("SMC++ supports one- or two-population inputs.")
-        if implementation_used == "native":
-            raise NotImplementedError(
-                "Two-population SMC++ data are preserved losslessly, but native split "
-                "inference is not yet implemented."
-            )
         if split_models is None:
-            raise ValueError(
-                "Upstream SMC++ split requires split_models=(population_1, population_2)."
-            )
+            raise ValueError("SMC++ split requires split_models=(population_1, population_2).")
         if initial_model is not None:
             raise ValueError("Use split_models, not initial_model, for SMC++ split inference.")
-        result_data = _smcpp_upstream_split(
-            data,
-            marginal_models=split_models,
-            generation_time=generation_time,
-            regularization=regularization,
-            max_iterations=max_iterations,
-            seed=seed,
-            implementation_requested=implementation,
-        )
+        if implementation_used == "native":
+            result_data = _smcpp_native_split(
+                data,
+                marginal_models=split_models,
+                generation_time=generation_time,
+                regularization=regularization,
+                max_iterations=max_iterations,
+                seed=seed,
+                implementation_requested=implementation,
+            )
+        else:
+            result_data = _smcpp_upstream_split(
+                data,
+                marginal_models=split_models,
+                generation_time=generation_time,
+                regularization=regularization,
+                max_iterations=max_iterations,
+                seed=seed,
+                implementation_requested=implementation,
+            )
         return (
             _persist_smcpp_split_outputs(result_data, output_prefix)
             if output_prefix is not None

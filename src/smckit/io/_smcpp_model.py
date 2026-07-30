@@ -115,8 +115,9 @@ def read_smcpp_model(path: str | Path) -> dict[str, Any]:
         raise ValueError("Only one-population SMCModel JSON is currently supported.")
     knots = np.asarray(model.get("knots", []), dtype=float)
     values = np.asarray(model.get("y", []), dtype=float)
-    if knots.ndim != 1 or values.shape != knots.shape or knots.size == 0:
-        raise ValueError("SMC++ model knots and y values must be aligned arrays.")
+    expected_values = len(knots) + 2 if model.get("spline_class") == "BSpline" else len(knots)
+    if knots.ndim != 1 or values.shape != (expected_values,) or knots.size == 0:
+        raise ValueError("SMC++ model has an invalid knot or spline-parameter count.")
     if np.any(knots <= 0) or np.any(np.diff(knots) <= 0) or not np.all(np.isfinite(values)):
         raise ValueError("SMC++ model knots must increase and model values must be finite.")
     n0 = float(model.get("N0", 0.0))

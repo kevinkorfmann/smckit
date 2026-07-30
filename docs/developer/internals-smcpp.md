@@ -25,6 +25,7 @@ This page preserves the deeper implementation notes needed for parity work.
 - CSFS approximation and emission layout
 - Span-based forward/backward recurrences
 - Transition structure for one- and two-distinguished variants
+- Exact two-population clean-split joint-SFS emissions
 - Native-vs-upstream comparison on shared `N_e(t)` grids
 
 ## Current native state
@@ -47,12 +48,17 @@ This page preserves the deeper implementation notes needed for parity work.
 - The strict small control and larger tracked one-pop `.smc` fixture now both
   clear the shared-grid parity gate, and fixed-model `gamma0`, `xisum`, and
   log-likelihood match upstream tightly on the same matrix.
+- The native two-population clean-split path evaluates the expected joint SFS
+  exactly, maps it to distinguished-lineage joint-CSFS emissions, and
+  reproduces the preserved shared-scale and split coordinate updates.
+- All five upstream marginal spline classes are converted to the same
+  100-piece demographic history used by the preserved split implementation.
 
 ## Handoff notes
 
 - Treat `vendor/smcpp` as the oracle source tree for future parity work.
-- The remaining work is fixture coverage, not the tracked one-pop HMM or
-  optimizer semantics.
+- The remaining SMC++ work is broader split fixture and performance coverage,
+  not the tracked one-pop HMM or clean-split mathematics.
 - Tracked one-pop parity now holds on both enforced fixtures, but that still
   does not automatically prove parity for future untracked SMC++ input shapes.
 - The larger tracked `.smc` fixture remains in the docs gallery as the more
@@ -66,8 +72,8 @@ This page preserves the deeper implementation notes needed for parity work.
   controlled side environment and maps results back into `SmcData`.
 - `implementation="native"` stays entirely in-repo and records the same
   provenance metadata.
-- `implementation="auto"` currently resolves to upstream when that side
-  environment exists.
+- `implementation="auto"` resolves to native for promoted one-pop workflows
+  and to upstream for split while the native split path is unpromoted.
 
 ## Where to read code
 
