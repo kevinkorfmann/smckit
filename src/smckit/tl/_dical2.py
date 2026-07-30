@@ -28,6 +28,7 @@ multiple populations.* PNAS 116(34):17115–17120.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import subprocess
@@ -43,7 +44,13 @@ from scipy.optimize import minimize
 from scipy.special import logsumexp
 
 from smckit._core import SmcData
-from smckit.io._dical2 import DiCal2Config, DiCal2Demo, DiCal2Epoch
+from smckit._provenance import sha256_file
+from smckit.io._dical2 import (
+    DiCal2Config,
+    DiCal2Demo,
+    DiCal2Epoch,
+    write_dical2_output,
+)
 from smckit.tl._implementation import (
     annotate_result,
     choose_implementation,
@@ -63,7 +70,10 @@ _ODE_INTEGRATION_LENGTH = 5.0
 _ODE_MAX_TIME = 2000.0
 _ODE_FACTOR_START_MAX = 10.0
 _ODE_ABS_TOL = 1e-14
-_ODE_REL_TOL = 1e-13
+# ``solve_ivp`` clamps relative tolerances below 100 machine eps.  This is
+# the closest representable SciPy setting to diCal2's Higham-Hall rtol=1e-14
+# and avoids a warning while preserving the oracle-matched trajectory.
+_ODE_REL_TOL = 100.0 * np.finfo(np.float64).eps
 _META_MAX_NEW_POINT_TRIES = 50
 
 
@@ -1005,17 +1015,16 @@ class SimpleTrunk:
                 y_dot[idx] += -y[idx] * (y[idx] - 1.0) / max(2.0 * curr_pop, EPS)
             return y_dot
 
-        solution = solve_ivp(
-            rhs,
-            (start_time, end_time),
+        # Upstream's Ethan trunk uses the same Higham-Hall integration
+        # tolerances as the demographic ODE core.  Reusing the native oracle-
+        # matched solver here is essential: looser trunk integration changes
+        # leave-one-out likelihoods even when the demographic core is exact.
+        return _solve_time_dependent_ode_system(
             np.asarray(start_sizes, dtype=np.float64),
-            method="RK45",
-            rtol=1e-8,
-            atol=1e-10,
+            rhs,
+            float(start_time),
+            float(end_time),
         )
-        if not solution.success:
-            raise RuntimeError(f"Ethan trunk ODE failed: {solution.message}")
-        return np.clip(np.asarray(solution.y[:, -1], dtype=np.float64), 0.0, np.inf)
 
     def _build_migrating_ethan_data(self) -> None:
         assert self.refined is not None
@@ -1378,18 +1387,24 @@ def _solve_time_dependent_ode_system(
     curr_end = curr_start + _ODE_INTEGRATION_LENGTH
     state = integrate_segment(curr_start, curr_end, state)
     max_time = max(_ODE_FACTOR_START_MAX * curr_start, _ODE_MAX_TIME)
-    while True:
-        curr_deriv = np.asarray(deriv(curr_end, state), dtype=np.float64)
-        if float(np.max(np.abs(curr_deriv))) <= 0.1 * EPS:
-            return np.clip(state, 0.0, np.inf)
-        if curr_end > max_time:
-            raise RuntimeError(
-                "The ODE solver computing the HMM probabilities ran too long. "
-                f"max_deriv={float(np.max(np.abs(curr_deriv)))}"
-            )
+    curr_deriv = np.asarray(deriv(curr_end, state), dtype=np.float64)
+    # Preserve diCal2's asymmetric first equilibrium check exactly.  The Java
+    # implementation only continues when at least one derivative is positive;
+    # this matters for the all-negative Ethan trunk-size ODE.
+    rerun = bool(np.any(curr_deriv > EPS))
+    while rerun:
         next_end = curr_end + _ODE_INTEGRATION_LENGTH
         state = integrate_segment(curr_end, next_end, state)
         curr_end = next_end
+        curr_deriv = np.asarray(deriv(curr_end, state), dtype=np.float64)
+        max_deriv = float(np.max(np.abs(curr_deriv)))
+        rerun = max_deriv > 0.1 * EPS
+        if rerun and curr_end - _ODE_INTEGRATION_LENGTH > max_time:
+            raise RuntimeError(
+                "The ODE solver computing the HMM probabilities ran too long. "
+                f"max_deriv={max_deriv}"
+            )
+    return np.clip(state, 0.0, np.inf)
 
 
 def _solve_time_dependent_probability_ode(
@@ -2028,7 +2043,6 @@ class EigenCore:
         for i in range(n_ref):
             self.P[i][i] = np.eye(self.n_anc_per_interval[i], dtype=np.float64)
             for j in range(i + 1, n_ref):
-                k_i = self.n_anc_per_interval[i]
                 k_jm1 = self.n_anc_per_interval[j - 1]
                 k_j = self.n_anc_per_interval[j]
                 f_jm1 = self.f_per_interval[j - 1]  # (2*k_jm1, 2*k_jm1)
@@ -5116,6 +5130,46 @@ class DiCal2Result:
     rounds: list[dict] = field(default_factory=list)
 
 
+def _dical2_json_default(value):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, Path):
+        return str(value)
+    raise TypeError(f"Cannot serialize {type(value).__name__} to JSON.")
+
+
+def _persist_dical2_outputs(data: SmcData, output_prefix: str | Path) -> SmcData:
+    """Persist original-compatible objective output plus normalized JSON."""
+    prefix = Path(output_prefix).expanduser().resolve()
+    prefix.parent.mkdir(parents=True, exist_ok=True)
+    objective_path = Path(f"{prefix}.dical2.txt")
+    result_path = Path(f"{prefix}.dical2.json")
+    write_dical2_output(data, objective_path)
+    result = data.results["dical2"]
+    artifacts = result["provenance"].setdefault("artifacts", [])
+    artifacts.append(
+        {
+            "kind": "objective_output",
+            "path": str(objective_path),
+            "sha256": sha256_file(objective_path),
+        }
+    )
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True, default=_dical2_json_default) + "\n",
+        encoding="utf-8",
+    )
+    artifacts.append(
+        {
+            "kind": "normalized_result",
+            "path": str(result_path),
+            "sha256": sha256_file(result_path),
+        }
+    )
+    return data
+
+
 def dical2(
     data: SmcData,
     n_intervals: int = 11,
@@ -5137,6 +5191,7 @@ def dical2(
     implementation: str = "auto",
     upstream_options: dict | None = None,
     native_options: dict | None = None,
+    output_prefix: str | Path | None = None,
 ) -> SmcData:
     """Run diCal2 demographic inference.
 
@@ -5188,6 +5243,10 @@ def dical2(
         port. ``"upstream"`` runs the vendored ``diCal2.jar`` through the
         public upstream bridge when the Java runtime is ready. ``"auto"``
         resolves to the best available implementation.
+    output_prefix : path-like, optional
+        Write ``.dical2.txt`` objective output compatible with the upstream
+        stdout parser and a complete ``.dical2.json`` normalized result. Both
+        artifacts are hashed in provenance.
 
     Returns
     -------
@@ -5326,11 +5385,16 @@ def dical2(
         method_options=upstream_method_options,
     )
     if implementation_used == "upstream":
-        return _dical2_upstream(
+        result_data = _dical2_upstream(
             data,
             resolved=resolved_upstream,
             cli_args=cli_args,
             implementation_requested=implementation,
+        )
+        return (
+            _persist_dical2_outputs(result_data, output_prefix)
+            if output_prefix is not None
+            else result_data
         )
 
     initialization_metadata: dict[str, object] | None = None
@@ -5589,7 +5653,11 @@ def dical2(
     }, method_name="dical2", implementation_requested=implementation, implementation_used=implementation_used)
     data.params.setdefault("mu", mu)
     data.params.setdefault("generation_time", generation_time)
-    return data
+    return (
+        _persist_dical2_outputs(data, output_prefix)
+        if output_prefix is not None
+        else data
+    )
 
 
 def _parse_dical2_stdout(stdout: str) -> tuple[list[dict], dict | None]:
@@ -5637,6 +5705,26 @@ def _interval_type_cli_name(interval_type: str | None) -> str | None:
     if interval_type == "customfixed":
         return "customFixed"
     return interval_type
+
+
+def _trunk_style_cli_name(trunk_style: str) -> str:
+    """Restore the case-sensitive spelling accepted by the Java CLI."""
+    names = {
+        "simple": "simple",
+        "oldcake": "oldCake",
+        "meancake": "meanCake",
+        "multicake": "multiCake",
+        "multicakeupdating": "multiCakeUpdating",
+        "migratingmulticake": "migratingMultiCake",
+        "migmulticakeupdating": "migMultiCakeUpdating",
+        "recursive": "recursive",
+        "exactcake": "exactCake",
+        "migratingethan": "migratingEthan",
+    }
+    try:
+        return names[trunk_style.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported diCal2 trunk_style: {trunk_style}") from exc
 
 
 def _dical2_upstream(
@@ -5730,6 +5818,13 @@ def _dical2_upstream(
         cmd.append("--useParamRelErr")
     if resolved.use_param_rel_err_m:
         cmd.append("--useParamRelErrM")
+    cmd.extend(["--trunkStyle", _trunk_style_cli_name(resolved.trunk_style)])
+    if resolved.trunk_style.lower() not in {"simple", "exactcake"}:
+        cmd.extend(["--cakeStyle", resolved.cake_style])
+    if resolved.add_trunk_intervals:
+        cmd.extend(["--addTrunkIntervals", str(int(resolved.add_trunk_intervals))])
+    if resolved.ancient_deme_states:
+        cmd.append("--ancientDemeStates")
     cmd.extend(cli_args)
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=jar.parent)
     if proc.returncode != 0:
@@ -5775,6 +5870,10 @@ def _dical2_upstream(
                     "compositeLikelihood": resolved.composite_mode,
                     "lociPerHmmStep": int(resolved.loci_per_hmm_step),
                     "seed": 0 if resolved.seed is None else int(resolved.seed),
+                    "trunkStyle": resolved.trunk_style,
+                    "cakeStyle": resolved.cake_style,
+                    "addTrunkIntervals": int(resolved.add_trunk_intervals),
+                    "ancientDemeStates": bool(resolved.ancient_deme_states),
                     "cli_args": cli_args,
                 },
                 extra={

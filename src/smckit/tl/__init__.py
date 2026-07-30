@@ -7,7 +7,7 @@ from smckit.tl._msmc import msmc2
 from smckit.tl._msmc_im import msmc_im
 from smckit.tl._phlash import phlash
 from smckit.tl._psmc import psmc, psmc_bootstrap
-from smckit.tl._smcpp import smcpp
+from smckit.tl._smcpp import smcpp, smcpp_cross_validate
 
 __all__ = [
     "asmc",
@@ -19,4 +19,5 @@ __all__ = [
     "psmc",
     "psmc_bootstrap",
     "smcpp",
+    "smcpp_cross_validate",
 ]

@@ -22,9 +22,9 @@ information rather than a single population-level history.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | Main public path today. |
-| `implementation="upstream"` | Not yet exposed | Public upstream bridge is planned but not wired. |
-| `implementation="auto"` | Available | Currently resolves to `native`. |
+| `implementation="native"` | Available | Implements promoted array and dense sequence decoding. |
+| `implementation="upstream"` | Available | Executes the preserved ASMC binary or binding. |
+| `implementation="auto"` | Capability-aware | Uses native for promoted array and sequence workflows. |
 
 Install contract:
 
@@ -76,8 +76,8 @@ data = smckit.tl.asmc(
 
 | Argument | What it means | When to change it | Default guidance |
 |---|---|---|---|
-| `implementation` | Choose `native`, `upstream`, or `auto`. | Mostly relevant for future provenance control. | Today `auto` resolves to `native`. |
-| `upstream_options` | Extra controls for the upstream bridge. | Only when that bridge is exposed. | Leave as `None`. |
+| `implementation` | Choose `native`, `upstream`, or `auto`. | Use an explicit selector for oracle work. | `auto` is capability-aware. |
+| `upstream_options` | Extra original CLI controls for the preserved bridge. | Use only for options not represented by typed arguments. | Leave as `None`. |
 | `native_options` | Extra controls for the native decoder. | Not part of routine use today. | Leave as `None`. |
 
 ### What to decode
@@ -127,9 +127,11 @@ structure along the genome.
 
 ## Current parity snapshot
 
-- MAP state agreement on the vendored fixture is about `99.84%`.
-- Posterior means are close but not yet full promotion-level parity against
-  upstream C++ output.
+- On the vendored `n300` array oracle, MAP state agreement is 100% and the
+  maximum posterior-mean relative error is `2.99e-4`.
+- On the dense `n300` sequence oracle with CSFS emissions, interval decoding,
+  and 0.5 cM burn-in, the maximum posterior-mean relative error is at most
+  `1e-3` and MAP agreement is at least 99.9%; `auto` therefore uses native.
 
 ## Learn more
 

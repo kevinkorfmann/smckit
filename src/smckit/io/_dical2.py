@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -807,7 +807,11 @@ def read_dical2(
             "reference_alleles": reference_alleles,
             "n_alleles": n_alleles,
             "source_paths": {
-                "sequences": None if not isinstance(sequences, (str, Path)) else str(Path(sequences)),
+            "sequences": (
+                None
+                if not isinstance(sequences, (str, Path))
+                else str(Path(sequences))
+            ),
                 "param_file": None if param_file is None else str(Path(param_file)),
                 "demo_file": None if demo_file is None else str(Path(demo_file)),
                 "rates_file": None if rates_file is None else str(Path(rates_file)),
@@ -817,3 +821,49 @@ def read_dical2(
         },
     )
     return data
+
+
+def write_dical2_output(
+    value: SmcData | dict,
+    path: str | Path,
+) -> Path:
+    """Write captured upstream stdout or a parser-compatible native fit row.
+
+    The native form preserves the tab-separated objective-row contract used by
+    diCal2 stdout: log likelihood, elapsed milliseconds, ordered parameters,
+    and a run identifier. Comment lines record that the artifact came from the
+    independent smckit implementation.
+    """
+    result = value.results.get("dical2") if isinstance(value, SmcData) else value
+    if not isinstance(result, dict):
+        raise ValueError("Value does not contain a diCal2 result mapping.")
+    target = Path(path).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    upstream = result.get("upstream")
+    if isinstance(upstream, dict) and isinstance(upstream.get("stdout"), str):
+        text = upstream["stdout"]
+        if text and not text.endswith("\n"):
+            text += "\n"
+    else:
+        params = np.asarray(
+            result.get("best_params", result.get("ordered_params", [])),
+            dtype=np.float64,
+        )
+        if params.ndim != 1 or params.size == 0:
+            raise ValueError("Native diCal2 result lacks a one-dimensional best_params array.")
+        log_likelihood = float(result["log_likelihood"])
+        row = "\t".join(
+            [
+                f"{log_likelihood:.17g}",
+                "0",
+                *(f"{float(parameter):.17g}" for parameter in params),
+                "smckit-native-best",
+            ]
+        )
+        text = (
+            "# smckit native diCal2-compatible objective output\n"
+            "# log_likelihood\telapsed_ms\tparameters...\trun_id\n"
+            f"{row}\n"
+        )
+    target.write_text(text, encoding="utf-8")
+    return target

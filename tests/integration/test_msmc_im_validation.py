@@ -24,9 +24,7 @@ pytestmark = [
     pytest.mark.filterwarnings(
         "ignore:invalid value encountered in scalar multiply:RuntimeWarning"
     ),
-    pytest.mark.filterwarnings(
-        "ignore:invalid value encountered in scalar divide:RuntimeWarning"
-    ),
+    pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide:RuntimeWarning"),
 ]
 
 
@@ -198,9 +196,8 @@ def _expected_split_time_quantiles(
             continue
 
         idx = int(np.searchsorted(cumulative_migration, q, side="left"))
-        frac = (
-            (q - cumulative_migration[idx - 1])
-            / (cumulative_migration[idx] - cumulative_migration[idx - 1])
+        frac = (q - cumulative_migration[idx - 1]) / (
+            cumulative_migration[idx] - cumulative_migration[idx - 1]
         )
         quantiles[q] = left_boundary[idx - 1] + frac * (
             left_boundary[idx] - left_boundary[idx - 1]
@@ -244,6 +241,7 @@ def _assert_public_payloads_match(
         "beta",
         "implementation_requested",
         "implementation",
+        "provenance",
     }
     assert set(upstream.keys()) == set(native.keys()) | {"backend", "upstream"}
 
@@ -259,6 +257,8 @@ def _assert_public_payloads_match(
     assert native["beta"] == upstream["beta"]
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ("name", "pattern", "beta", "mu", "N1_init", "N2_init", "m_init"),
     ORACLE_CASES,
@@ -334,6 +334,7 @@ def test_msmc_im_native_and_upstream_match_vendored_cli_on_oracle_matrix(
     )
 
 
+@pytest.mark.oracle
 def test_msmc_im_public_upstream_runner_matches_vendored_cli_for_in_memory_input(
     tmp_path: Path,
 ) -> None:

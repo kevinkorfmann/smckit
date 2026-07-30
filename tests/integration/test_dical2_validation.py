@@ -24,13 +24,13 @@ from smckit.tl._dical2 import (
     DICAL2_T_INF,
     EigenCore,
     SimpleTrunk,
+    _default_demo_for_single_pop,
     _enumerate_csd_pairs,
     compute_time_intervals,
     expected_counts,
     forward_log,
     refine_demography,
 )
-from smckit.tl._dical2 import _default_demo_for_single_pop
 
 msprime = pytest.importorskip("msprime")
 
@@ -85,9 +85,7 @@ def test_read_param_examples():
 
 
 def test_read_demo_examples():
-    d = read_dical2_demo(
-        f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo"
-    )
+    d = read_dical2_demo(f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo")
     assert len(d.epochs) == 4
     for ep in d.epochs:
         assert ep.pop_sizes is not None
@@ -95,9 +93,7 @@ def test_read_demo_examples():
 
 
 def test_read_config_examples():
-    c = read_dical2_config(
-        f"{VENDOR_EXAMPLES}/cleanSplit/clean_split.config"
-    )
+    c = read_dical2_config(f"{VENDOR_EXAMPLES}/cleanSplit/clean_split.config")
     assert c.n_populations == 2
 
 
@@ -184,6 +180,7 @@ def test_csd_enumeration_modes():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 def test_dical2_runs_on_simulated(simulated_sequences):
     """diCal2 should produce a finite log-likelihood and positive Ne."""
     seqs = simulated_sequences
@@ -212,6 +209,7 @@ def test_dical2_runs_on_simulated(simulated_sequences):
     assert 1e2 < geom_mean < 1e8
 
 
+@pytest.mark.slow
 def test_dical2_log_likelihood_improves(simulated_sequences):
     """Log-likelihood should not decrease across the first EM step."""
     seqs = simulated_sequences[:, :500]  # smaller for speed

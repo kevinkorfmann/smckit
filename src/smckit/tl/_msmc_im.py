@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import warnings
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -30,7 +31,8 @@ from scipy import integrate
 from scipy.optimize import fmin_powell
 
 from smckit._core import SmcData
-from smckit.io._msmc_im import read_msmc_im_output
+from smckit._provenance import sha256_file
+from smckit.io._msmc_im import read_msmc_im_output, write_msmc_im_output
 from smckit.io._multihetsep import read_msmc_combined_output
 from smckit.tl._implementation import (
     annotate_result,
@@ -1059,6 +1061,7 @@ def msmc_im(
     beta: tuple[float, float] = (1e-8, 1e-6),
     xtol: float = 1e-4,
     ftol: float = 1e-2,
+    output_prefix: str | Path | None = None,
     implementation: str = "auto",
     upstream_options: dict | None = None,
     native_options: dict | None = None,
@@ -1094,6 +1097,8 @@ def msmc_im(
         Powell optimizer parameter tolerance. Default ``1e-4``.
     ftol : float
         Powell optimizer function tolerance. Default ``1e-2``.
+    output_prefix : str or Path, optional
+        Write an original-compatible ``.MSMC_IM.estimates.txt`` artifact.
     implementation : {"auto", "native", "upstream"}
         Algorithm provenance selector. ``"native"`` runs the in-repo fitter.
         ``"upstream"`` runs the vendored ``MSMC_IM.py`` oracle when it is
@@ -1105,12 +1110,18 @@ def msmc_im(
     SmcData
         Input data with results stored in ``data.results["msmc_im"]``.
     """
+    started = time.perf_counter()
     implementation = normalize_implementation(implementation)
+    requested_capabilities: set[str] = set()
+    if output_prefix is not None:
+        requested_capabilities.add("output")
+    if upstream_options:
+        requested_capabilities.add("upstream_options")
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("msmc_im"),
         method_name="msmc_im",
-        requested_capabilities={"upstream_options"} if upstream_options else None,
+        requested_capabilities=requested_capabilities or None,
     )
     warn_if_native_not_trusted("msmc_im", implementation_used)
     if implementation_used == "upstream":
@@ -1122,6 +1133,7 @@ def msmc_im(
             N2_init=N2_init,
             m_init=m_init,
             beta=beta,
+            output_prefix=output_prefix,
             implementation_requested=implementation,
             upstream_options=upstream_options,
         )
@@ -1239,6 +1251,28 @@ def msmc_im(
         mu=mu,
     )
 
+    artifacts: list[dict[str, object]] = []
+    if output_prefix is not None:
+        output_path = Path(
+            f"{output_prefix}.b1_{beta[0]}.b2_{beta[1]}.MSMC_IM.estimates.txt"
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        write_msmc_im_output(
+            output_path,
+            result.left_boundary,
+            result.N1_corrected,
+            result.N2_corrected,
+            result.m,
+            result.M,
+        )
+        artifacts.append(
+            {
+                "path": str(output_path),
+                "sha256": sha256_file(output_path),
+                "kind": "msmc-im-estimates",
+            }
+        )
+
     data.results["msmc_im"] = annotate_result(
         _build_msmc_im_payload(
             left_boundary=result.left_boundary,
@@ -1257,6 +1291,20 @@ def msmc_im(
         method_name="msmc_im",
         implementation_requested=implementation,
         implementation_used=implementation_used,
+        effective_args={
+            "pattern": pattern,
+            "mu": mu,
+            "N1_init": N1_init,
+            "N2_init": N2_init,
+            "m_init": m_init,
+            "beta": beta,
+            "xtol": xtol,
+            "ftol": ftol,
+            "output_prefix": None if output_prefix is None else str(output_prefix),
+        },
+        input_paths=[msmc_data["source_path"]] if msmc_data.get("source_path") else None,
+        runtime_seconds=time.perf_counter() - started,
+        artifacts=artifacts,
     )
     data.params["mu"] = mu
 
@@ -1298,9 +1346,11 @@ def _msmc_im_upstream(
     N2_init: float,
     m_init: float,
     beta: tuple[float, float],
+    output_prefix: str | Path | None,
     implementation_requested: str,
     upstream_options: dict | None,
 ) -> SmcData:
+    started = time.perf_counter()
     script = Path(__file__).resolve().parents[3] / "vendor/MSMC-IM/MSMC_IM.py"
     if not script.exists():
         require_upstream_available("msmc_im")
@@ -1352,7 +1402,12 @@ def _msmc_im_upstream(
     try:
         with tempfile.TemporaryDirectory(prefix="smckit-msmc-im-") as tmpdir:
             tmpdir_path = Path(tmpdir)
-            out_prefix = tmpdir_path / "msmc_im"
+            out_prefix = (
+                Path(output_prefix).resolve()
+                if output_prefix is not None
+                else tmpdir_path / "msmc_im"
+            )
+            out_prefix.parent.mkdir(parents=True, exist_ok=True)
             env = os.environ.copy()
             env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
             cmd = [
@@ -1402,12 +1457,18 @@ def _msmc_im_upstream(
                     f"stdout:\n{proc.stdout}\n"
                     f"stderr:\n{proc.stderr}"
                 )
-            candidates = sorted(tmpdir_path.glob("*.MSMC_IM.estimates.txt"))
+            candidates = sorted(
+                out_prefix.parent.glob(f"{out_prefix.name}.b1_*.b2_*.MSMC_IM.estimates.txt")
+            )
             if not candidates:
                 raise RuntimeError("Upstream MSMC-IM did not produce an estimates file.")
             estimates_path = candidates[0]
             parsed = read_msmc_im_output(estimates_path)
-            fittingdetails_candidates = sorted(tmpdir_path.glob("*.MSMC_IM.fittingdetails.txt"))
+            fittingdetails_candidates = sorted(
+                out_prefix.parent.glob(
+                    f"{out_prefix.name}.b1_*.b2_*.MSMC_IM.fittingdetails.txt"
+                )
+            )
             if not fittingdetails_candidates:
                 raise RuntimeError(
                     "Upstream MSMC-IM did not produce a fittingdetails file."
@@ -1439,6 +1500,19 @@ def _msmc_im_upstream(
             if len(right_boundary) == len(parsed["left_boundary"]):
                 right_boundary[-1] = parsed["left_boundary"][-1] * 4.0
 
+            artifacts = []
+            if output_prefix is not None:
+                for path, kind in (
+                    (estimates_path, "msmc-im-estimates"),
+                    (fittingdetails_path, "msmc-im-fitting-details"),
+                ):
+                    artifacts.append(
+                        {
+                            "path": str(path),
+                            "sha256": sha256_file(path),
+                            "kind": kind,
+                        }
+                    )
             smc_data.results["msmc_im"] = annotate_result(
                 _build_msmc_im_payload(
                     left_boundary=parsed["left_boundary"],
@@ -1472,6 +1546,10 @@ def _msmc_im_upstream(
                 method_name="msmc_im",
                 implementation_requested=implementation_requested,
                 implementation_used="upstream",
+                effective_args=effective_args,
+                input_paths=[input_path],
+                runtime_seconds=time.perf_counter() - started,
+                artifacts=artifacts,
             )
             smc_data.params["mu"] = mu
             return smc_data

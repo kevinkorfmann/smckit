@@ -13,7 +13,16 @@ REPLICATES = range(1, config["replicates"] + 1)
 rule all:
     input:
         "results/protocol.json",
-        expand("results/simulations/{scenario}/{replicate}.json", scenario=SCENARIOS, replicate=REPLICATES),
+        expand(
+            "results/simulations/{scenario}/{replicate}.truth.json",
+            scenario=SCENARIOS,
+            replicate=REPLICATES,
+        ),
+        expand(
+            "results/simulations/{scenario}/{replicate}.trees",
+            scenario=SCENARIOS,
+            replicate=REPLICATES,
+        ),
 
 
 rule protocol:
@@ -27,9 +36,14 @@ rule protocol:
 
 rule simulate:
     output:
-        "results/simulations/{scenario}/{replicate}.json"
+        truth="results/simulations/{scenario}/{replicate}.truth.json",
+        trees="results/simulations/{scenario}/{replicate}.trees"
     params:
         seed=lambda wildcards: config["seed"] + int(wildcards.replicate)
     shell:
         "python scripts/simulate.py --scenario {wildcards.scenario} "
-        "--replicate {wildcards.replicate} --seed {params.seed} --output {output}"
+        "--replicate {wildcards.replicate} --seed {params.seed} "
+        "--sequence-length {config[sequence_length]} "
+        "--recombination-rate {config[recombination_rate]} "
+        "--mutation-rate {config[mutation_rate]} "
+        "--tree-output {output.trees} --truth-output {output.truth}"

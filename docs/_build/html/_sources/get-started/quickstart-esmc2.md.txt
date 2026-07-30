@@ -30,6 +30,7 @@ data = smckit.tl.esmc2(
     beta=0.8,
     mu=1.25e-8,
     generation_time=1.0,
+    output_dir="analysis/esmc2",
     implementation="native",
 )
 ```
@@ -37,6 +38,18 @@ data = smckit.tl.esmc2(
 This example turns on `estimate_beta` so the ecological part of the model is
 active. `beta=0.8` is just a starting assumption for that optimizer, not a
 trusted species-specific value by itself.
+
+The output directory contains the original numeric result tables (`Tc.txt`,
+`Xi.txt`, `rho.txt`, `beta.txt`, `sigma.txt`, `mu.txt`, and `LH.txt`) plus
+normalized time and effective-size tables. The complete preserved R package
+is available to custom scripts with:
+
+```bash
+smckit upstream esmc2 -- analysis.R argument1 argument2
+```
+
+The runner injects the bootstrapped repository-local R library, so every
+exported upstream helper remains available without changing the user library.
 
 ## Inspect the result
 

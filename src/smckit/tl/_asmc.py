@@ -514,6 +514,12 @@ def _decode_pair_numba(
                 scratch,
                 cumulative,
             )
+            # ASMC 1.4's batched sequence implementation stores the
+            # inter-marker intermediate in the destination slot and then
+            # assigns that slot back onto the preceding alpha map before the
+            # marker step. Propagation still uses the marker alpha, but the
+            # posterior buffer retains this inter-marker value at site-1.
+            alpha[site - 1] = scratch
             _forward_transition_numba(
                 scratch,
                 marker_transition_indices[site],
@@ -574,6 +580,9 @@ def _decode_pair_numba(
                 vec,
                 upward,
             )
+            # The corresponding Eigen map assignment in upstream overwrites
+            # the following site's stored beta with the inter-marker result.
+            beta[site + 1] = scratch
             _backward_transition_numba(
                 scratch,
                 backward_marker_transition_indices[site],
@@ -1639,7 +1648,11 @@ def _asmc_upstream_pairs(
         using_CSFS=not np.isinf(skip_csfs_distance),
         compress=np.isinf(skip_csfs_distance),
         use_ancestral=not fold_data,
-        skip_CSFS_distance=float(skip_csfs_distance),
+        # ``compress`` is the upstream shorthand for an infinite CSFS skip.
+        # Supplying both controls is rejected by ASMC 1.4.0.
+        skip_CSFS_distance=(
+            float("nan") if np.isinf(skip_csfs_distance) else float(skip_csfs_distance)
+        ),
         no_batches=False,
         do_posterior_sums=False,
         do_per_pair_posterior_mean=False,

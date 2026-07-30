@@ -8,7 +8,7 @@
   <title>smckit.io._asmc &mdash; smckit 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=97d07af7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=e37cf168" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/pretext-layout.js?v=cc9de092"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -52,9 +53,17 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../get-started/installation.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#base-install">Base install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#install-from-source">Install from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#repo-environment-commands">Repo environment commands</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#upstream-tool-readiness">Upstream tool readiness</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#runtime-and-bootstrap-matrix">Runtime and bootstrap matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#platform-install-recipes">Platform install recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../get-started/installation.html#windows">Windows</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/installation.html#bootstrapping-examples">Bootstrapping examples</a></li>
 </ul>
 </li>
@@ -97,6 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -105,6 +116,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -154,6 +171,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#ecological-and-migration-parameters-need-extra-caution">Ecological and migration parameters need extra caution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
 </ul>
 </li>
@@ -168,6 +186,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -180,7 +199,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#smc">SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#dical2">diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#ssm">SSM</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../guide/gallery.html#overview">Overview</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/psmc-ssm.html">PSMC-SSM</a><ul>
@@ -224,8 +242,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#time-grid-and-fit-controls">Time-grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#biological-scaling-and-initialization">Biological scaling and initialization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-comes-back-in-data-results-psmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;psmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -234,7 +260,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#what-to-decode">What to decode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#decoding-behavior-and-output-size">Decoding behavior and output size</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-comes-back-in-data-results-asmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;asmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -243,7 +278,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#core-fit-controls">Core fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#scaling-and-rate-parameters">Scaling and rate parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#advanced-numerical-controls">Advanced numerical controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-comes-back-in-data-results-msmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#learn-more">Learn more</a></li>
 </ul>
@@ -252,8 +297,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#model-definition-and-scaling">Model definition and scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#optimization-starting-points">Optimization starting points</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#regularization-and-optimizer-tolerances">Regularization and optimizer tolerances</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-comes-back-in-data-results-msmc-im">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc_im&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -261,8 +315,21 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#model-size-and-run-length">Model size and run length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#scaling-and-baseline-rates">Scaling and baseline rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#ecological-parameters">Ecological parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#recombination-fitting">Recombination fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#advanced-grouping-and-search-bounds">Advanced grouping and search bounds</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-comes-back-in-data-results-esmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;esmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -270,7 +337,20 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#model-size-and-fit-duration">Model size and fit duration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#time-grid-and-scaling-controls">Time-grid and scaling controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#models-and-figures">Models and figures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#practical-notes">Practical notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#learn-more">Learn more</a></li>
 </ul>
@@ -279,16 +359,38 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#core-demographic-grid-and-fit-controls">Core demographic grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#biological-scaling">Biological scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#start-point-and-meta-start-controls">Start-point and meta-start controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#search-constraints-and-reproducibility">Search constraints and reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-comes-back-in-data-results-dical2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;dical2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#recommended-starting-workflow">Recommended starting workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#how-to-think-about-the-workflow">How to think about the workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-the-main-knobs-mean">What the main knobs mean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-to-inspect-after-fitting">What to inspect after fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -335,17 +437,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
@@ -353,17 +447,39 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#asmc">ASMC</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc2">MSMC2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#msmc-im">MSMC-IM</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#esmc2">eSMC2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/parity.html#parity-snapshot">Parity snapshot</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#esmc2">eSMC2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#dical2">diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#smc">SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-dical2.html">diCal2 Native Parity Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#why-these-changes-were-necessary">Why these changes were necessary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-changed">What changed</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#shared-upstream-native-result-normalization">1. Shared upstream/native result normalization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#vcf-reader-now-preserves-upstream-style-physical-locus-metadata">2. VCF reader now preserves upstream-style physical-locus metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#grouped-locus-counting-now-uses-physical-blocks-not-just-segregating-columns">3. Grouped-locus counting now uses physical blocks, not just segregating columns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#refined-intervals-now-materialize-interval-specific-epochs">4. Refined intervals now materialize interval-specific epochs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-psmc.html">PSMC Internals</a><ul>
@@ -378,9 +494,38 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#why-this-page-exists">Why this page exists</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#core-ingredients">Core ingredients</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#porting-hotspots">Porting hotspots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#current-native-state">Current native state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#handoff-notes">Handoff notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#upstream-bridge-notes">Upstream bridge notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#where-to-read-code">Where to read code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-smcpp.html#what-stayed-out-of-the-main-docs">What stayed out of the main docs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html">SMC++ Parity Closure Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#scope">Scope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#final-state">Final state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#what-was-actually-wrong">What was actually wrong</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#native-one-pop-preprocessing-was-not-phase-aligned-with-upstream">1. Native one-pop preprocessing was not phase-aligned with upstream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#native-one-pop-hmm-was-leaving-the-upstream-compressed-row-ceremony">2. Native one-pop HMM was leaving the upstream compressed-row ceremony</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#how-the-issue-was-found">How the issue was found</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#the-fixes-that-closed-parity">The fixes that closed parity</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#upstream-preprocessing-offset-in-native-one-pop-preprocessing">Upstream preprocessing offset in native one-pop preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#stay-on-the-compressed-run-length-stream-in-the-one-pop-hmm">Stay on the compressed run-length stream in the one-pop HMM</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#earlier-fixes-that-mattered">Earlier fixes that mattered</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#one-pop-watterson-estimator">One-pop Watterson estimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#monomorphic-one-pop-emission-handling">Monomorphic one-pop emission handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#one-pop-transition-details">One-pop transition details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#prefit-initialization-parity">Prefit / initialization parity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#scale-step-optimizer-semantics">Scale-step optimizer semantics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#what-did-not-close-parity-by-itself">What did not close parity by itself</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#practical-lesson">Practical lesson</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/smcpp-parity-closure.html#code-pointers">Code pointers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-esmc2.html">eSMC2 Internals</a><ul>
@@ -434,6 +579,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -466,6 +615,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
@@ -502,19 +655,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -595,7 +765,6 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
@@ -609,6 +778,7 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># Decoding quantities container</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
+
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DecodingQuantities</span><span class="p">:</span>
@@ -669,8 +839,12 @@
     <span class="n">D_vectors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">row_ratio_vectors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
-    <span class="n">classic_emission</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
-    <span class="n">compressed_emission</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+    <span class="n">classic_emission</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">compressed_emission</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">csfs_map</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">folded_csfs_map</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
@@ -859,9 +1033,10 @@
                     <span class="n">dq</span><span class="o">.</span><span class="n">homozygous_emission_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;Loaded decoding quantities: states=</span><span class="si">%d</span><span class="s2">, csfs_samples=</span><span class="si">%d</span><span class="s2">, &quot;</span>
-        <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> transition distances&quot;</span><span class="p">,</span>
-        <span class="n">dq</span><span class="o">.</span><span class="n">states</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="p">),</span>
+        <span class="s2">&quot;Loaded decoding quantities: states=</span><span class="si">%d</span><span class="s2">, csfs_samples=</span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2"> transition distances&quot;</span><span class="p">,</span>
+        <span class="n">dq</span><span class="o">.</span><span class="n">states</span><span class="p">,</span>
+        <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">dq</span><span class="o">.</span><span class="n">D_vectors</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">dq</span></div>
 
@@ -870,6 +1045,7 @@
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># Haplotype data (Oxford .hap format)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
+
 
 <div class="viewcode-block" id="read_hap">
 <a class="viewcode-back" href="../../../api/io.html#smckit.io.read_hap">[docs]</a>
@@ -910,13 +1086,41 @@
     <span class="n">positions</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">with</span> <span class="n">opener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">expected_haplotypes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">line_number</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">parts</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Malformed ASMC haplotype row </span><span class="si">{</span><span class="n">line_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: &quot;</span>
+                    <span class="s2">&quot;expected at least 7 columns.&quot;</span>
+                <span class="p">)</span>
             <span class="c1"># chr snpID pos alleleA alleleB hap0 hap1 ...</span>
             <span class="n">snp_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-            <span class="n">genotypes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">5</span><span class="p">:]]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">genotypes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">5</span><span class="p">:]]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Non-binary ASMC haplotype value on row </span><span class="si">{</span><span class="n">line_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">genotypes</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ASMC haplotype row </span><span class="si">{</span><span class="n">line_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> contains values &quot;</span>
+                    <span class="s2">&quot;other than 0 or 1.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">expected_haplotypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">expected_haplotypes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">genotypes</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">genotypes</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expected_haplotypes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Inconsistent haplotype count on row </span><span class="si">{</span><span class="n">line_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;expected </span><span class="si">{</span><span class="n">expected_haplotypes</span><span class="si">}</span><span class="s2">, found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">genotypes</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
             <span class="n">hap_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">genotypes</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">hap_rows</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ASMC haplotype file is empty: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># hap_rows is (n_sites, n_haps) -&gt; transpose to (n_haps, n_sites)</span>
     <span class="n">haplotypes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hap_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
@@ -952,19 +1156,22 @@
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">opener</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span> <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">open</span>
+    <span class="k">with</span> <span class="n">opener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="c1"># Skip header lines (2 header lines in Oxford format)</span>
         <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="s2">&quot;fam_id&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                    <span class="s2">&quot;ind_id&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;sex&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="k">else</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
-                <span class="p">})</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;fam_id&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="s2">&quot;ind_id&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="s2">&quot;missing&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;sex&quot;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="k">else</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
     <span class="k">return</span> <span class="n">samples</span></div>
 
 
@@ -994,7 +1201,11 @@
     <span class="k">with</span> <span class="n">opener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">gen_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span>  <span class="c1"># cM -&gt; Morgans</span>
+            <span class="c1"># Upstream parses map coordinates into float32 before converting</span>
+            <span class="c1"># cM to Morgans; preserving that order matters for long WGS HMMs.</span>
+            <span class="n">gen_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="mf">100.0</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="n">phys_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
 
     <span class="k">return</span> <span class="p">(</span>
@@ -1008,10 +1219,15 @@
 <span class="c1"># Undistinguished counts (for CSFS emission model)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
+
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_undistinguished_counts</span><span class="p">(</span>
     <span class="n">haplotypes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">csfs_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">fold_to_minor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;expected&quot;</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">allow_undersampled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute undistinguished allele counts for CSFS emissions.</span>
 
@@ -1019,8 +1235,10 @@
 <span class="sd">    &quot;undistinguished&quot; (non-focal) lineages, for each of the 3 observation</span>
 <span class="sd">    types (0 = both ancestral, 1 = heterozygous, 2 = both derived).</span>
 
-<span class="sd">    Uses the hypergeometric expected value (deterministic) rather than</span>
-<span class="sd">    random sampling, giving reproducible results independent of RNG state.</span>
+<span class="sd">    ``strategy=&quot;expected&quot;`` uses the rounded hypergeometric expectation and</span>
+<span class="sd">    is deterministic. ``strategy=&quot;sample&quot;`` draws from the same</span>
+<span class="sd">    hypergeometric distribution used by upstream ASMC; ``random_seed``</span>
+<span class="sd">    controls reproducibility.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1029,6 +1247,13 @@
 <span class="sd">        Total number of CSFS samples (from decoding quantities).</span>
 <span class="sd">    fold_to_minor : bool</span>
 <span class="sd">        Whether to fold allele counts to minor allele.</span>
+<span class="sd">    strategy : {&quot;expected&quot;, &quot;sample&quot;}</span>
+<span class="sd">        Deterministic expected count or a stochastic hypergeometric draw.</span>
+<span class="sd">    random_seed : int, optional</span>
+<span class="sd">        Seed used by ``strategy=&quot;sample&quot;``.</span>
+<span class="sd">    allow_undersampled : bool</span>
+<span class="sd">        Return unavailable counts instead of failing when the CSFS sample</span>
+<span class="sd">        requirement exceeds the input. This supports compressed decoding.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1036,7 +1261,22 @@
 <span class="sd">        Undistinguished counts for obs types 0, 1, 2. Value of -1 means</span>
 <span class="sd">        the count is invalid (out of range).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;expected&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;strategy must be one of: expected, sample&quot;</span><span class="p">)</span>
+
     <span class="n">n_haps</span><span class="p">,</span> <span class="n">n_sites</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">n_haps</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC requires at least two haplotypes.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">csfs_samples</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># Compressed test fixtures can omit CSFS tables entirely.</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">csfs_samples</span> <span class="o">&gt;</span> <span class="n">n_haps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">allow_undersampled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_sites</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;CSFS requires </span><span class="si">{</span><span class="n">csfs_samples</span><span class="si">}</span><span class="s2"> haplotypes but input contains only </span><span class="si">{</span><span class="n">n_haps</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
 
     <span class="c1"># Derived allele count per site</span>
     <span class="n">derived_counts</span> <span class="o">=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -1067,9 +1307,17 @@
                 <span class="n">undistinguished</span><span class="p">[</span><span class="n">site</span><span class="p">,</span> <span class="n">distinguished</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># Deterministic: expected value of hypergeometric, rounded</span>
-            <span class="c1"># E[X] = sample_size * successes / pop_size</span>
-            <span class="n">sample</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">sample_size</span> <span class="o">*</span> <span class="n">successes</span> <span class="o">/</span> <span class="n">pop_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+                <span class="n">sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="n">rng</span><span class="o">.</span><span class="n">hypergeometric</span><span class="p">(</span>
+                        <span class="n">successes</span><span class="p">,</span>
+                        <span class="n">pop_size</span> <span class="o">-</span> <span class="n">successes</span><span class="p">,</span>
+                        <span class="n">sample_size</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Deterministic expected value: E[X] = n * K / N.</span>
+                <span class="n">sample</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">sample_size</span> <span class="o">*</span> <span class="n">successes</span> <span class="o">/</span> <span class="n">pop_size</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">fold_to_minor</span> <span class="ow">and</span> <span class="p">(</span><span class="n">sample</span> <span class="o">+</span> <span class="n">distinguished</span> <span class="o">&gt;</span> <span class="n">csfs_samples</span> <span class="o">//</span> <span class="mi">2</span><span class="p">):</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="n">sample_size</span> <span class="o">-</span> <span class="n">sample</span>
@@ -1083,11 +1331,17 @@
 <span class="c1"># High-level loader</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
+
 <div class="viewcode-block" id="read_asmc">
 <a class="viewcode-back" href="../../../api/io.html#smckit.io.read_asmc">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_asmc</span><span class="p">(</span>
     <span class="n">file_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">dq_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">map_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fold_to_minor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">undistinguished_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;expected&quot;</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load ASMC input data from standard file set.</span>
 
@@ -1100,6 +1354,15 @@
 <span class="sd">        Common prefix for hap/samples/map files.</span>
 <span class="sd">    dq_file : str or Path</span>
 <span class="sd">        Path to ``.decodingQuantities.gz`` file.</span>
+<span class="sd">    map_file : str or Path, optional</span>
+<span class="sd">        Explicit genetic map path instead of ``{file_root}.map[.gz]``.</span>
+<span class="sd">    fold_to_minor : bool</span>
+<span class="sd">        Match the default upstream behavior by coding the minor allele as 1.</span>
+<span class="sd">        Set to false when ancestral alleles are already coded as 1.</span>
+<span class="sd">    undistinguished_strategy : {&quot;expected&quot;, &quot;sample&quot;}</span>
+<span class="sd">        Method for constructing CSFS undistinguished counts.</span>
+<span class="sd">    random_seed : int, optional</span>
+<span class="sd">        Seed used for stochastic hypergeometric sampling.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1111,21 +1374,61 @@
     <span class="c1"># Find haplotype file</span>
     <span class="n">hap_path</span> <span class="o">=</span> <span class="n">_find_file</span><span class="p">(</span><span class="n">file_root</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;.hap.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;.hap&quot;</span><span class="p">,</span> <span class="s2">&quot;.haps.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;.haps&quot;</span><span class="p">])</span>
     <span class="n">samples_path</span> <span class="o">=</span> <span class="n">_find_file</span><span class="p">(</span><span class="n">file_root</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;.samples&quot;</span><span class="p">,</span> <span class="s2">&quot;.sample&quot;</span><span class="p">])</span>
-    <span class="n">map_path</span> <span class="o">=</span> <span class="n">_find_file</span><span class="p">(</span><span class="n">file_root</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;.map.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;.map&quot;</span><span class="p">])</span>
+    <span class="n">map_path</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="n">map_file</span><span class="p">)</span> <span class="k">if</span> <span class="n">map_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_find_file</span><span class="p">(</span><span class="n">file_root</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;.map.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;.map&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">map_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ASMC genetic map does not exist: </span><span class="si">{</span><span class="n">map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">haplotypes</span><span class="p">,</span> <span class="n">snp_ids</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">flipped</span> <span class="o">=</span> <span class="n">read_hap</span><span class="p">(</span><span class="n">hap_path</span><span class="p">,</span> <span class="n">fold_to_minor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">haplotypes</span><span class="p">,</span> <span class="n">snp_ids</span><span class="p">,</span> <span class="n">hap_positions</span><span class="p">,</span> <span class="n">flipped</span> <span class="o">=</span> <span class="n">read_hap</span><span class="p">(</span>
+        <span class="n">hap_path</span><span class="p">,</span>
+        <span class="n">fold_to_minor</span><span class="o">=</span><span class="n">fold_to_minor</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="n">read_samples</span><span class="p">(</span><span class="n">samples_path</span><span class="p">)</span>
     <span class="n">genetic_positions</span><span class="p">,</span> <span class="n">physical_positions</span> <span class="o">=</span> <span class="n">read_map</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
     <span class="n">dq</span> <span class="o">=</span> <span class="n">read_decoding_quantities</span><span class="p">(</span><span class="n">dq_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">genetic_positions</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;ASMC haplotype and genetic-map site counts differ: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">genetic_positions</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">hap_positions</span><span class="p">),</span> <span class="n">physical_positions</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC haplotype and map physical positions do not match.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;ASMC sample and haplotype counts differ: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span><span class="si">}</span><span class="s2"> diploid samples imply </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span><span class="si">}</span><span class="s2"> haplotypes, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;found </span><span class="si">{</span><span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC genetic positions must be nondecreasing.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">physical_positions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC physical positions must be nondecreasing.&quot;</span><span class="p">)</span>
 
     <span class="c1"># Compute recombination rates between markers</span>
     <span class="n">rec_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">)</span>
-    <span class="n">rec_rates</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">genetic_positions</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">genetic_positions</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">genetic_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">genetic_positions</span><span class="p">)</span>
+    <span class="n">physical_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">physical_positions</span><span class="p">)</span>
+    <span class="n">informative</span> <span class="o">=</span> <span class="n">genetic_distances</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
+        <span class="n">genetic_distances</span><span class="p">,</span>
+        <span class="n">physical_distances</span><span class="p">,</span>
+        <span class="n">out</span><span class="o">=</span><span class="n">rec_rates</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+        <span class="n">where</span><span class="o">=</span><span class="n">informative</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">physical_distances</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">rec_rates</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">rec_rates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">rec_rates</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># Compute undistinguished counts for CSFS</span>
     <span class="n">undist_counts</span> <span class="o">=</span> <span class="n">compute_undistinguished_counts</span><span class="p">(</span>
-        <span class="n">haplotypes</span><span class="p">,</span> <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span><span class="p">,</span> <span class="n">fold_to_minor</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">haplotypes</span><span class="p">,</span>
+        <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span><span class="p">,</span>
+        <span class="n">fold_to_minor</span><span class="o">=</span><span class="n">fold_to_minor</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">undistinguished_strategy</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+        <span class="n">allow_undersampled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">data_has_csfs_sample_size</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">csfs_samples</span> <span class="o">&lt;=</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">SmcData</span><span class="p">()</span>
     <span class="n">data</span><span class="o">.</span><span class="n">sequences</span> <span class="o">=</span> <span class="n">haplotypes</span>
@@ -1138,12 +1441,24 @@
     <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;decoding_quantities&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dq</span>
     <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;undistinguished_counts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">undist_counts</span>
     <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;site_was_flipped&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flipped</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;fold_to_minor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fold_to_minor</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;undistinguished_strategy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">undistinguished_strategy</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;random_seed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_seed</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;csfs_sample_size_available&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_has_csfs_sample_size</span>
     <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;input_file_root&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_root</span><span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;decoding_quantities_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">dq_file</span><span class="p">))</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;map_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s2">&quot;source_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">hap_path</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">samples_path</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">map_path</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">dq_file</span><span class="p">)),</span>
+    <span class="p">]</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="s2">&quot;Loaded ASMC data: </span><span class="si">%d</span><span class="s2"> haplotypes, </span><span class="si">%d</span><span class="s2"> sites&quot;</span><span class="p">,</span>
-        <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">haplotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">data</span></div>
 
@@ -1155,9 +1470,51 @@
         <span class="n">candidate</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">candidate</span>
-    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Cannot find file with root &#39;</span><span class="si">{</span><span class="n">root</span><span class="si">}</span><span class="s2">&#39; and suffixes </span><span class="si">{</span><span class="n">suffixes</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot find file with root &#39;</span><span class="si">{</span><span class="n">root</span><span class="si">}</span><span class="s2">&#39; and suffixes </span><span class="si">{</span><span class="n">suffixes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_asmc_posterior_sums</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read an ASMC ``*.sumOverPairs[.gz]`` matrix.&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">opener</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span> <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">open</span>
+    <span class="k">with</span> <span class="n">opener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">write_asmc_posterior_sums</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write an original-compatible ASMC posterior-sum matrix.&quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">matrix</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC posterior sums must be a two-dimensional matrix.&quot;</span><span class="p">)</span>
+    <span class="n">opener</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span> <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">open</span>
+    <span class="k">with</span> <span class="n">opener</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.9g</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">merge_asmc_posterior_sums</span><span class="p">(</span>
+    <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge ASMC job outputs and optionally normalize each site.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one ASMC posterior-sum path is required.&quot;</span><span class="p">)</span>
+    <span class="n">matrices</span> <span class="o">=</span> <span class="p">[</span><span class="n">read_asmc_posterior_sums</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">]</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">shape</span> <span class="k">for</span> <span class="n">matrix</span> <span class="ow">in</span> <span class="n">matrices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ASMC posterior-sum matrices must have identical shapes.&quot;</span><span class="p">)</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">matrices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="n">totals</span> <span class="o">=</span> <span class="n">merged</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">totals</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">merged</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">totals</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">merged</span>
 </pre></div>
 
            </div>

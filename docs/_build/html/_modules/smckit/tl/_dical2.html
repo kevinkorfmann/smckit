@@ -106,6 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -114,6 +116,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -178,6 +186,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -336,6 +345,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#models-and-figures">Models and figures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
@@ -361,6 +373,14 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
@@ -417,17 +437,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
@@ -441,6 +453,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
 </ul>
@@ -462,10 +476,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#the-ode-relative-tolerance-must-match-the-java-oracle">12. The ODE relative tolerance must match the Java oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#preserve-the-ethan-trunk-solver-s-asymmetric-infinity-check">13. Preserve the Ethan trunk solver’s asymmetric infinity check</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#next-steps">Next steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#current-closure">Current closure</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals-psmc.html">PSMC Internals</a><ul>
@@ -565,6 +580,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -597,6 +616,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
@@ -606,6 +629,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_dical2_output"><code class="docutils literal notranslate"><span class="pre">write_dical2_output()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -633,19 +657,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -747,6 +788,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
@@ -762,7 +804,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcData</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._dical2</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiCal2Config</span><span class="p">,</span> <span class="n">DiCal2Demo</span><span class="p">,</span> <span class="n">DiCal2Epoch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit._provenance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._dical2</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DiCal2Config</span><span class="p">,</span>
+    <span class="n">DiCal2Demo</span><span class="p">,</span>
+    <span class="n">DiCal2Epoch</span><span class="p">,</span>
+    <span class="n">write_dical2_output</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.tl._implementation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">annotate_result</span><span class="p">,</span>
     <span class="n">choose_implementation</span><span class="p">,</span>
@@ -782,7 +830,10 @@
 <span class="n">_ODE_MAX_TIME</span> <span class="o">=</span> <span class="mf">2000.0</span>
 <span class="n">_ODE_FACTOR_START_MAX</span> <span class="o">=</span> <span class="mf">10.0</span>
 <span class="n">_ODE_ABS_TOL</span> <span class="o">=</span> <span class="mf">1e-14</span>
-<span class="n">_ODE_REL_TOL</span> <span class="o">=</span> <span class="mf">1e-13</span>
+<span class="c1"># ``solve_ivp`` clamps relative tolerances below 100 machine eps.  This is</span>
+<span class="c1"># the closest representable SciPy setting to diCal2&#39;s Higham-Hall rtol=1e-14</span>
+<span class="c1"># and avoids a warning while preserving the oracle-matched trajectory.</span>
+<span class="n">_ODE_REL_TOL</span> <span class="o">=</span> <span class="mf">100.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
 <span class="n">_META_MAX_NEW_POINT_TRIES</span> <span class="o">=</span> <span class="mi">50</span>
 
 
@@ -1724,17 +1775,16 @@
                 <span class="n">y_dot</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="o">-</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">curr_pop</span><span class="p">,</span> <span class="n">EPS</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">y_dot</span>
 
-        <span class="n">solution</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span>
-            <span class="n">rhs</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">),</span>
+        <span class="c1"># Upstream&#39;s Ethan trunk uses the same Higham-Hall integration</span>
+        <span class="c1"># tolerances as the demographic ODE core.  Reusing the native oracle-</span>
+        <span class="c1"># matched solver here is essential: looser trunk integration changes</span>
+        <span class="c1"># leave-one-out likelihoods even when the demographic core is exact.</span>
+        <span class="k">return</span> <span class="n">_solve_time_dependent_ode_system</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">start_sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;RK45&quot;</span><span class="p">,</span>
-            <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
-            <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
+            <span class="n">rhs</span><span class="p">,</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">start_time</span><span class="p">),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">end_time</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">solution</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ethan trunk ODE failed: </span><span class="si">{</span><span class="n">solution</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">solution</span><span class="o">.</span><span class="n">y</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_migrating_ethan_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">refined</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -2097,18 +2147,24 @@
     <span class="n">curr_end</span> <span class="o">=</span> <span class="n">curr_start</span> <span class="o">+</span> <span class="n">_ODE_INTEGRATION_LENGTH</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">integrate_segment</span><span class="p">(</span><span class="n">curr_start</span><span class="p">,</span> <span class="n">curr_end</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
     <span class="n">max_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">_ODE_FACTOR_START_MAX</span> <span class="o">*</span> <span class="n">curr_start</span><span class="p">,</span> <span class="n">_ODE_MAX_TIME</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">curr_deriv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">deriv</span><span class="p">(</span><span class="n">curr_end</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">curr_deriv</span><span class="p">)))</span> <span class="o">&lt;=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">EPS</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">curr_end</span> <span class="o">&gt;</span> <span class="n">max_time</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;The ODE solver computing the HMM probabilities ran too long. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;max_deriv=</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">curr_deriv</span><span class="p">)))</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+    <span class="n">curr_deriv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">deriv</span><span class="p">(</span><span class="n">curr_end</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="c1"># Preserve diCal2&#39;s asymmetric first equilibrium check exactly.  The Java</span>
+    <span class="c1"># implementation only continues when at least one derivative is positive;</span>
+    <span class="c1"># this matters for the all-negative Ethan trunk-size ODE.</span>
+    <span class="n">rerun</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">curr_deriv</span> <span class="o">&gt;</span> <span class="n">EPS</span><span class="p">))</span>
+    <span class="k">while</span> <span class="n">rerun</span><span class="p">:</span>
         <span class="n">next_end</span> <span class="o">=</span> <span class="n">curr_end</span> <span class="o">+</span> <span class="n">_ODE_INTEGRATION_LENGTH</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">integrate_segment</span><span class="p">(</span><span class="n">curr_end</span><span class="p">,</span> <span class="n">next_end</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
         <span class="n">curr_end</span> <span class="o">=</span> <span class="n">next_end</span>
+        <span class="n">curr_deriv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">deriv</span><span class="p">(</span><span class="n">curr_end</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">max_deriv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">curr_deriv</span><span class="p">)))</span>
+        <span class="n">rerun</span> <span class="o">=</span> <span class="n">max_deriv</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">EPS</span>
+        <span class="k">if</span> <span class="n">rerun</span> <span class="ow">and</span> <span class="n">curr_end</span> <span class="o">-</span> <span class="n">_ODE_INTEGRATION_LENGTH</span> <span class="o">&gt;</span> <span class="n">max_time</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;The ODE solver computing the HMM probabilities ran too long. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;max_deriv=</span><span class="si">{</span><span class="n">max_deriv</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_solve_time_dependent_probability_ode</span><span class="p">(</span>
@@ -2747,7 +2803,6 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_ref</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_anc_per_interval</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_ref</span><span class="p">):</span>
-                <span class="n">k_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_anc_per_interval</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="n">k_jm1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_anc_per_interval</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">k_j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_anc_per_interval</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                 <span class="n">f_jm1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_per_interval</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># (2*k_jm1, 2*k_jm1)</span>
@@ -5835,6 +5890,46 @@
     <span class="n">rounds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_dical2_json_default</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot serialize </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> to JSON.&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_persist_dical2_outputs</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Persist original-compatible objective output plus normalized JSON.&quot;&quot;&quot;</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="n">prefix</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">objective_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.dical2.txt&quot;</span><span class="p">)</span>
+    <span class="n">result_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.dical2.json&quot;</span><span class="p">)</span>
+    <span class="n">write_dical2_output</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">objective_path</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;dical2&quot;</span><span class="p">]</span>
+    <span class="n">artifacts</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;provenance&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;artifacts&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">artifacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;objective_output&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">objective_path</span><span class="p">),</span>
+            <span class="s2">&quot;sha256&quot;</span><span class="p">:</span> <span class="n">sha256_file</span><span class="p">(</span><span class="n">objective_path</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">result_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_dical2_json_default</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">artifacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;normalized_result&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">result_path</span><span class="p">),</span>
+            <span class="s2">&quot;sha256&quot;</span><span class="p">:</span> <span class="n">sha256_file</span><span class="p">(</span><span class="n">result_path</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+
 <div class="viewcode-block" id="dical2">
 <a class="viewcode-back" href="../../../api/tl.html#smckit.tl.dical2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">dical2</span><span class="p">(</span>
@@ -5858,6 +5953,7 @@
     <span class="n">implementation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
     <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">native_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">output_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run diCal2 demographic inference.</span>
 
@@ -5909,6 +6005,10 @@
 <span class="sd">        port. ``&quot;upstream&quot;`` runs the vendored ``diCal2.jar`` through the</span>
 <span class="sd">        public upstream bridge when the Java runtime is ready. ``&quot;auto&quot;``</span>
 <span class="sd">        resolves to the best available implementation.</span>
+<span class="sd">    output_prefix : path-like, optional</span>
+<span class="sd">        Write ``.dical2.txt`` objective output compatible with the upstream</span>
+<span class="sd">        stdout parser and a complete ``.dical2.json`` normalized result. Both</span>
+<span class="sd">        artifacts are hashed in provenance.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -5919,6 +6019,8 @@
     <span class="n">implementation_used</span> <span class="o">=</span> <span class="n">choose_implementation</span><span class="p">(</span>
         <span class="n">implementation</span><span class="p">,</span>
         <span class="n">upstream_available</span><span class="o">=</span><span class="n">method_upstream_available</span><span class="p">(</span><span class="s2">&quot;dical2&quot;</span><span class="p">),</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;dical2&quot;</span><span class="p">,</span>
+        <span class="n">requested_capabilities</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;upstream_options&quot;</span><span class="p">}</span> <span class="k">if</span> <span class="n">upstream_options</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">warn_if_native_not_trusted</span><span class="p">(</span><span class="s2">&quot;dical2&quot;</span><span class="p">,</span> <span class="n">implementation_used</span><span class="p">)</span>
     <span class="n">source_paths</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">uns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_paths&quot;</span><span class="p">,</span> <span class="p">{})</span>
@@ -6045,11 +6147,16 @@
         <span class="n">method_options</span><span class="o">=</span><span class="n">upstream_method_options</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">implementation_used</span> <span class="o">==</span> <span class="s2">&quot;upstream&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_dical2_upstream</span><span class="p">(</span>
+        <span class="n">result_data</span> <span class="o">=</span> <span class="n">_dical2_upstream</span><span class="p">(</span>
             <span class="n">data</span><span class="p">,</span>
             <span class="n">resolved</span><span class="o">=</span><span class="n">resolved_upstream</span><span class="p">,</span>
             <span class="n">cli_args</span><span class="o">=</span><span class="n">cli_args</span><span class="p">,</span>
             <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">_persist_dical2_outputs</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">result_data</span>
         <span class="p">)</span>
 
     <span class="n">initialization_metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -6305,10 +6412,14 @@
         <span class="s2">&quot;initialization&quot;</span><span class="p">:</span> <span class="n">initialization_metadata</span><span class="p">,</span>
         <span class="s2">&quot;meta_trace&quot;</span><span class="p">:</span> <span class="n">meta_trace</span><span class="p">,</span>
         <span class="s2">&quot;best_params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">ordered_param_values</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-    <span class="p">},</span> <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span> <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">)</span>
+    <span class="p">},</span> <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;dical2&quot;</span><span class="p">,</span> <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span> <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;generation_time&quot;</span><span class="p">,</span> <span class="n">generation_time</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">data</span></div>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_persist_dical2_outputs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">data</span>
+    <span class="p">)</span></div>
 
 
 
@@ -6357,6 +6468,26 @@
     <span class="k">if</span> <span class="n">interval_type</span> <span class="o">==</span> <span class="s2">&quot;customfixed&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;customFixed&quot;</span>
     <span class="k">return</span> <span class="n">interval_type</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_trunk_style_cli_name</span><span class="p">(</span><span class="n">trunk_style</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Restore the case-sensitive spelling accepted by the Java CLI.&quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;simple&quot;</span><span class="p">:</span> <span class="s2">&quot;simple&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;oldcake&quot;</span><span class="p">:</span> <span class="s2">&quot;oldCake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;meancake&quot;</span><span class="p">:</span> <span class="s2">&quot;meanCake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;multicake&quot;</span><span class="p">:</span> <span class="s2">&quot;multiCake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;multicakeupdating&quot;</span><span class="p">:</span> <span class="s2">&quot;multiCakeUpdating&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;migratingmulticake&quot;</span><span class="p">:</span> <span class="s2">&quot;migratingMultiCake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;migmulticakeupdating&quot;</span><span class="p">:</span> <span class="s2">&quot;migMultiCakeUpdating&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recursive&quot;</span><span class="p">:</span> <span class="s2">&quot;recursive&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;exactcake&quot;</span><span class="p">:</span> <span class="s2">&quot;exactCake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;migratingethan&quot;</span><span class="p">:</span> <span class="s2">&quot;migratingEthan&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">names</span><span class="p">[</span><span class="n">trunk_style</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported diCal2 trunk_style: </span><span class="si">{</span><span class="n">trunk_style</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_dical2_upstream</span><span class="p">(</span>
@@ -6450,6 +6581,13 @@
         <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--useParamRelErr&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">resolved</span><span class="o">.</span><span class="n">use_param_rel_err_m</span><span class="p">:</span>
         <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--useParamRelErrM&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--trunkStyle&quot;</span><span class="p">,</span> <span class="n">_trunk_style_cli_name</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">trunk_style</span><span class="p">)])</span>
+    <span class="k">if</span> <span class="n">resolved</span><span class="o">.</span><span class="n">trunk_style</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;simple&quot;</span><span class="p">,</span> <span class="s2">&quot;exactcake&quot;</span><span class="p">}:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--cakeStyle&quot;</span><span class="p">,</span> <span class="n">resolved</span><span class="o">.</span><span class="n">cake_style</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">resolved</span><span class="o">.</span><span class="n">add_trunk_intervals</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;--addTrunkIntervals&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">add_trunk_intervals</span><span class="p">))])</span>
+    <span class="k">if</span> <span class="n">resolved</span><span class="o">.</span><span class="n">ancient_deme_states</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--ancientDemeStates&quot;</span><span class="p">)</span>
     <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">cli_args</span><span class="p">)</span>
     <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">jar</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -6495,6 +6633,10 @@
                     <span class="s2">&quot;compositeLikelihood&quot;</span><span class="p">:</span> <span class="n">resolved</span><span class="o">.</span><span class="n">composite_mode</span><span class="p">,</span>
                     <span class="s2">&quot;lociPerHmmStep&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">loci_per_hmm_step</span><span class="p">),</span>
                     <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">resolved</span><span class="o">.</span><span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">seed</span><span class="p">),</span>
+                    <span class="s2">&quot;trunkStyle&quot;</span><span class="p">:</span> <span class="n">resolved</span><span class="o">.</span><span class="n">trunk_style</span><span class="p">,</span>
+                    <span class="s2">&quot;cakeStyle&quot;</span><span class="p">:</span> <span class="n">resolved</span><span class="o">.</span><span class="n">cake_style</span><span class="p">,</span>
+                    <span class="s2">&quot;addTrunkIntervals&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">add_trunk_intervals</span><span class="p">),</span>
+                    <span class="s2">&quot;ancientDemeStates&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">resolved</span><span class="o">.</span><span class="n">ancient_deme_states</span><span class="p">),</span>
                     <span class="s2">&quot;cli_args&quot;</span><span class="p">:</span> <span class="n">cli_args</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
@@ -6505,6 +6647,7 @@
                 <span class="p">},</span>
             <span class="p">),</span>
         <span class="p">},</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;dical2&quot;</span><span class="p">,</span>
         <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation_requested</span><span class="p">,</span>
         <span class="n">implementation_used</span><span class="o">=</span><span class="s2">&quot;upstream&quot;</span><span class="p">,</span>
     <span class="p">)</span>

@@ -6,6 +6,7 @@ See docs/smcpp_internals.md for the full mathematical reference.
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ import tempfile
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from scipy.linalg import expm
@@ -21,6 +23,9 @@ from scipy.optimize import minimize, minimize_scalar
 from scipy.special import comb
 
 from smckit._core import SmcData
+from smckit._provenance import sha256_file
+from smckit.io._smcpp_input import write_smcpp_input
+from smckit.io._smcpp_model import read_smcpp_model, write_smcpp_model
 from smckit.tl._implementation import (
     annotate_result,
     choose_implementation,
@@ -2684,6 +2689,129 @@ class SmcppResult:
     optimization_result: dict = field(default_factory=dict)
 
 
+def _initial_log_eta(
+    initial_model: SmcData | dict[str, Any] | str | Path,
+    target_time: np.ndarray,
+) -> np.ndarray:
+    """Interpolate a serialized SMC++ history onto native model knots."""
+    if isinstance(initial_model, (str, Path)):
+        payload = read_smcpp_model(initial_model)
+    elif isinstance(initial_model, SmcData):
+        payload = initial_model.results.get("smcpp")
+        if payload is None:
+            raise ValueError("initial_model SmcData has no SMC++ result.")
+    else:
+        payload = initial_model
+    if not isinstance(payload, dict):
+        raise TypeError("initial_model must be a model path, mapping, or SmcData.")
+
+    if "smckit" in payload:
+        normalized = payload["smckit"]
+        source_time = np.asarray(normalized["time"], dtype=float)
+        source_eta = np.asarray(normalized["eta"], dtype=float)
+    elif {"time", "eta"} <= payload.keys():
+        source_time = np.asarray(payload["time"], dtype=float)
+        source_eta = np.asarray(payload["eta"], dtype=float)
+    elif "model" in payload:
+        model = payload["model"]
+        source_time = np.asarray(model["knots"], dtype=float)
+        source_eta = np.exp(np.asarray(model["y"], dtype=float))
+    else:
+        raise ValueError("initial_model lacks normalized time/eta or an SMCModel block.")
+    if (
+        source_time.ndim != 1
+        or source_eta.shape != source_time.shape
+        or source_time.size == 0
+        or np.any(source_time <= 0)
+        or np.any(np.diff(source_time) <= 0)
+        or np.any(source_eta <= 0)
+    ):
+        raise ValueError("initial_model time and eta arrays must be positive and ordered.")
+    target = np.asarray(target_time, dtype=float)
+    if target.ndim != 1 or np.any(target <= 0):
+        raise ValueError("Native SMC++ initialization knots must be positive.")
+    return np.interp(
+        np.log(target),
+        np.log(source_time),
+        np.log(source_eta),
+        left=np.log(source_eta[0]),
+        right=np.log(source_eta[-1]),
+    )
+
+
+def _json_default(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, Path):
+        return str(value)
+    raise TypeError(f"Cannot serialize {type(value).__name__} to JSON.")
+
+
+def _persist_smcpp_outputs(data: SmcData, output_prefix: str | Path) -> SmcData:
+    prefix = Path(output_prefix).expanduser().resolve()
+    prefix.parent.mkdir(parents=True, exist_ok=True)
+    model_path = Path(f"{prefix}.smcpp.model.json")
+    result_path = Path(f"{prefix}.smcpp.json")
+    write_smcpp_model(data, model_path)
+    result = data.results["smcpp"]
+    artifacts = result["provenance"].setdefault("artifacts", [])
+    artifacts.append(
+        {
+            "kind": "model",
+            "path": str(model_path),
+            "sha256": sha256_file(model_path),
+        }
+    )
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
+    artifacts.append(
+        {
+            "kind": "normalized_result",
+            "path": str(result_path),
+            "sha256": sha256_file(result_path),
+        }
+    )
+    return data
+
+
+def _persist_smcpp_split_outputs(data: SmcData, output_prefix: str | Path) -> SmcData:
+    """Persist the normalized split result and original upstream model JSON."""
+    prefix = Path(output_prefix).expanduser().resolve()
+    prefix.parent.mkdir(parents=True, exist_ok=True)
+    model_path = Path(f"{prefix}.smcpp.split.model.json")
+    result_path = Path(f"{prefix}.smcpp.split.json")
+    result = data.results["smcpp"]
+    upstream_model = result["upstream"]["model"]
+    model_path.write_text(
+        json.dumps(upstream_model, indent=2, sort_keys=True, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
+    artifacts = result["provenance"].setdefault("artifacts", [])
+    artifacts.append(
+        {
+            "kind": "split_model",
+            "path": str(model_path),
+            "sha256": sha256_file(model_path),
+        }
+    )
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
+    artifacts.append(
+        {
+            "kind": "normalized_split_result",
+            "path": str(result_path),
+            "sha256": sha256_file(result_path),
+        }
+    )
+    return data
+
+
 def _resolve_upstream_smcpp_python() -> str | None:
     """Locate the controlled Python environment that can run upstream SMC++."""
     env_python = os.environ.get("SMCKIT_SMCPP_PYTHON")
@@ -2803,6 +2931,122 @@ def _run_upstream_smcpp(
             )
 
         return json.loads((tmpdir_path / "smcpp_result.json").read_text(encoding="utf-8"))
+
+
+def _materialize_smcpp_marginal_model(
+    value: SmcData | dict[str, Any] | str | Path,
+    target: Path,
+    *,
+    population: str,
+) -> dict[str, Any]:
+    """Write one marginal model in the JSON shape consumed by ``smc++ split``."""
+    if isinstance(value, (str, Path)):
+        payload = copy.deepcopy(read_smcpp_model(value))
+        payload["model"]["pid"] = population
+        payload["hidden_states"] = {population: [0.0, float("inf")]}
+        target.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return payload
+    write_smcpp_model(value, target, population=population)
+    return read_smcpp_model(target)
+
+
+def _run_upstream_smcpp_split(
+    data: SmcData,
+    *,
+    marginal_models: tuple[
+        SmcData | dict[str, Any] | str | Path,
+        SmcData | dict[str, Any] | str | Path,
+    ],
+    generation_time: float,
+    regularization: float,
+    max_iterations: int,
+    seed: int | None,
+) -> dict[str, Any]:
+    """Run the preserved upstream SMC++ two-population split workflow."""
+    python_exe = _resolve_upstream_smcpp_python()
+    if python_exe is None:
+        raise RuntimeError(
+            "Upstream SMC++ backend is unavailable. Set SMCKIT_SMCPP_PYTHON "
+            "or create /tmp/smcpp39/bin/python."
+        )
+    if int(data.uns.get("n_populations", 1)) != 2:
+        raise ValueError("SMC++ split requires exactly two populations.")
+    if len(marginal_models) != 2:
+        raise ValueError("SMC++ split requires exactly two marginal population models.")
+
+    runner = Path(__file__).with_name("_smcpp_upstream_runner.py")
+    population_ids = list(data.uns.get("populations") or data.uns.get("pids") or [])
+    if len(population_ids) != 2:
+        population_ids = ["population_1", "population_2"]
+
+    with tempfile.TemporaryDirectory(prefix="smckit-smcpp-split-") as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        input_path = write_smcpp_input(data, tmpdir_path / "joint.smc")
+        model_paths = [
+            tmpdir_path / "population_1.model.json",
+            tmpdir_path / "population_2.model.json",
+        ]
+        model_payloads = [
+            _materialize_smcpp_marginal_model(
+                marginal_models[index],
+                model_paths[index],
+                population=population_ids[index],
+            )
+            for index in range(2)
+        ]
+        theta = [float(payload["theta"]) for payload in model_payloads]
+        rho = [float(payload["rho"]) for payload in model_payloads]
+        n0 = [float(payload["model"]["N0"]) for payload in model_payloads]
+        if not np.isclose(theta[0], theta[1], rtol=0.0, atol=1e-15):
+            raise ValueError("SMC++ marginal models must have identical theta values.")
+        if not np.isclose(rho[0], rho[1], rtol=0.0, atol=1e-15):
+            raise ValueError("SMC++ marginal models must have identical rho values.")
+        if not np.isclose(n0[0], n0[1], rtol=0.0, atol=1e-12):
+            raise ValueError("SMC++ marginal models must have identical N0 values.")
+
+        mu = theta[0] / (2.0 * n0[0])
+        recombination_rate = rho[0] / (2.0 * n0[0])
+        payload = {
+            "mode": "split",
+            "input_paths": [str(input_path)],
+            "pop1": str(model_paths[0]),
+            "pop2": str(model_paths[1]),
+            "output_json": str(tmpdir_path / "smcpp_split_result.json"),
+            "mu": mu,
+            "recombination_rate": recombination_rate,
+            "generation_time": float(generation_time),
+            "n_intervals": max(len(model_payloads[0]["model"]["knots"]), 2),
+            "regularization": float(regularization),
+            "max_iterations": int(max_iterations),
+            "seed": None if seed is None else int(seed),
+            "trace": False,
+        }
+        payload_path = tmpdir_path / "runner_payload.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+        env = os.environ.copy()
+        env.setdefault("MPLCONFIGDIR", str(tmpdir_path / "mplconfig"))
+        proc = subprocess.run(
+            [python_exe, str(runner), str(payload_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                "Upstream SMC++ split backend failed.\n"
+                f"stdout:\n{proc.stdout}\n"
+                f"stderr:\n{proc.stderr}"
+            )
+        result = json.loads(
+            (tmpdir_path / "smcpp_split_result.json").read_text(encoding="utf-8")
+        )
+        result["stdout"] = proc.stdout
+        result["stderr"] = proc.stderr
+        return result
 
 
 def _run_upstream_smcpp_fixed_model_stats(
@@ -3271,6 +3515,7 @@ def _smcpp_native(
     regularization: float = 1.0,
     max_iterations: int = 100,
     seed: int | None = None,
+    initial_model: SmcData | dict[str, Any] | str | Path | None = None,
     implementation_requested: str = "native",
 ) -> SmcData:
     """Run SMC++ demographic inference.
@@ -3357,7 +3602,7 @@ def _smcpp_native(
     log_eta_init = np.full(K, np.log(init_eta0), dtype=np.float64)
     init_jitter = 0.0001 if n_distinguished == 2 else 0.01
 
-    if n_distinguished == 2 and K_requested >= 2:
+    if n_distinguished == 2 and K_requested >= 2 and initial_model is None:
         log_eta_prefit_init = np.full(len(prefit_t) - 1, np.log(init_eta0), dtype=np.float64)
         log_eta_prefit_init += rng.normal(0.0, init_jitter, len(log_eta_prefit_init))
         prefit_hidden_states = np.array([0.0, np.inf], dtype=np.float64)
@@ -3394,6 +3639,9 @@ def _smcpp_native(
         )
     else:
         log_eta_init += rng.normal(0, init_jitter, K)
+    if initial_model is not None:
+        initialization_time = t[1:] if n_distinguished == 2 else (t[:-1] + t[1:]) / 2.0
+        log_eta_init = _initial_log_eta(initial_model, initialization_time)
 
     fit_records = records
     if n_distinguished == 2:
@@ -3579,6 +3827,7 @@ def _smcpp_native(
         "native_hidden_states": native_hidden_states,
         "preprocessing": preprocessing,
         "observation_scale": float(observation_scale),
+        "initial_model_used": initial_model is not None,
     }, method_name="smcpp", implementation_requested=implementation_requested, implementation_used="native")
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
@@ -3664,6 +3913,76 @@ def _smcpp_upstream(
     return data
 
 
+def _smcpp_upstream_split(
+    data: SmcData,
+    *,
+    marginal_models: tuple[
+        SmcData | dict[str, Any] | str | Path,
+        SmcData | dict[str, Any] | str | Path,
+    ],
+    generation_time: float,
+    regularization: float,
+    max_iterations: int,
+    seed: int | None,
+    implementation_requested: str,
+) -> SmcData:
+    """Run and normalize the preserved SMC++ two-population split analysis."""
+    payload = _run_upstream_smcpp_split(
+        data,
+        marginal_models=marginal_models,
+        generation_time=generation_time,
+        regularization=regularization,
+        max_iterations=max_iterations,
+        seed=seed,
+    )
+    population_models = [
+        {
+            "population": model["population"],
+            "time": np.asarray(model["time"], dtype=np.float64),
+            "ne": np.asarray(model["ne"], dtype=np.float64),
+        }
+        for model in payload["population_models"]
+    ]
+    data.results["smcpp"] = annotate_result(
+        {
+            "analysis": "split",
+            "backend": "upstream",
+            "populations": list(payload["population_ids"]),
+            "population_models": population_models,
+            "split": float(payload["split"]),
+            "split_generations": float(payload["split_generations"]),
+            "split_years": float(payload["split_years"]),
+            "theta": float(payload["theta"]),
+            "rho": float(payload["rho"]),
+            "n0": float(payload["n0"]),
+            "log_likelihood": float(payload["log_likelihood"]),
+            "regularization": float(payload["regularization"]),
+            "optimization": dict(payload["optimization"]),
+            "upstream": standard_upstream_metadata(
+                "smcpp",
+                effective_args={
+                    "workflow": "split",
+                    "generation_time": float(generation_time),
+                    "regularization": float(regularization),
+                    "max_iterations": int(max_iterations),
+                    "seed": None if seed is None else int(seed),
+                },
+                extra={
+                    "model": payload["model"],
+                    "hidden_states": payload["hidden_states"],
+                    "stdout": payload["stdout"],
+                    "stderr": payload["stderr"],
+                },
+            ),
+        },
+        method_name="smcpp",
+        implementation_requested=implementation_requested,
+        implementation_used="upstream",
+    )
+    data.params["generation_time"] = generation_time
+    return data
+
+
 def smcpp(
     data: SmcData,
     n_intervals: int = 32,
@@ -3679,28 +3998,81 @@ def smcpp(
     backend: str | None = None,
     upstream_options: dict | None = None,
     native_options: dict | None = None,
+    initial_model: SmcData | dict[str, Any] | str | Path | None = None,
+    split_models: tuple[
+        SmcData | dict[str, Any] | str | Path,
+        SmcData | dict[str, Any] | str | Path,
+    ]
+    | None = None,
+    output_prefix: str | Path | None = None,
 ) -> SmcData:
     """Run SMC++ demographic inference.
 
     Parameters are the same as the native implementation. ``implementation``
     may be ``"native"``, ``"upstream"``, or ``"auto"``. ``"auto"`` selects
     native only after the requested capability has passed its promotion gate.
-    ``backend`` is a deprecated compatibility alias.
+    ``backend`` is a deprecated compatibility alias. For a two-population
+    input, pass the two fitted marginal histories as ``split_models=(pop1,
+    pop2)``. The preserved upstream split workflow is available now; native
+    split inference remains an explicit unsupported capability.
     """
     implementation = normalize_implementation(
         implementation,
         backend=backend,
     )
+    n_populations = int(data.uns.get("n_populations", 1))
+    requested_capabilities: set[str] = set()
+    if upstream_options:
+        requested_capabilities.add("upstream_options")
+    if initial_model is not None or output_prefix is not None:
+        requested_capabilities.add("model_serialization")
+    if n_populations == 2 or split_models is not None:
+        requested_capabilities.add("split")
     implementation_used = choose_implementation(
         implementation,
         upstream_available=method_upstream_available("smcpp"),
         method_name="smcpp",
-        requested_capabilities={"upstream_options"} if upstream_options else None,
+        requested_capabilities=requested_capabilities or None,
     )
     warn_if_native_not_trusted("smcpp", implementation_used)
 
+    if n_populations != 1:
+        if n_populations != 2:
+            raise NotImplementedError("SMC++ supports one- or two-population inputs.")
+        if implementation_used == "native":
+            raise NotImplementedError(
+                "Two-population SMC++ data are preserved losslessly, but native split "
+                "inference is not yet implemented."
+            )
+        if split_models is None:
+            raise ValueError(
+                "Upstream SMC++ split requires split_models=(population_1, population_2)."
+            )
+        if initial_model is not None:
+            raise ValueError("Use split_models, not initial_model, for SMC++ split inference.")
+        result_data = _smcpp_upstream_split(
+            data,
+            marginal_models=split_models,
+            generation_time=generation_time,
+            regularization=regularization,
+            max_iterations=max_iterations,
+            seed=seed,
+            implementation_requested=implementation,
+        )
+        return (
+            _persist_smcpp_split_outputs(result_data, output_prefix)
+            if output_prefix is not None
+            else result_data
+        )
+    if split_models is not None:
+        raise ValueError("split_models requires a two-population SMC++ input.")
+
     if implementation_used == "upstream":
-        return _smcpp_upstream(
+        if initial_model is not None:
+            raise NotImplementedError(
+                "The smckit upstream SMC++ bridge does not yet accept an initial model."
+            )
+        result_data = _smcpp_upstream(
             data,
             n_intervals=n_intervals,
             max_t=max_t,
@@ -3714,12 +4086,17 @@ def smcpp(
             upstream_options=upstream_options,
             implementation_requested=implementation,
         )
+        return (
+            _persist_smcpp_outputs(result_data, output_prefix)
+            if output_prefix is not None
+            else result_data
+        )
 
     if native_options:
         unsupported = ", ".join(sorted(native_options))
         raise TypeError(f"Unsupported smcpp native_options keys: {unsupported}")
 
-    return _smcpp_native(
+    result_data = _smcpp_native(
         data,
         n_intervals=n_intervals,
         max_t=max_t,
@@ -3730,5 +4107,151 @@ def smcpp(
         regularization=regularization,
         max_iterations=max_iterations,
         seed=seed,
+        initial_model=initial_model,
         implementation_requested=implementation,
+    )
+    return (
+        _persist_smcpp_outputs(result_data, output_prefix)
+        if output_prefix is not None
+        else result_data
+    )
+
+
+def _smcpp_heldout_log_likelihood(data: SmcData, result: dict[str, Any]) -> float:
+    records = data.uns["records"]
+    n_undist = int(data.uns["n_undist"])
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+    observation_scale = float(result.get("observation_scale", 1.0))
+    if n_distinguished == 2 and result.get("preprocessing", {}).get("applied"):
+        try:
+            records = _preprocess_onepop_records(records, n_undist)
+        except RuntimeError:
+            observation_scale = 1.0
+    rho_base = float(result["rho"])
+    if n_distinguished != 2:
+        rho_base /= 2.0
+    params = compute_hmm_params(
+        np.asarray(result["eta"], dtype=float),
+        n_undist,
+        np.asarray(result["time_boundaries"], dtype=float),
+        float(result["theta"]),
+        rho_base,
+        n_distinguished=n_distinguished,
+        hidden_states=result.get("native_hidden_states"),
+        polarization_error=0.5 if n_distinguished == 2 else 0.0,
+        observation_scale=observation_scale,
+    )
+    log_likelihood = 0.0
+    for record in records:
+        observations = _maybe_expand_onepop_observation_spans(
+            record["observations"],
+            params,
+        )
+        if not observations:
+            continue
+        _, scales = _forward_spans(params, observations)
+        log_likelihood += _log_likelihood_spans(scales)
+    return float(log_likelihood)
+
+
+def smcpp_cross_validate(
+    data: SmcData,
+    *,
+    regularization_candidates: list[float] | tuple[float, ...] = tuple(range(2, 10)),
+    folds: int = 2,
+    seed: int = 1,
+    output_prefix: str | Path | None = None,
+    **fit_options: Any,
+) -> SmcData:
+    """Select SMC++ regularization by held-out contig log likelihood.
+
+    This mirrors upstream ``smc++ cv``: whole records/contigs are assigned to
+    folds, every regularization candidate is fitted on the remaining records,
+    and the candidate with the largest summed held-out HMM log likelihood is
+    refitted on the complete dataset.
+    """
+    records = list(data.uns.get("records", []))
+    if not 2 <= folds <= len(records):
+        raise ValueError("folds must be between 2 and the number of SMC++ records.")
+    candidates = [float(value) for value in regularization_candidates]
+    if not candidates or any(not np.isfinite(value) or value < 0 for value in candidates):
+        raise ValueError("regularization_candidates must contain finite non-negative values.")
+    if len(candidates) != len(set(candidates)):
+        raise ValueError("regularization_candidates must be unique.")
+    forbidden = {"implementation", "regularization", "seed", "output_prefix"}
+    conflicts = forbidden.intersection(fit_options)
+    if conflicts:
+        raise TypeError(
+            "smcpp_cross_validate controls these options directly: "
+            + ", ".join(sorted(conflicts))
+        )
+    if int(data.uns.get("n_populations", 1)) != 1:
+        raise NotImplementedError(
+            "Native SMC++ cross-validation currently supports one population."
+        )
+
+    fold_indices = [
+        np.asarray(indices, dtype=int)
+        for indices in np.array_split(np.arange(len(records)), folds)
+    ]
+    candidate_results: list[dict[str, Any]] = []
+    for candidate_index, candidate in enumerate(candidates):
+        fold_results: list[dict[str, Any]] = []
+        for fold_index, test_indices in enumerate(fold_indices):
+            test_set = set(test_indices.tolist())
+            training = copy.deepcopy(data)
+            training.uns["records"] = [
+                record for index, record in enumerate(records) if index not in test_set
+            ]
+            fitted = smcpp(
+                training,
+                regularization=candidate,
+                seed=seed + candidate_index * folds + fold_index,
+                implementation="native",
+                **fit_options,
+            )
+            held_out = copy.deepcopy(data)
+            held_out.uns["records"] = [
+                record for index, record in enumerate(records) if index in test_set
+            ]
+            heldout_log_likelihood = _smcpp_heldout_log_likelihood(
+                held_out,
+                fitted.results["smcpp"],
+            )
+            fold_results.append(
+                {
+                    "fold": fold_index,
+                    "training_records": len(training.uns["records"]),
+                    "heldout_records": len(held_out.uns["records"]),
+                    "heldout_log_likelihood": heldout_log_likelihood,
+                }
+            )
+        candidate_results.append(
+            {
+                "regularization": candidate,
+                "heldout_log_likelihood": float(
+                    sum(fold["heldout_log_likelihood"] for fold in fold_results)
+                ),
+                "folds": fold_results,
+            }
+        )
+    best = max(candidate_results, key=lambda item: item["heldout_log_likelihood"])
+    final = smcpp(
+        data,
+        regularization=float(best["regularization"]),
+        seed=seed,
+        implementation="native",
+        **fit_options,
+    )
+    final.results["smcpp"]["cross_validation"] = {
+        "folds": folds,
+        "seed": seed,
+        "candidates": candidate_results,
+        "selected_regularization": float(best["regularization"]),
+        "selection_metric": "summed held-out HMM log likelihood",
+    }
+    return (
+        _persist_smcpp_outputs(final, output_prefix)
+        if output_prefix is not None
+        else final
     )

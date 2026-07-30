@@ -15,6 +15,8 @@ This page answers two practical questions:
 | {func}`smckit.io.read_asmc` | prefix for `.hap.gz`, `.samples`, `.map.gz` | ASMC |
 | {func}`smckit.io.read_decoding_quantities` | `.decodingQuantities.gz` | ASMC |
 | {func}`smckit.io.read_smcpp_input` | `.smc` / `.smc.gz` | SMC++ |
+| {func}`smckit.pp.smcpp_from_vcf` | VCF/VCF.GZ + optional BED | SMC++ preparation |
+| {func}`smckit.io.read_smcpp_model` | `.smcpp.model.json` | SMC++ reload/plot |
 | {func}`smckit.io.read_dical2` | model-file bundle + sequence input | diCal2 |
 
 ## PSMCFA
@@ -77,14 +79,18 @@ Examples:
 Used by: **SMC++**
 
 An `.smc.gz` file stores the genome in span-encoded form rather than listing
-every position. It is the standard SMC++ input produced by the upstream
-tooling.
+every position. smckit ships a compact packaged fixture at
+`smckit.io.example_path("smcpp/example.smc.gz")`.
 
-The repository does not currently ship a compact `.smc.gz` fixture. The best
-starting point is the upstream project:
+Use {func}`smckit.pp.smcpp_from_vcf` for one- or two-population VCF input,
+explicit distinguished haplotypes, BED masks, gzip output, and conservative
+missing-run handling. The reader/writer preserve all population triplets.
+Native split inference remains under development, but the I/O layer never
+silently discards population columns.
 
-- `https://github.com/popgenmethods/smcpp`
-- `https://github.com/popgenmethods/smcpp/tree/master/example`
+Fitted models use `.smcpp.model.json`. These files contain a stable normalized
+section and an original-style `SMCModel` block, and can initialize a later
+native fit.
 
 ## diCal2 model-file bundle
 

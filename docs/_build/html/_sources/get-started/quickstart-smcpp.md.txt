@@ -37,6 +37,7 @@ data = smckit.tl.smcpp(
     mu=1.25e-8,
     generation_time=25.0,
     implementation="native",
+    output_prefix="results/example",
 )
 ```
 
@@ -54,6 +55,50 @@ print(res["log_likelihood"])
 print(res["ne"][:5])
 print(res["optimization"])
 ```
+
+The output prefix writes a normalized result and a reloadable model:
+
+- `results/example.smcpp.json`
+- `results/example.smcpp.model.json`
+
+Both paths and hashes are stored in `res["provenance"]["artifacts"]`.
+
+## Start from VCF
+
+```python
+data = smckit.pp.smcpp_from_vcf(
+    "cohort.vcf.gz",
+    "results/chr22.smc.gz",
+    contig="chr22",
+    populations={"EUR": ["sample-a", "sample-b", "sample-c"]},
+    distinguished=[("sample-a", 0), ("sample-a", 1)],
+    mask_path="chr22-callable-mask.bed",
+)
+```
+
+BED masks use 0-based half-open coordinates. Use `missing_cutoff` instead of a
+mask to mark sufficiently long unobserved stretches as missing.
+
+## Select regularization by held-out contigs
+
+Combine multiple records in `data.uns["records"]`, then run:
+
+```python
+data = smckit.tl.smcpp_cross_validate(
+    data,
+    regularization_candidates=[2, 3, 4, 5, 6, 7, 8, 9],
+    folds=2,
+    seed=1729,
+    n_intervals=32,
+    max_iterations=100,
+)
+
+ax = smckit.pl.smcpp_cross_validation_scores(data)
+smckit.pl.save_smcpp_figure(ax.figure, "results/smcpp-cv.pdf")
+```
+
+Cross-validation splits whole records/contigs, matching the original SMC++
+procedure.
 
 For a fuller explanation of `regularization`, input interpretation, and the
 optimization payload, see the [SMC++ method page](../methods/smcpp.md).

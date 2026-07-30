@@ -1,9 +1,12 @@
 """Unit tests for diCal2 implementation."""
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
+from smckit._core import SmcData
 from smckit.io._dical2 import (
     DiCal2Config,
     DiCal2Demo,
@@ -14,6 +17,7 @@ from smckit.io._dical2 import (
     read_dical2_demo,
     read_dical2_param,
     read_dical2_rates,
+    write_dical2_output,
 )
 from smckit.tl._dical2 import (
     DICAL2_T_INF,
@@ -24,6 +28,8 @@ from smckit.tl._dical2 import (
     _build_native_core,
     _JavaRandom,
     _old_interval_boundaries,
+    _parse_dical2_stdout,
+    _persist_dical2_outputs,
     _resolve_dical2_options,
     _resolve_interval_boundaries,
     backward_log,
@@ -344,6 +350,42 @@ class TestReadDical2:
             np.array([[1, 0], [0, 1]], dtype=np.int64),
         )
         np.testing.assert_array_equal(config.sample_sizes, np.array([1, 1], dtype=np.int64))
+
+
+class TestDical2Output:
+    def test_native_objective_output_round_trips_through_upstream_parser(self, tmp_path):
+        result = {
+            "best_params": np.array([1.25, 2.5]),
+            "log_likelihood": -12.75,
+        }
+        path = write_dical2_output(result, tmp_path / "fit.txt")
+        rows, best = _parse_dical2_stdout(path.read_text())
+
+        assert len(rows) == 1
+        assert best is not None
+        assert best["log_likelihood"] == pytest.approx(-12.75)
+        np.testing.assert_allclose(best["params"], [1.25, 2.5])
+        assert best["id"] == "smckit-native-best"
+
+    def test_output_prefix_records_objective_and_json_artifacts(self, tmp_path):
+        data = SmcData()
+        data.results["dical2"] = {
+            "best_params": np.array([0.5, 1.5]),
+            "log_likelihood": -3.0,
+            "provenance": {"artifacts": []},
+        }
+        _persist_dical2_outputs(data, tmp_path / "analysis")
+
+        objective_path = tmp_path / "analysis.dical2.txt"
+        result_path = tmp_path / "analysis.dical2.json"
+        assert objective_path.is_file()
+        assert result_path.is_file()
+        on_disk = json.loads(result_path.read_text())
+        assert on_disk["best_params"] == [0.5, 1.5]
+        assert {
+            artifact["kind"]
+            for artifact in data.results["dical2"]["provenance"]["artifacts"]
+        } == {"objective_output", "normalized_result"}
 
 
 # ---------------------------------------------------------------------------

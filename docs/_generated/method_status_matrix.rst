@@ -12,49 +12,49 @@
      - ✓
      - ✓
      - `0.9999223 lambda corr`
-     - Public upstream bridge now runs the vendored binary; native port remains stable.
+     - Preserved upstream execution and the native port cover missing and multi-record inputs, explicit intervals and parameters, divergence, bootstrap, decoding, transition capping, and original-compatible result files.
    * - ASMC
      - ✓
      - ✓
      - ✓
-     - `0.9984 MAP agreement`
-     - Public upstream path uses the documented ASMC executable outputs.
+     - `array: 100% MAP and 2.99e-4 max mean error; dense sequence: >=99.9% MAP and <=1e-3 max mean error`
+     - Native parity covers array and dense sequence decoding, folded or ancestral coding, CSFS spacing/compression, explicit pairs and interval burn-in, job partitioning, complete posterior summaries, and original-compatible artifacts.
    * - MSMC2
      - ✓
      - ✓
      - ✓
      - `>= 0.999999865 lambda corr`
-     - Public upstream bridge runs the vendored MSMC2 CLI.
+     - Native parity covers pair selection, ambiguous and missing data, multiple chromosomes/files, fixed recombination, Li-Durbin and quantile boundaries, explicit initialization, and original-compatible artifacts.
    * - MSMC-IM
      - ✓
      - ✓
      - ✓
-     - `strict payload match on 4-case upstream-backed oracle matrix`
-     - Public upstream bridge runs the vendored Python fitter; native and upstream now share the same public payload contract and are interchangeable on the enforced Yoruba/French oracle matrix.
+     - `strict payload match on four Yoruba/French controls and an independent synthetic split family`
+     - The native fitter and preserved upstream runner share the corrected/raw population-size, migration, split-quantile, chi-square, and estimates-artifact contract across two enforced oracle families.
    * - eSMC2
      - ✓
      - ✓
      - ✓
      - `<= 0.3605% max tracked Xi rel err`
-     - Native and upstream are interchangeable on the tracked public `.psmcfa` and `multihetsep` input-family matrix, plus the fixed-rho, rho-redo, beta, sigma, beta+sigma, and grouped-state oracle cases.
+     - Native and upstream are interchangeable on the tracked public input and model matrix; native output preserves the original numeric tables, while raw upstream R execution exposes the complete exported helper package.
    * - SMC++
      - ✓
      - ✓
      - ✓
      - `>= 0.999125 tracked one-pop log-Ne corr`
-     - Public upstream path exists; the native one-pop path now clears the strict small control and larger tracked `.smc` parity fixtures, with fixed-model E-step statistics matching upstream on the same matrix.
+     - The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Two-population inputs now have a typed, normalized preserved-upstream split workflow with exact model artifacts; native split inference remains blocked.
    * - diCal2
      - ✓
      - ✓
      - ✗
-     - `README exp search matches best params; fixed-point dloglik=7.45e-4. README IM search matches best params; fixed-point dloglik=3.15e-2.`
-     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README exp and IM searches now reach the upstream best-fit parameter vectors; the remaining gap is the native fixed-point likelihood value at those shared points.
+     - `README exp and IM searches match best parameters; fixed-point dloglik <=5.38e-11.`
+     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README exponential-growth and isolation-migration searches reach the upstream best-fit parameter vectors, and their fixed-point likelihoods agree within 5.38e-11 after reproducing the upstream ODE tolerance and Ethan-trunk equilibrium behavior.
    * - PHLASH
      - ✓
      - n/a
      - ✗
-     - `external package integration`
-     - Normalized adapter for the maintained PHLASH 1.0.6 Python package; no independent rewrite is planned for 1.0.
+     - `real-package PSMCFA smoke plus normalized posterior contract`
+     - Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.
    * - SSM
      - n/a
      - ✓

@@ -13,14 +13,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from smckit.io._asmc import read_asmc, read_decoding_quantities, read_hap, read_map
+from smckit.io._asmc import read_asmc
 from smckit.tl._asmc import (
     asmc,
     backward,
     compute_posteriors,
     encode_pair,
     forward,
-    posterior_map_tmrca,
     posterior_mean_tmrca,
     prepare_emissions,
 )
@@ -208,9 +207,9 @@ class TestRegressionComparison:
     def test_posterior_means_match_reference_within_tolerance(
         self, smckit_results, ref_posterior_means
     ):
-        """Posterior means should remain numerically close to the reference."""
+        """Every posterior mean clears the roadmap's 0.1% scalar gate."""
         our_means = np.array(smckit_results["per_pair_posterior_means"])
-        assert np.allclose(our_means, ref_posterior_means, rtol=1e-2)
+        assert np.allclose(our_means, ref_posterior_means, rtol=1e-3)
 
     def test_sum_of_posteriors_shape(self, smckit_results):
         sop = smckit_results["sum_of_posteriors"]
@@ -235,10 +234,10 @@ class TestRegressionComparison:
             assert m.max() < n_states
 
     def test_map_agreement_with_reference(self, smckit_results, ref_maps):
-        """MAP state indices should stay close to the upstream regression output."""
+        """MAP state indices should agree on at least 99.9% of sites."""
         our_maps = np.array(smckit_results["per_pair_maps"])
         ref_maps = ref_maps.astype(np.int32)
-        assert np.mean(our_maps == ref_maps) > 0.75
+        assert np.mean(our_maps == ref_maps) >= 0.999
         for pair_idx in range(3):
             corr = np.corrcoef(our_maps[pair_idx], ref_maps[pair_idx])[0, 1]
-            assert corr > 0.97, f"Pair {pair_idx}: MAP correlation {corr:.3f} too low"
+            assert corr > 0.999, f"Pair {pair_idx}: MAP correlation {corr:.6f} too low"
