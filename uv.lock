@@ -4449,7 +4449,9 @@ asmc = [
 dev = [
     { name = "build" },
     { name = "hatchling" },
+    { name = "psutil" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 docs = [
@@ -4473,6 +4475,7 @@ phlash = [
     { name = "phlash", marker = "python_full_version >= '3.12'" },
 ]
 publication = [
+    { name = "psutil" },
     { name = "pyyaml" },
     { name = "snakemake", marker = "python_full_version >= '3.11'" },
     { name = "stdpopsim" },
@@ -4494,7 +4497,10 @@ requires-dist = [
     { name = "optax", marker = "extra == 'jax'", specifier = ">=0.2.0" },
     { name = "phlash", marker = "python_full_version >= '3.12' and extra == 'all-models'", specifier = "==1.0.6" },
     { name = "phlash", marker = "python_full_version >= '3.12' and extra == 'phlash'", specifier = "==1.0.6" },
+    { name = "psutil", marker = "extra == 'dev'", specifier = ">=5.9" },
+    { name = "psutil", marker = "extra == 'publication'", specifier = ">=5.9" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6" },
     { name = "pyyaml", marker = "extra == 'publication'", specifier = ">=6" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "scipy", specifier = ">=1.10" },

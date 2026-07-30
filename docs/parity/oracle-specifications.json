@@ -68,10 +68,107 @@
       "status": "enforced"
     },
     "esmc2": {"fixtures": ["psmcfa", "multihetsep", "selfing", "dormancy"], "status": "enforced_partial"},
-    "asmc": {"fixtures": ["synthetic decode", "published example"], "status": "draft"},
-    "msmc_im": {"fixtures": ["Yoruba/French", "simulated split-migration"], "status": "enforced_partial"},
-    "smcpp": {"fixtures": ["small one-pop control", "larger one-pop SMC", "two-pop split"], "status": "enforced_partial"},
+    "asmc": {
+      "fixtures": [
+        "synthetic decoder controls",
+        "published n300 array regression",
+        "whole-genome sequence regression"
+      ],
+      "workflows": [
+        "array and whole-genome sequence decoding",
+        "folded and ancestral coding",
+        "CSFS spacing and compressed emissions",
+        "explicit pairs and interval burn-in",
+        "job partitioning",
+        "posterior sums, major/minor sums, means, MAP, and full posteriors",
+        "original-compatible result artifacts"
+      ],
+      "final_metrics": [
+        "posterior mean relative error",
+        "MAP state agreement",
+        "posterior normalization",
+        "output matrix agreement"
+      ],
+      "array_acceptance": {
+        "posterior_mean_relative_error_max": 0.001,
+        "map_state_agreement_min": 0.999
+      },
+      "sequence_acceptance": {
+        "posterior_mean_relative_error_max": 0.001,
+        "map_state_agreement_min": 0.999,
+        "fixture": "n300 dense sequence interval with 0.5 cM burn-in"
+      },
+      "status": "enforced"
+    },
+    "msmc_im": {
+      "fixtures": [
+        "four-case Yoruba/French control matrix",
+        "independent synthetic split-migration family"
+      ],
+      "workflows": [
+        "pattern and regularization controls",
+        "asymmetric starting sizes and low migration",
+        "corrected and raw population sizes",
+        "instantaneous and cumulative migration",
+        "split quantiles and chi-square diagnostics",
+        "original-compatible estimates output",
+        "summary plotting and vector export"
+      ],
+      "final_metrics": [
+        "strict normalized payload agreement",
+        "fit objective agreement",
+        "artifact round trip"
+      ],
+      "status": "enforced"
+    },
+    "smcpp": {
+      "fixtures": [
+        "small one-pop control",
+        "larger one-pop SMC",
+        "frozen indexed VCF preparation oracle",
+        "two-population SMC round trip",
+        "two-population split"
+      ],
+      "workflows": [
+        "one-population native and upstream inference",
+        "VCF-to-SMC preparation with masks and compressed input",
+        "lossless one- and two-population SMC I/O",
+        "contig-level regularization cross-validation",
+        "model serialization and reloadable initialization",
+        "publication plotting and vector export"
+      ],
+      "final_metrics": [
+        "log-Ne trajectory correlation and scale ratio",
+        "fixed-model HMM sufficient statistics",
+        "exact VCF conversion observation stream",
+        "held-out log likelihood",
+        "model and result artifact hashes"
+      ],
+      "status": "enforced_partial"
+    },
     "dical2": {"fixtures": ["README exponential", "README isolation-migration", "structured simulation"], "status": "enforced_partial"},
-    "phlash": {"fixtures": ["simulated psmcfa", "simulated tree sequence"], "status": "draft"}
+    "phlash": {
+      "fixtures": [
+        "synthetic PSMCFA real-package smoke",
+        "mocked VCF/BCF contract",
+        "simulated tree sequence"
+      ],
+      "workflows": [
+        "PSMCFA parsing and inference through PHLASH 1.0.6",
+        "VCF/BCF and tree-sequence Contig construction",
+        "deterministic JAX key construction",
+        "posterior median and credible intervals",
+        "normalized JSON and compressed NumPy artifacts",
+        "publication plotting"
+      ],
+      "final_metrics": [
+        "posterior sample count",
+        "finite population-size trajectories",
+        "theta and rho posterior summaries",
+        "credible-interval quantiles",
+        "input and artifact hashes"
+      ],
+      "status": "enforced_partial"
+    }
   }
 }

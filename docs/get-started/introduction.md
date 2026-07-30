@@ -2,7 +2,8 @@
 
 **smckit** is a unified Python framework for Sequentially Markovian Coalescent
 (SMC) demographic inference. It brings the major SMC tools — PSMC, MSMC2,
-SMC++, ASMC, eSMC2, MSMC-IM, and diCal2 — under a single, consistent API.
+SMC++, ASMC, eSMC2, MSMC-IM, diCal2, and PHLASH — under a single,
+consistent API.
 
 The project philosophy is preservation first:
 
@@ -75,6 +76,8 @@ configuration:
   model to MSMC2 cross-population coalescence rates.
 - **diCal2** (Steinrücken, Kamm & Song, 2019) — fits structured demographic
   models with population sizes, migration, and growth from phased haplotypes.
+- **PHLASH** (Nasrallah et al., 2024) — provides Bayesian population-size
+  inference, posterior uncertainty, and scaling to large samples.
 
 These tools are written in a mix of C, C++, D, R, and Python; they have
 incompatible input formats, divergent CLIs, and uneven documentation. smckit
@@ -133,6 +136,8 @@ plot or further analyze the results.
   SMC++ input.
 - **[Quickstart: diCal2](quickstart-dical2.md)** — run a diCal2-style analysis
   from native `.param` / `.demo` / `.config` files and a VCF.
+- **[Quickstart: PHLASH](quickstart-phlash.md)** — run maintained external
+  Bayesian inference with normalized posterior summaries and uncertainty.
 - **[The SmcData container](../guide/smcdata.md)** — understand the central
   data structure.
 - **[Choosing a method](../guide/choosing-a-method.md)** — pick the right

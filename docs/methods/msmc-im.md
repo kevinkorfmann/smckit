@@ -90,6 +90,7 @@ different `pattern`, you must match it here or the fit is not well-defined.
 | `beta` | Pair of regularization strengths controlling migration and asymmetry penalties. | Change when you intentionally want a looser or tighter fit. | Moderate users should learn this parameter before changing it casually. |
 | `xtol` | Powell optimizer parameter tolerance. | Change only when you are tuning optimizer behavior. | Advanced. |
 | `ftol` | Powell optimizer objective tolerance. | Change only when you are tuning optimizer behavior. | Advanced. |
+| `output_prefix` | Write an original-compatible estimates artifact. | Set for archived or downstream workflows. | Optional. |
 
 ## What comes back in `data.results["msmc_im"]`
 
@@ -102,6 +103,20 @@ Common fields to inspect:
 - `M`
 - `split_time_quantiles`
 - time axes
+
+For a unit-safe three-panel diagnostic:
+
+```python
+axes = smckit.pl.msmc_im_summary(
+    data,
+    population_labels=("Population 1", "Population 2"),
+)
+smckit.pl.save_msmc_im_figure(axes[0].figure, "msmc-im-summary.pdf")
+```
+
+Population sizes, instantaneous migration, and cumulative migration use
+separate aligned panels; split quantiles are shown with redundant marker
+shapes.
 
 This result is easier to misuse than a plain `N_e(t)` curve. `m(t)` and
 `M(t)` summarize a fitted isolation-migration model layered on top of MSMC2

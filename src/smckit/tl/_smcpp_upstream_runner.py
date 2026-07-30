@@ -341,7 +341,7 @@ def _build_trace_plugin(enabled: bool):
     if not enabled:
         return None
 
-    from smcpp.optimize.plugins.optimizer_plugin import OptimizerPlugin, targets
+    from smcpp.optimize.plugins.optimizer_plugin import OptimizerPlugin
 
     class TracePlugin(OptimizerPlugin):
         DISABLED = False
@@ -370,6 +370,50 @@ def _build_trace_plugin(enabled: bool):
     return TracePlugin()
 
 
+def _split_result(analysis, payload: dict) -> dict:
+    """Normalize an upstream two-population split fit for the main process."""
+    model = analysis.model
+    model1 = model.model1
+    model2 = model.model2
+    n0 = float(model.N0)
+    time1 = np.asarray(model1.knots, dtype=float)
+    time2 = np.asarray(model2.knots, dtype=float)
+    ne1 = np.asarray(model1(time1), dtype=float) * 2.0 * n0
+    ne2 = np.asarray(model2(time2), dtype=float) * 2.0 * n0
+    split = float(model.split)
+    generation_time = float(payload["generation_time"])
+    return {
+        "model": model.to_dict(),
+        "population_ids": list(model.pids),
+        "population_models": [
+            {
+                "population": model1.pid,
+                "time": time1.tolist(),
+                "ne": ne1.tolist(),
+            },
+            {
+                "population": model2.pid,
+                "time": time2.tolist(),
+                "ne": ne2.tolist(),
+            },
+        ],
+        "split": split,
+        "split_generations": split * 2.0 * n0,
+        "split_years": split * 2.0 * n0 * generation_time,
+        "theta": float(analysis._theta),
+        "rho": float(analysis._rho),
+        "n0": n0,
+        "log_likelihood": float(analysis.loglik()),
+        "regularization": float(analysis._penalty),
+        "optimization": {
+            "success": True,
+            "algorithm": "L-BFGS-B",
+            "n_iterations": 1,
+        },
+        "hidden_states": {str(k): list(v) for k, v in analysis.hidden_states.items()},
+    }
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         raise SystemExit("usage: _smcpp_upstream_runner.py <payload.json>")
@@ -383,6 +427,12 @@ def main(argv: list[str]) -> int:
 
     if payload["seed"] is not None:
         np.random.seed(int(payload["seed"]))
+
+    split_mode = payload.get("mode") == "split"
+    split_mu = float(payload["mu"])
+    if split_mode:
+        marginal = json.loads(Path(payload["pop1"]).read_text(encoding="utf-8"))
+        split_mu = float(marginal["theta"]) / (2.0 * float(marginal["model"]["N0"]))
 
     args = Namespace(
         verbose=0,
@@ -409,10 +459,21 @@ def main(argv: list[str]) -> int:
         polarization_error=0.5,
         knots=int(payload["n_intervals"]),
         spline="piecewise",
-        mu=float(payload["mu"]),
-        r=float(payload["recombination_rate"]),
+        mu=split_mu,
+        r=None if split_mode else float(payload["recombination_rate"]),
+        pop1=payload.get("pop1"),
+        pop2=payload.get("pop2"),
     )
     os.makedirs(args.outdir, exist_ok=True)
+
+    if split_mode:
+        from smcpp.analysis.split import SplitAnalysis
+
+        analysis = SplitAnalysis(payload["input_paths"], args)
+        analysis.run()
+        result = _split_result(analysis, payload)
+        Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
+        return 0
 
     analysis = Analysis(payload["input_paths"], args)
     if payload.get("mode") == "fixed_model_stats":

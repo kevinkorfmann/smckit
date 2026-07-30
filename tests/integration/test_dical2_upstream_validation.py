@@ -11,7 +11,6 @@ import smckit
 from smckit.io import read_dical2
 from smckit.tl import dical2
 
-
 ROOT = Path("vendor/diCal2/examples/fromReadme")
 EXP_NATIVE_OPTIONS = {
     "interval_type": "logUniform",
@@ -132,6 +131,8 @@ def test_dical2_upstream_backend_runs_end_to_end() -> None:
     assert len(res["em_path"]) >= 1
     assert res["resolved_options"]["interval_type"] == "loguniform"
     assert res["resolved_options"]["number_iterations_mstep"] == 2
+    assert res["upstream"]["effective_args"]["trunkStyle"] == "migratingethan"
+    assert "# trunkStyle = migratingEthan" in res["upstream"]["stdout"]
     assert np.all(np.asarray(res["time"]) >= 0.0)
     assert np.all(np.asarray(res["ne"]) > 0.0)
     np.testing.assert_allclose(np.asarray(res["best_params"]), np.asarray(res["ordered_params"]))
@@ -155,6 +156,8 @@ def test_dical2_upstream_im_backend_runs_end_to_end() -> None:
     assert len(res["structured_ne"]) > 0
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_loguniform_exp_runs_independently() -> None:
     upstream = _run_exp_upstream()
     native = _run_exp_native()
@@ -183,8 +186,14 @@ def test_dical2_native_loguniform_exp_runs_independently() -> None:
         rtol=1e-8,
         atol=1e-8,
     )
-    assert native["resolved_options"]["interval_type"] == upstream["resolved_options"]["interval_type"]
-    assert native["resolved_options"]["interval_params"] == upstream["resolved_options"]["interval_params"]
+    assert (
+        native["resolved_options"]["interval_type"]
+        == upstream["resolved_options"]["interval_type"]
+    )
+    assert (
+        native["resolved_options"]["interval_params"]
+        == upstream["resolved_options"]["interval_params"]
+    )
     assert native["resolved_options"]["nm_fraction"] == pytest.approx(0.2)
     assert native["core_type"] == "ode"
     assert native["initialization"] is None
@@ -193,6 +202,8 @@ def test_dical2_native_loguniform_exp_runs_independently() -> None:
     assert native["n_iterations"] >= 1
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_loguniform_exp_records_meta_trace() -> None:
     native = _run_exp_native(record_meta_trace=True)
 
@@ -205,7 +216,9 @@ def test_dical2_native_loguniform_exp_records_meta_trace() -> None:
 
     assert len(generation_zero["starting_points"]) == EXP_COMMON["meta_num_points"]
     assert len(generation_zero["runs"]) == EXP_COMMON["meta_num_points"]
-    assert len(generation_zero["offspring"]) == EXP_COMMON["meta_num_points"] - EXP_COMMON["meta_keep_best"]
+    assert len(generation_zero["offspring"]) == (
+        EXP_COMMON["meta_num_points"] - EXP_COMMON["meta_keep_best"]
+    )
     assert len(generation_zero["next_generation"]) == EXP_COMMON["meta_num_points"]
     np.testing.assert_allclose(
         np.asarray(generation_zero["next_generation"]),
@@ -223,6 +236,8 @@ def test_dical2_native_loguniform_exp_records_meta_trace() -> None:
     assert generation_one["best_log_likelihood"] == pytest.approx(native["log_likelihood"])
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_loguniform_exp_full_search_matches_upstream_params() -> None:
     upstream = _run_exp_upstream()
     native = _run_exp_native()
@@ -239,12 +254,20 @@ def test_dical2_native_loguniform_exp_full_search_matches_upstream_params() -> N
     )
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_im_runs_independently() -> None:
     upstream = _run_im_upstream()
     native = _run_im_native()
 
-    assert native["resolved_options"]["interval_type"] == upstream["resolved_options"]["interval_type"]
-    assert native["resolved_options"]["interval_params"] == upstream["resolved_options"]["interval_params"]
+    assert (
+        native["resolved_options"]["interval_type"]
+        == upstream["resolved_options"]["interval_type"]
+    )
+    assert (
+        native["resolved_options"]["interval_params"]
+        == upstream["resolved_options"]["interval_params"]
+    )
     assert native["resolved_options"]["nm_fraction"] == pytest.approx(0.2)
     assert native["initialization"] is None
     assert np.isfinite(native["log_likelihood"])
@@ -254,6 +277,8 @@ def test_dical2_native_im_runs_independently() -> None:
     assert len(native["structured_ne"]) == len(upstream["structured_ne"])
 
 
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_im_full_search_matches_upstream_params() -> None:
     upstream = _run_im_upstream()
     native = _run_im_native()
@@ -266,10 +291,8 @@ def test_dical2_native_im_full_search_matches_upstream_params() -> None:
     )
 
 
-@pytest.mark.xfail(
-    reason="Native diCal2 fixed-point log-likelihood still differs slightly from upstream on README fixtures.",
-    strict=False,
-)
+@pytest.mark.oracle
+@pytest.mark.slow
 def test_dical2_native_full_search_matches_upstream_fit_value() -> None:
     exp_upstream = _run_exp_upstream()
     exp_native = _run_exp_native()
@@ -280,6 +303,7 @@ def test_dical2_native_full_search_matches_upstream_fit_value() -> None:
     assert im_native["log_likelihood"] == pytest.approx(im_upstream["log_likelihood"], abs=1e-8)
 
 
+@pytest.mark.oracle
 def test_dical2_native_loguniform_exp_matches_upstream_curve_at_oracle_params() -> None:
     upstream = _run_exp_upstream()
 
@@ -300,7 +324,10 @@ def test_dical2_native_loguniform_exp_matches_upstream_curve_at_oracle_params() 
         float(np.min(np.asarray(native["time"])[np.asarray(native["time"]) > 0])),
         float(np.min(np.asarray(upstream["time"])[np.asarray(upstream["time"]) > 0])),
     )
-    t_max = min(float(np.max(np.asarray(native["time"]))), float(np.max(np.asarray(upstream["time"]))))
+    t_max = min(
+        float(np.max(np.asarray(native["time"]))),
+        float(np.max(np.asarray(upstream["time"]))),
+    )
     grid = np.geomspace(t_min, t_max, 200)
 
     native_ne = _step_eval(np.asarray(native["time"]), np.asarray(native["ne"]), grid)
@@ -311,12 +338,14 @@ def test_dical2_native_loguniform_exp_matches_upstream_curve_at_oracle_params() 
     median_log10_error = float(np.median(np.abs(np.log10(native_ne / upstream_ne))))
 
     assert np.asarray(native["best_params"]) == pytest.approx(np.asarray(upstream["best_params"]))
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
     assert log_corr >= 0.999999
     assert 0.999 < scale_ratio < 1.001
     assert median_log10_error < 1e-6
     assert float(np.median(rel)) < 1e-6
 
 
+@pytest.mark.oracle
 def test_dical2_native_im_matches_upstream_demography_at_oracle_params() -> None:
     upstream = _run_im_upstream()
     native = dical2(
@@ -333,9 +362,12 @@ def test_dical2_native_im_matches_upstream_demography_at_oracle_params() -> None
 
     assert np.asarray(native["best_params"]) == pytest.approx(np.asarray(upstream["best_params"]))
     assert native["core_type"] == "ode"
-    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=2e-3)
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
     np.testing.assert_allclose(np.asarray(native["time"]), np.asarray(upstream["time"]))
-    np.testing.assert_allclose(np.asarray(native["ordered_params"]), np.asarray(upstream["ordered_params"]))
+    np.testing.assert_allclose(
+        np.asarray(native["ordered_params"]),
+        np.asarray(upstream["ordered_params"]),
+    )
     assert len(native["structured_ne"]) == len(upstream["structured_ne"])
     for native_epoch, upstream_epoch in zip(native["structured_ne"], upstream["structured_ne"]):
         np.testing.assert_allclose(np.asarray(native_epoch), np.asarray(upstream_epoch))

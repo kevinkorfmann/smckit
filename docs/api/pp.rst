@@ -3,11 +3,9 @@ Preprocessing
 
 .. currentmodule:: smckit.pp
 
-.. admonition:: In Development
-   :class: warning
+Native converters preserve their source paths, options, and hashes in
+``SmcData.uns["preprocessing"]``.
 
-   The preprocessing module is currently a placeholder. Future functions will
-   include ``psmcfa_from_vcf()``, ``msmc_input_from_vcf()``, and ``simulate()``.
+.. autofunction:: psmcfa_from_consensus
 
-.. automodule:: smckit.pp
-   :members:
+.. autofunction:: smcpp_from_vcf

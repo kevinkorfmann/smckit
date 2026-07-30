@@ -106,6 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -114,6 +116,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -178,6 +186,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -336,6 +345,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#models-and-figures">Models and figures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
@@ -361,6 +373,14 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
@@ -417,17 +437,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
@@ -441,6 +453,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
 </ul>
@@ -456,9 +470,14 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
@@ -560,6 +579,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -592,6 +615,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
@@ -628,19 +655,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -728,6 +772,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
@@ -736,6 +781,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit</span><span class="w"> </span><span class="kn">import</span> <span class="n">upstream</span> <span class="k">as</span> <span class="n">upstream_registry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit._provenance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256_file</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.backends._numba_esmc2</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">HMM_TINY</span><span class="p">,</span>
     <span class="n">esmc2_build_hmm</span><span class="p">,</span>
@@ -889,18 +935,10 @@
     <span class="n">n</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">identity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
 
-    <span class="n">c_mats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">sym</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">sym</span><span class="p">])</span> <span class="o">@</span> <span class="n">Q</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="p">}</span>
-    <span class="n">to_mats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">sym</span><span class="p">:</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">sym</span><span class="p">])</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="p">}</span>
-    <span class="n">q_prime</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">sym</span><span class="p">:</span> <span class="n">identity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="p">}</span>
-    <span class="n">q_power</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">sym</span><span class="p">:</span> <span class="n">identity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="p">}</span>
+    <span class="n">c_mats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">sym</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">sym</span><span class="p">])</span> <span class="o">@</span> <span class="n">Q</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
+    <span class="n">to_mats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">sym</span><span class="p">:</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">sym</span><span class="p">])</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
+    <span class="n">q_prime</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">sym</span><span class="p">:</span> <span class="n">identity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
+    <span class="n">q_power</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">sym</span><span class="p">:</span> <span class="n">identity</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)}</span>
     <span class="n">eig_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">base_symbol</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
@@ -1027,15 +1065,8 @@
             <span class="n">beta_scaled</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">scales</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">outer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">alpha</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">beta_scaled</span><span class="p">)</span>
             <span class="n">transformed</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">outer</span> <span class="o">@</span> <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span>
-            <span class="n">n_counts</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span>
-                <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_power</span><span class="p">[</span><span class="n">sym</span><span class="p">])</span>
-                <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span>
-                <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">])</span>
-            <span class="p">)</span>
-            <span class="n">m_counts</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span>
-                <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_prime</span><span class="p">[</span><span class="n">sym</span><span class="p">])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span>
-            <span class="p">)</span>
+            <span class="n">n_counts</span> <span class="o">+=</span> <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_power</span><span class="p">[</span><span class="n">sym</span><span class="p">])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">])</span>
+            <span class="n">m_counts</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_prime</span><span class="p">[</span><span class="n">sym</span><span class="p">])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
 
     <span class="n">middle_symbols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">symbols</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">middle_symbols</span><span class="p">:</span>
@@ -1057,12 +1088,8 @@
         <span class="n">_</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">w_inv</span> <span class="o">=</span> <span class="n">eig_cache</span><span class="p">[</span><span class="n">base_symbol</span><span class="p">]</span>
         <span class="n">beta_scaled</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[:,</span> <span class="n">pos</span><span class="p">]</span> <span class="o">/</span> <span class="n">scales</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
         <span class="n">transformed</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">alpha</span><span class="p">[:,</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">@</span> <span class="n">beta_scaled</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">m_counts</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span>
-            <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_prime</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sym</span><span class="p">)])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span>
-        <span class="p">)</span>
-        <span class="n">n_counts</span> <span class="o">+=</span> <span class="p">(</span>
-            <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_power</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sym</span><span class="p">)])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">])</span>
-        <span class="p">)</span>
+        <span class="n">m_counts</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_prime</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sym</span><span class="p">)])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">n_counts</span> <span class="o">+=</span> <span class="n">w_inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">transformed</span> <span class="o">*</span> <span class="n">q_power</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sym</span><span class="p">)])</span> <span class="o">@</span> <span class="n">w</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">g</span><span class="p">[:,</span> <span class="n">base_symbol</span><span class="p">])</span>
 
     <span class="n">last_symbol</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">symbols</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">gamma_last</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -1198,9 +1225,12 @@
         <span class="p">)</span>
     <span class="n">sequences_all</span> <span class="o">=</span> <span class="n">_sequences_from_smcdata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="n">input_metadata</span> <span class="o">=</span> <span class="n">_input_family_metadata</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sequences_all</span><span class="p">)</span>
-    <span class="n">sequences</span><span class="p">,</span> <span class="n">theta_terms</span><span class="p">,</span> <span class="n">sequence_lengths</span><span class="p">,</span> <span class="n">used_sequence_indices</span> <span class="o">=</span> <span class="n">_select_vendor_usable_sequences</span><span class="p">(</span>
-        <span class="n">sequences_all</span>
-    <span class="p">)</span>
+    <span class="p">(</span>
+        <span class="n">sequences</span><span class="p">,</span>
+        <span class="n">theta_terms</span><span class="p">,</span>
+        <span class="n">sequence_lengths</span><span class="p">,</span>
+        <span class="n">used_sequence_indices</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_select_vendor_usable_sequences</span><span class="p">(</span><span class="n">sequences_all</span><span class="p">)</span>
     <span class="n">reference_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sequence_lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
     <span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
@@ -1485,14 +1515,14 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;Upstream eSMC2 backend failed.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;stdout:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;stderr:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Upstream eSMC2 backend failed.</span><span class="se">\n</span><span class="s2">stdout:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n</span><span class="s2">stderr:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="n">Tc_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Tc.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
         <span class="n">Xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;Xi.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-        <span class="n">rho_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;rho.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">rho_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;rho.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+        <span class="p">)</span>
         <span class="n">rho_public</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">beta_final</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;beta.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
         <span class="n">sigma_final</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="s2">&quot;sigma.txt&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
@@ -1632,22 +1662,27 @@
     <span class="n">generation_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write a normalized eSMC2 result payload back into SmcData.&quot;&quot;&quot;</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;esmc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">({</span>
-        <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">Tc</span><span class="p">,</span>
-        <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
-        <span class="s2">&quot;Xi&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">Xi</span><span class="p">,</span>
-        <span class="s2">&quot;ne&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">ne</span><span class="p">,</span>
-        <span class="s2">&quot;time_years&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">time_years</span><span class="p">,</span>
-        <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
-        <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
-        <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span>
-        <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
-        <span class="s2">&quot;rho_per_sequence&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rho_per_sequence</span><span class="p">,</span>
-        <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
-        <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">,</span>
-        <span class="s2">&quot;rounds&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rounds</span><span class="p">,</span>
-        <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">implementation_used</span><span class="p">,</span>
-    <span class="p">},</span> <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation_requested</span><span class="p">,</span> <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;esmc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">Tc</span><span class="p">,</span>
+            <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+            <span class="s2">&quot;Xi&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">Xi</span><span class="p">,</span>
+            <span class="s2">&quot;ne&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">ne</span><span class="p">,</span>
+            <span class="s2">&quot;time_years&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">time_years</span><span class="p">,</span>
+            <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+            <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span>
+            <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+            <span class="s2">&quot;rho_per_sequence&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rho_per_sequence</span><span class="p">,</span>
+            <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+            <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">,</span>
+            <span class="s2">&quot;rounds&quot;</span><span class="p">:</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">rounds</span><span class="p">,</span>
+            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">implementation_used</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;esmc2&quot;</span><span class="p">,</span>
+        <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation_requested</span><span class="p">,</span>
+        <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>
     <span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;generation_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generation_time</span>
     <span class="k">return</span> <span class="n">data</span>
@@ -1800,13 +1835,13 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert unit Xi parameters (0–1) into group-level Xi scalings.&quot;&quot;&quot;</span>
     <span class="n">scaled</span> <span class="o">=</span> <span class="n">xi_params</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">box_p</span><span class="p">)</span> <span class="o">-</span> <span class="n">box_p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="n">scaled</span>
+    <span class="k">return</span> <span class="mf">10.0</span><span class="o">**</span><span class="n">scaled</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_rho_from_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">rho_base</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">box_r</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a [0,1] unit rho parameter into the per-sequence recombination rate.&quot;&quot;&quot;</span>
     <span class="n">scaled</span> <span class="o">=</span> <span class="n">unit</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">box_r</span><span class="p">)</span> <span class="o">-</span> <span class="n">box_r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">rho_base</span> <span class="o">*</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="n">scaled</span>
+    <span class="k">return</span> <span class="n">rho_base</span> <span class="o">*</span> <span class="mf">10.0</span><span class="o">**</span><span class="n">scaled</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_beta_from_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">box_b</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -1873,9 +1908,7 @@
     <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">theta_terms</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">lengths</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;theta_terms and lengths must have the same shape.&quot;</span><span class="p">)</span>
-    <span class="n">theta_vals</span> <span class="o">=</span> <span class="n">theta_terms</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_b</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">theta_vals</span> <span class="o">=</span> <span class="n">theta_terms</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">((</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_b</span><span class="p">))</span>
     <span class="n">mu_vals</span> <span class="o">=</span> <span class="n">theta_vals</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">lengths</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mu_vals</span><span class="p">))</span>
 
@@ -1935,7 +1968,9 @@
         <span class="k">if</span> <span class="n">source_paths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;source_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">source_paths</span><span class="p">]</span>
             <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;n_source_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source_paths</span><span class="p">))</span>
-        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">))</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;has_skip_ambiguous_missing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
             <span class="nb">any</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
@@ -2128,11 +2163,7 @@
         <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">lam</span> <span class="o">=</span> <span class="n">lmax</span> <span class="k">if</span> <span class="p">(</span><span class="n">sty</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">yty</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">lmax</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">lmin</span><span class="p">,</span> <span class="n">sty</span> <span class="o">/</span> <span class="n">yty</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">lam</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">lmax</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">sts</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">yty</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)</span>
-                <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">lmax</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">lmin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sts</span> <span class="o">/</span> <span class="n">yty</span><span class="p">)))</span>
-            <span class="p">)</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">lmax</span> <span class="k">if</span> <span class="p">(</span><span class="n">sts</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">yty</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">lmax</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">lmin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sts</span> <span class="o">/</span> <span class="n">yty</span><span class="p">)))</span>
 
         <span class="n">param</span> <span class="o">=</span> <span class="n">candidate</span>
         <span class="n">grad</span> <span class="o">=</span> <span class="n">grad_new</span>
@@ -3041,21 +3072,23 @@
                 <span class="n">sigma_hidden</span><span class="o">=</span><span class="n">sigma_hidden</span><span class="p">,</span>
             <span class="p">)</span>
 
-            <span class="n">rounds</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">rounds</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;outer_round&quot;</span><span class="p">:</span> <span class="n">bit</span><span class="p">,</span>
-                <span class="s2">&quot;inner_round&quot;</span><span class="p">:</span> <span class="n">inner_it</span><span class="p">,</span>
-                <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">ll_round</span><span class="p">,</span>
-                <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">current_beta</span><span class="p">,</span>
-                <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">current_sigma</span><span class="p">,</span>
-                <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">),</span>
-                <span class="s2">&quot;rho_per_sequence&quot;</span><span class="p">:</span> <span class="n">current_rho</span><span class="p">,</span>
-                <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu_run</span><span class="p">,</span>
-                <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">reference_length</span><span class="p">,</span>
-                <span class="s2">&quot;Xi&quot;</span><span class="p">:</span> <span class="n">Xi_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">Tc_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-            <span class="p">})</span>
+            <span class="n">rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">rounds</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;outer_round&quot;</span><span class="p">:</span> <span class="n">bit</span><span class="p">,</span>
+                    <span class="s2">&quot;inner_round&quot;</span><span class="p">:</span> <span class="n">inner_it</span><span class="p">,</span>
+                    <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">ll_round</span><span class="p">,</span>
+                    <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">current_beta</span><span class="p">,</span>
+                    <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">current_sigma</span><span class="p">,</span>
+                    <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">_public_rho_from_sequence_rho</span><span class="p">(</span><span class="n">current_rho</span><span class="p">,</span> <span class="n">reference_length</span><span class="p">),</span>
+                    <span class="s2">&quot;rho_per_sequence&quot;</span><span class="p">:</span> <span class="n">current_rho</span><span class="p">,</span>
+                    <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu_run</span><span class="p">,</span>
+                    <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">mu_run</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">reference_length</span><span class="p">,</span>
+                    <span class="s2">&quot;Xi&quot;</span><span class="p">:</span> <span class="n">Xi_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                    <span class="s2">&quot;Tc&quot;</span><span class="p">:</span> <span class="n">Tc_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                    <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_round</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;  LL=</span><span class="si">%.2f</span><span class="s2"> beta=</span><span class="si">%.4f</span><span class="s2"> sigma=</span><span class="si">%.4f</span><span class="s2"> rho=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -3279,6 +3312,7 @@
     <span class="n">box_r</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
     <span class="n">rp</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
     <span class="n">rho_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">implementation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
     <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3291,6 +3325,7 @@
 <span class="sd">    prefers upstream when an executable R environment is available. ``backend``</span>
 <span class="sd">    is a deprecated compatibility alias.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
     <span class="n">implementation</span> <span class="o">=</span> <span class="n">normalize_implementation</span><span class="p">(</span>
         <span class="n">implementation</span><span class="p">,</span>
         <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span>
@@ -3298,11 +3333,19 @@
     <span class="n">implementation_used</span> <span class="o">=</span> <span class="n">choose_implementation</span><span class="p">(</span>
         <span class="n">implementation</span><span class="p">,</span>
         <span class="n">upstream_available</span><span class="o">=</span><span class="n">method_upstream_available</span><span class="p">(</span><span class="s2">&quot;esmc2&quot;</span><span class="p">),</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;esmc2&quot;</span><span class="p">,</span>
+        <span class="n">requested_capabilities</span><span class="o">=</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="o">*</span><span class="p">({</span><span class="s2">&quot;output&quot;</span><span class="p">}</span> <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()),</span>
+                <span class="o">*</span><span class="p">({</span><span class="s2">&quot;upstream_options&quot;</span><span class="p">}</span> <span class="k">if</span> <span class="n">upstream_options</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()),</span>
+            <span class="p">}</span>
+            <span class="ow">or</span> <span class="kc">None</span>
+        <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">warn_if_native_not_trusted</span><span class="p">(</span><span class="s2">&quot;esmc2&quot;</span><span class="p">,</span> <span class="n">implementation_used</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">implementation_used</span> <span class="o">==</span> <span class="s2">&quot;upstream&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_esmc2_upstream</span><span class="p">(</span>
+        <span class="n">result_data</span> <span class="o">=</span> <span class="n">_esmc2_upstream</span><span class="p">(</span>
             <span class="n">data</span><span class="p">,</span>
             <span class="n">n_states</span><span class="o">=</span><span class="n">n_states</span><span class="p">,</span>
             <span class="n">rho_over_theta</span><span class="o">=</span><span class="n">rho_over_theta</span><span class="p">,</span>
@@ -3325,12 +3368,17 @@
             <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
             <span class="n">upstream_options</span><span class="o">=</span><span class="n">upstream_options</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_finalize_esmc2_public_result</span><span class="p">(</span>
+            <span class="n">result_data</span><span class="p">,</span>
+            <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+            <span class="n">runtime_seconds</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">native_options</span><span class="p">:</span>
         <span class="n">unsupported</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">native_options</span><span class="p">))</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported esmc2 native_options keys: </span><span class="si">{</span><span class="n">unsupported</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_esmc2_native</span><span class="p">(</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">_esmc2_native</span><span class="p">(</span>
         <span class="n">data</span><span class="p">,</span>
         <span class="n">n_states</span><span class="o">=</span><span class="n">n_states</span><span class="p">,</span>
         <span class="n">rho_over_theta</span><span class="o">=</span><span class="n">rho_over_theta</span><span class="p">,</span>
@@ -3351,8 +3399,53 @@
         <span class="n">rp</span><span class="o">=</span><span class="n">rp</span><span class="p">,</span>
         <span class="n">rho_penalty</span><span class="o">=</span><span class="n">rho_penalty</span><span class="p">,</span>
         <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_esmc2_public_result</span><span class="p">(</span>
+        <span class="n">result_data</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+        <span class="n">runtime_seconds</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span>
     <span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_finalize_esmc2_public_result</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">SmcData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">runtime_seconds</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;esmc2&quot;</span><span class="p">]</span>
+    <span class="n">artifacts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">directory</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">output_values</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Tc.txt&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;Tc&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;Xi.txt&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;Xi&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;rho.txt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;beta.txt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;sigma.txt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;mu.txt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;LH.txt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;log_likelihood&quot;</span><span class="p">]],</span>
+            <span class="s2">&quot;t.txt&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;ne.txt&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;ne&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;time_years.txt&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;time_years&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">output_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">directory</span> <span class="o">/</span> <span class="n">name</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)),</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.17g</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">artifacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+                    <span class="s2">&quot;sha256&quot;</span><span class="p">:</span> <span class="n">sha256_file</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+                    <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;esmc2-</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+    <span class="n">provenance</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;provenance&quot;</span><span class="p">]</span>
+    <span class="n">provenance</span><span class="p">[</span><span class="s2">&quot;runtime_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">runtime_seconds</span>
+    <span class="n">provenance</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;output_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">provenance</span><span class="p">[</span><span class="s2">&quot;artifacts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">artifacts</span>
+    <span class="k">return</span> <span class="n">data</span>
 </pre></div>
 
            </div>

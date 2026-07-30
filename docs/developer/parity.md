@@ -15,11 +15,11 @@ and the remaining work before declaring the oracle complete.
 
 ## ASMC
 
-**Progress:** The vendored `n300` fixture confirms MAP indices match ~99.84% of sites; posterior means still require a tighter `rtol=1e-3` match for a handful of sites.
-**Decisions:** Canonical decoding quantities (`.decodingQuantities.gz`) anchor the comparison, and we replay the same haplotypes/genetic positions as the reference.
+**Progress:** The vendored `n300` array fixture clears the strict gate: MAP indices agree at every tested site, median posterior-mean relative error is `9.12e-5`, and the maximum relative error is `2.99e-4`. A separate dense `n300` whole-genome sequence interval with CSFS emissions and 0.5 cM burn-in also clears the `1e-3` maximum posterior-mean error and 99.9% MAP-agreement gates.
+**Decisions:** Canonical decoding quantities (`.decodingQuantities.gz`) anchor the comparison, and we replay the same haplotypes/genetic positions as the reference. Sequence mode preserves ASMC 1.4's batched intermediate-buffer semantics because those values affect the public posterior output.
 **Context:** ASMC extends PSMC by decoding per-pair coalescence times; it depends on optimized transition table decomposition and dense decoding quantization.
-**Remaining tasks:** Eliminate the remaining posterior drift, expand the fixture catalog beyond the n300 array, and harden the `smckit.tl.asmc` regression suite.
-**References:** :doc:`methods/asmc`, ``tests/integration/test_asmc_validation.py``
+**Remaining tasks:** Keep both array and dense-sequence oracles in the scheduled upstream matrix and add additional empirical sequence panels to the publication benchmark.
+**References:** :doc:`methods/asmc`, ``tests/integration/test_asmc_validation.py``, ``tests/integration/test_asmc_sequence_oracle.py``
 
 ## MSMC2
 
@@ -31,10 +31,10 @@ and the remaining work before declaring the oracle complete.
 
 ## MSMC-IM
 
-**Progress:** The vendored Yoruba/French ceremony is now enforced as a four-case upstream-backed oracle matrix: native and the public upstream runner both match the vendored CLI outputs, and both paths now expose the same public payload fields for corrected/raw `N`, thresholded `m`, cumulative migration, split quantiles, and chi-square diagnostics.
+**Progress:** The vendored Yoruba/French ceremony is enforced as a four-case upstream-backed oracle matrix, and an independent synthetic split-migration family now broadens the input surface. Native and upstream match the public payload fields for corrected/raw `N`, thresholded `m`, cumulative migration, split quantiles, chi-square diagnostics, and persisted estimates.
 **Decisions:** The official `MSMC_IM.py` run remains the ceremony, the native fitter keeps the vendored TMRCA/objective semantics together with SciPy Powell, and the upstream bridge now always captures the vendored `.fittingdetails.txt` artifact so result normalization stays implementation-independent.
 **Context:** MSMC-IM is a thin reparameterization of MSMC2’s coalescence rates, so parity here is a downstream check on MSMC2’s output, the chi-square objective in `smckit.tl._msmc_im`, and the public upstream bridge semantics.
-**Remaining tasks:** Expand fixture diversity beyond the tracked Yoruba/French input, add heatmap diagnostics to monitor `m(t)` vs `M(t)`, and keep the helper-level oracle tests in sync if the upstream script changes. Upstream still remains the broader fidelity baseline outside the enforced matrix.
+**Remaining tasks:** Keep the helper-level oracle tests synchronized if the upstream script changes and add empirical nonhuman sensitivity runs in the frozen publication workflow.
 **References:** :doc:`methods/msmc-im`, ``tests/integration/test_msmc_im_validation.py``
 
 ## eSMC2
@@ -47,10 +47,10 @@ and the remaining work before declaring the oracle complete.
 
 ## diCal2
 
-**Progress:** The vendored README fixtures now share upstream/native result normalization, and the native search path runs independently again with Java-style RNG handling, exact Java `nextLong` spawning, and Java-style coordinatewise shuffle semantics. The native optimizer now reaches the same best-fit parameter vector as upstream on both README `exp` and README `IM`. The remaining fixed-point likelihood gap at the upstream best-fit parameters is about `7.45e-4` on `exp` and about `1.63e-3` on `IM`, after routing structured multi-deme native runs through `ODECore` instead of the less accurate no-growth structured `EigenCore` path.
-**Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and treat best-parameter parity and fixed-point likelihood parity as separate gates. Also keep the diagnostics script aligned with the upstream bridge by selecting the best oracle row, not merely the last printed row.
+**Progress:** The vendored README fixtures share upstream/native result normalization, and the native search path runs independently with Java-style RNG handling, exact Java `nextLong` spawning, and Java-style coordinatewise shuffle semantics. The native optimizer reaches the same best-fit parameter vector as upstream on both README `exp` and README `IM`. Matching the Java ODE tolerance and Ethan-trunk infinite-tail stopping rule closes the fixed-point likelihood differences to at most `5.38e-11`.
+**Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and preserve upstream numerical quirks when they affect results. The former full-search expected failure is now a strict scheduled oracle.
 **Context:** diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer, stochastic optimizer replay, and Java-bridge validation path.
-**Remaining tasks:** Close the remaining fixed-point likelihood delta on the README `exp` and `IM` fixtures now that optimizer parity is in place. Only after those fit-value gates are restored should the native trust warning be reconsidered.
+**Remaining tasks:** Add independent structured/growth simulations, original-compatible native output artifacts, broader feature-ledger coverage, and performance evidence before reconsidering the native trust warning.
 **References:** :doc:`methods/dical2`, :doc:`internals-dical2`, ``tests/integration/test_dical2_upstream_validation.py``
 
 ## SMC++

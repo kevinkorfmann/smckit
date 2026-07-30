@@ -85,6 +85,7 @@ leave the meta-start and bounds machinery alone until you know why you need it.
 | Argument | What it means | When to change it | Default guidance |
 |---|---|---|---|
 | `implementation` | Choose `native`, `upstream`, or `auto`. | Force `upstream` when you want the vendored Java tool. | `auto` prefers upstream when all required path-backed inputs are present and Java is ready. |
+| `output_prefix` | Prefix for the result files written after a successful run. | Set when you want durable, hashed artifacts. | Writes `<prefix>.dical2.txt` and `<prefix>.dical2.json`. |
 | `upstream_options` | Extra bridge controls for the upstream CLI path. | Use only when reproducing a specific upstream command. | Leave as `None` first. |
 | `native_options` | Extra controls for the native implementation. | Use only when you intentionally need diCal2-specific advanced controls. | Not a first-pass knob. |
 
@@ -135,9 +136,15 @@ Common fields to inspect:
 - demographic arrays such as `pop_sizes`
 - `time`
 - EM or meta-start diagnostics
+- `artifacts` with paths and SHA-256 hashes when `output_prefix` is set
 
 With diCal2, the fitted named parameters are often more important than any one
 plotted summary curve.
+
+The text artifact uses the original parser-compatible layout: log-likelihood,
+elapsed seconds, ordered parameter values, and run identifier. Preserved
+upstream runs retain the exact captured Java stdout; the JSON artifact records
+the normalized result and provenance.
 
 ## How to tell if the run behaved sensibly
 
@@ -164,20 +171,19 @@ arrays.
 
 On the tracked README fixtures, parity is materially tighter than before:
 
-- at the upstream best-fit parameter vector, the native fixed-point log-likelihood
-  delta is now about `7.45e-4`
+- at the upstream best-fit parameter vector, the native exponential-growth
+  fixed-point log-likelihood delta is about `5.38e-11`
 - replaying each explicit `exp.rand` start point now lands on the same endpoint
   to displayed precision, with log-likelihood deltas at or below about `2.21e-4`
 - the full independent native searches now land on the same best-fit parameter
   vectors as upstream on both README `exp` and README `IM`
 - at the upstream best-fit parameter vector on README `IM`, the native
-  fixed-point log-likelihood delta is now about `1.63e-3`
+  fixed-point log-likelihood delta is about `2.88e-9`
 
-The remaining gap is the objective value, not the search winner. Native and
-upstream now agree on the README `exp` and `IM` best-fit parameter vectors, but
-the native reported log-likelihood is still slightly offset at those same
-points, so the method is closer to interchangeable than before without yet
-fully reaching it.
+The tracked objective values and search winners now agree, and both execution
+paths produce original-parser-compatible text plus normalized JSON artifacts.
+Native promotion still requires independent simulation families, remaining
+feature-ledger closure, and the performance gate.
 
 ## Learn more
 

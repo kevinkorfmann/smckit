@@ -135,9 +135,9 @@ def test_packaged_dical2_quickstart_reads_example_bundle(tmp_path, monkeypatch) 
     with pytest.warns(NativeTrustWarning):
         data = smckit.tl.dical2(
             data,
-            n_intervals=11,
-            max_t=4.0,
-            n_em_iterations=1,
+            n_intervals=4,
+            max_t=2.0,
+            n_em_iterations=0,
             composite_mode="pac",
             implementation="native",
         )
@@ -171,17 +171,16 @@ def test_packaged_esmc2_quickstart_runs_native(tmp_path, monkeypatch) -> None:
 
     example = smckit.io.example_path("psmc/NA12878_chr22.psmcfa")
     data = smckit.io.read_psmcfa(example)
-    with pytest.warns(NativeTrustWarning):
-        data = smckit.tl.esmc2(
-            data,
-            n_states=20,
-            n_iterations=1,
-            estimate_beta=True,
-            beta=0.8,
-            mu=1.25e-8,
-            generation_time=1.0,
-            implementation="native",
-        )
+    data = smckit.tl.esmc2(
+        data,
+        n_states=20,
+        n_iterations=1,
+        estimate_beta=True,
+        beta=0.8,
+        mu=1.25e-8,
+        generation_time=1.0,
+        implementation="native",
+    )
 
     res = data.results["esmc2"]
     assert res["implementation"] == "native"

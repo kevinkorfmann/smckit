@@ -103,6 +103,30 @@ smckit.pl.demographic_history(
 )
 ```
 
+## Method-specific publication plots
+
+SMC++ and PHLASH expose uncertainty/model-selection-aware plots:
+
+```python
+ax = smckit.pl.smcpp_demographic_history(smcpp_data, show_knots=True)
+smckit.pl.save_smcpp_figure(ax.figure, "smcpp-history.pdf")
+
+ax = smckit.pl.smcpp_cross_validation_scores(smcpp_data)
+smckit.pl.save_smcpp_figure(ax.figure, "smcpp-cross-validation.svg")
+
+ax = smckit.pl.phlash_demographic_history(
+    phlash_data,
+    posterior_samples=20,
+)
+smckit.pl.save_phlash_figure(ax.figure, "phlash-posterior.pdf")
+
+axes = smckit.pl.msmc_im_summary(msmc_im_data, population_labels=("YRI", "CEU"))
+smckit.pl.save_msmc_im_figure(axes[0].figure, "msmc-im-summary.svg")
+```
+
+These helpers use colorblind-safe colors, redundant markers, compact
+single-column dimensions, and vector or 600-dpi raster export.
+
 ## See also
 
 - The **[Gallery](gallery.md)** for example plots produced with this

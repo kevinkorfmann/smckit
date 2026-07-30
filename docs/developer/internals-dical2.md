@@ -212,34 +212,40 @@ Routing structured multi-deme native runs through `ODECore` preserved the
 already-correct search path while bringing the README `IM` fixed-point value
 much closer to the vendored oracle.
 
-## What still does not match
+### 12. The ODE relative tolerance must match the Java oracle
 
-The full independent searches now agree on the best-fit parameters, but the
-native and upstream fixed-point likelihood values still differ slightly at those
-same points:
+The native solver used a relative tolerance of `1e-13`, while the pinned Java
+implementation configures its Higham-Hall solver at `1e-14`. SciPy clamps
+relative tolerances below 100 machine eps, so native now uses that explicit
+floating-point floor: the closest representable setting.
 
-- README `exp`
-  - upstream log-likelihood: about `-15.87706545`
-  - native log-likelihood at the same best-fit point: about `-15.87632006`
-- README `IM`
-  - upstream log-likelihood: about `-70.16830865`
-  - native log-likelihood at the same best-fit point: about `-70.16668205`
+This change reduced the README `IM` fixed-point native-minus-upstream
+log-likelihood difference from about `1.63e-3` to `-2.88e-9`. The strict
+structured IM oracle is therefore enforced at `1e-8`.
 
-Interpretation:
+### 13. Preserve the Ethan trunk solver's asymmetric infinity check
 
-- the optimizer-path mismatch is no longer the blocker on the tracked README
-  fixtures
-- the remaining blocker is the native fixed-point likelihood calculation itself,
-  which is now close enough that it should be debugged as a numerical/core-CSD
-  issue rather than as a search-ceremony issue
+The last exponential-growth difference was not in growth itself. It came from
+an upstream numerical quirk in the `migratingEthan` trunk approximation. After
+the first five-unit integration segment of an infinite interval, Java continues
+only if at least one derivative is positive. A one-population Ethan trunk has
+only negative derivatives, so upstream intentionally stops there rather than
+integrating to equilibrium.
 
-## Next steps
+Reproducing that asymmetric first check reduced the README exponential fixture
+difference from about `7.45e-4` to `5.38e-11`. A control run with the `simple`
+trunk agrees to about `6.1e-13`, confirming that the core, leave-one-out
+expansion, grouped emissions, and transition calculation were already aligned.
 
-- close the remaining fixed-point `exp` likelihood delta now that the search
-  winner is aligned
-- bring `IM` fixed-point likelihood parity down from `1.63e-3` to the same
-  tighter standard
-- focus `IM` debugging on the cross-pop PCL evaluator path first, because the
-  reduced probes now show that is where most of the remaining gap lives
-- only then tighten the integration gate back to true native/upstream
-  interchangeability
+## Current closure
+
+The tracked README exponential-growth and isolation-migration workflows now:
+
+- reach the same best-fit parameter vectors in independent searches
+- agree on fixed-point likelihood within `1e-8`
+- reproduce upstream grouped-locus, LOL/PCL, ODE, migration, and growth
+  semantics
+
+Native promotion still requires independent structured/growth simulations,
+remaining feature-ledger closure, original-compatible output artifacts, and the
+performance gate.

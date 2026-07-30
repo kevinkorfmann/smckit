@@ -49,7 +49,18 @@ SMC++
 
 .. autofunction:: smcpp
 
+.. autofunction:: smcpp_cross_validate
+
 diCal2
 ------
 
 .. autofunction:: dical2
+
+PHLASH
+------
+
+PHLASH is a maintained external Python integration. ``implementation="auto"``
+and ``implementation="upstream"`` execute the installed PHLASH package;
+``implementation="native"`` is intentionally unsupported.
+
+.. autofunction:: phlash

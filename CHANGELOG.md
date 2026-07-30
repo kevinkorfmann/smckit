@@ -6,6 +6,17 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 
 ### Added
 
+- Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
+  99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
+  sequence decoding unpromoted until its WGS oracle is closed.
+- Add deterministic publication-protocol validation plus reusable trajectory,
+  likelihood, posterior-coverage, bootstrap-speedup, and memory-promotion
+  metrics.
+- Add a three-panel, colorblind-safe MSMC-IM diagnostic with vector and
+  publication-resolution export.
+- Enforce MSMC-IM on an independent synthetic split family and persist hashed,
+  original-compatible estimates from both native and upstream typed runs.
+
 - Capability registry and capability-aware implementation selection.
 - Versioned, JSON-serializable execution provenance.
 - Unified command-line interface and exact raw upstream runner.
@@ -22,10 +33,33 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Native MSMC2 original-compatible final, loop, and log artifacts plus
   explicit mutation/lambda initialization.
 - Native and upstream eSMC2 numeric artifact export.
+- Validated PHLASH 1.0.6 PSMCFA, VCF/BCF, tree-sequence, and constructed-Contig
+  workflows with deterministic JAX seeds, normalized posterior parameter
+  summaries and credible intervals, hashed JSON/NPZ artifacts, and publication
+  plotting.
+- A provenance-recorded compatibility shim for the PHLASH 1.0.6 PSMCFA
+  matrix-shape regression and a real-package integration smoke test.
+- Native SMC++ VCF-to-SMC preparation with gzip, BED masks, long-gap
+  missingness, distinguished-lineage selection, one/two-population headers,
+  and an exact preserved-upstream conversion oracle.
+- Typed preserved-upstream SMC++ split inference with two marginal model
+  inputs, normalized population histories and split time, and hashed original
+  plus normalized output artifacts.
+- Parser-compatible diCal2 text output and versioned provenance JSON for both
+  native and preserved-upstream runs.
+- Lossless one/two-population SMC++ I/O, contig-level regularization
+  cross-validation, reloadable model initialization, upstream-readable model
+  JSON, hashed result artifacts, and publication-ready demography/CV plots.
 
 ### Changed
 
 - `implementation="auto"` now chooses native only for promoted capabilities.
+- Match diCal2's Higham-Hall tolerance and Ethan-trunk infinity behavior,
+  closing the tracked exponential-growth and isolation-migration fixed-point
+  likelihood oracles to within `1e-8`.
+- Forward typed diCal2 trunk, cake, ancient-deme-state, and additional-trunk
+  controls to the preserved Java implementation instead of recording them
+  without changing execution.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

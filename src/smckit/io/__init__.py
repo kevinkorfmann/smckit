@@ -17,6 +17,7 @@ from smckit.io._dical2 import (
     read_dical2_param,
     read_dical2_rates,
     read_dical2_sequences,
+    write_dical2_output,
 )
 from smckit.io._examples import example_path, example_prefix
 from smckit.io._msmc_im import read_msmc_im_output, write_msmc_im_output
@@ -28,7 +29,12 @@ from smckit.io._multihetsep import (
 )
 from smckit.io._psmc_output import read_psmc_output, write_psmc_output
 from smckit.io._psmcfa import read_psmcfa, write_psmcfa
-from smckit.io._smcpp_input import read_smcpp_input
+from smckit.io._smcpp_input import read_smcpp_input, write_smcpp_input
+from smckit.io._smcpp_model import (
+    read_smcpp_model,
+    smcpp_model_payload,
+    write_smcpp_model,
+)
 
 __all__ = [
     "merge_asmc_posterior_sums",
@@ -53,6 +59,11 @@ __all__ = [
     "read_psmc_output",
     "read_samples",
     "read_smcpp_input",
+    "read_smcpp_model",
+    "smcpp_model_payload",
+    "write_smcpp_input",
+    "write_smcpp_model",
+    "write_dical2_output",
     "write_msmc_im_output",
     "write_msmc_output",
     "write_asmc_posterior_sums",

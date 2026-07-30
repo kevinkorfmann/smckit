@@ -42,8 +42,8 @@
       "per_pair_outputs",
       "sequence"
     ],
-    "tracked_agreement": "0.9984 MAP agreement",
-    "notes": "Native parity covers array and sequence decoding, folded or ancestral coding, CSFS spacing/compression, explicit pairs and interval burn-in, job partitioning, complete posterior summaries, and original-compatible artifacts.",
+    "tracked_agreement": "array: 100% MAP and 2.99e-4 max mean error; dense sequence: >=99.9% MAP and <=1e-3 max mean error",
+    "notes": "Native parity covers array and dense sequence decoding, folded or ancestral coding, CSFS spacing/compression, explicit pairs and interval burn-in, job partitioning, complete posterior summaries, and original-compatible artifacts.",
     "install_extra": "asmc",
     "native_warning": null
   },
@@ -73,8 +73,11 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
-    "tracked_agreement": "strict payload match on 4-case upstream-backed oracle matrix",
-    "notes": "Public upstream bridge runs the vendored Python fitter; native and upstream now share the same public payload contract and are interchangeable on the enforced Yoruba/French oracle matrix.",
+    "native_promoted_capabilities": [
+      "output"
+    ],
+    "tracked_agreement": "strict payload match on four Yoruba/French controls and an independent synthetic split family",
+    "notes": "The native fitter and preserved upstream runner share the corrected/raw population-size, migration, split-quantile, chi-square, and estimates-artifact contract across two enforced oracle families.",
     "install_extra": "msmc_im",
     "native_warning": null
   },
@@ -100,8 +103,18 @@
     "native": "✓",
     "native_default_eligible": true,
     "native_trusted_for_docs": true,
+    "native_promoted_capabilities": [
+      "compressed",
+      "cross_validation",
+      "initial_model",
+      "masks",
+      "model_serialization",
+      "output",
+      "plotting",
+      "vcf_preparation"
+    ],
     "tracked_agreement": ">= 0.999125 tracked one-pop log-Ne corr",
-    "notes": "Public upstream path exists; the native one-pop path now clears the strict small control and larger tracked `.smc` parity fixtures, with fixed-model E-step statistics matching upstream on the same matrix.",
+    "notes": "The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Two-population inputs now have a typed, normalized preserved-upstream split workflow with exact model artifacts; native split inference remains blocked.",
     "install_extra": "smcpp",
     "native_warning": null
   },
@@ -112,8 +125,8 @@
     "native": "✓",
     "native_default_eligible": false,
     "native_trusted_for_docs": false,
-    "tracked_agreement": "README exp search matches best params; fixed-point dloglik=7.45e-4. README IM search matches best params; fixed-point dloglik=3.15e-2.",
-    "notes": "Public upstream Java bridge parses the EM-path stdout into structured results. Native README exp and IM searches now reach the upstream best-fit parameter vectors; the remaining gap is the native fixed-point likelihood value at those shared points.",
+    "tracked_agreement": "README exp and IM searches match best parameters; fixed-point dloglik <=5.38e-11.",
+    "notes": "Public upstream Java bridge parses the EM-path stdout into structured results. Native README exponential-growth and isolation-migration searches reach the upstream best-fit parameter vectors, and their fixed-point likelihoods agree within 5.38e-11 after reproducing the upstream ODE tolerance and Ethan-trunk equilibrium behavior.",
     "install_extra": "dical2",
     "native_warning": "The native diCal2 path is available for packaged examples, but it is not yet trusted enough to recommend over upstream. Prefer the upstream Java path when the result matters."
   },
@@ -124,8 +137,8 @@
     "native": "n/a",
     "native_default_eligible": false,
     "native_trusted_for_docs": false,
-    "tracked_agreement": "external package integration",
-    "notes": "Normalized adapter for the maintained PHLASH 1.0.6 Python package; no independent rewrite is planned for 1.0.",
+    "tracked_agreement": "real-package PSMCFA smoke plus normalized posterior contract",
+    "notes": "Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.",
     "install_extra": "phlash",
     "native_warning": null
   },

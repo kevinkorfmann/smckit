@@ -214,6 +214,11 @@ Quick Feature-to-Tool Table
      - `.param`, `.demo`, `.config`, sequences
      - sizes, growth, and migration parameters
      - best fit when the demographic specification already exists outside smckit, with upstream still the fidelity baseline while native `exp` oracle-point and explicit-start agreement tighten
+   * - :doc:`PHLASH <methods/phlash>`
+     - Bayesian demographic inference with posterior uncertainty
+     - `.psmcfa`, VCF/BCF, or tree sequence
+     - posterior `N_e(t)` and credible intervals
+     - maintained external PHLASH 1.0.6 execution with normalized, provenance-rich smckit results
    * - :doc:`SSM Framework <methods/ssm>` / :doc:`PSMC-SSM <guide/psmc-ssm>`
      - method development, HMM inspection, and gradient fitting
      - `psmcfa`-style observations
@@ -233,6 +238,7 @@ Quickstarts
      <a class="smckit-card" href="get-started/quickstart-esmc2.html"><strong>eSMC2</strong><span>Dormancy and selfing on top of pairwise SMC.</span></a>
      <a class="smckit-card" href="get-started/quickstart-smcpp.html"><strong>SMC++</strong><span>Many unphased genomes with upstream/native provenance.</span></a>
      <a class="smckit-card" href="get-started/quickstart-dical2.html"><strong>diCal2</strong><span>Structured demography from native model files.</span></a>
+     <a class="smckit-card" href="get-started/quickstart-phlash.html"><strong>PHLASH</strong><span>Bayesian histories with posterior uncertainty.</span></a>
    </div>
 
 .. toctree::
@@ -249,6 +255,7 @@ Quickstarts
    get-started/quickstart-esmc2
    get-started/quickstart-smcpp
    get-started/quickstart-dical2
+   get-started/quickstart-phlash
 
 .. toctree::
    :maxdepth: 2

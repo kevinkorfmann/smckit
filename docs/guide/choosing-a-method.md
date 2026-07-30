@@ -14,6 +14,7 @@ implementation maturity.
 | **SMC++** | many unphased genomes | `.smc.gz` | `N_e(t)` | native and upstream; tracked one-pop parity is enforced |
 | **ASMC** | per-site pairwise ancestry | hap/map/samples + decoding quantities | TMRCA along the genome | native public path |
 | **diCal2** | explicit structured demographic models | `.param`, `.demo`, `.config`, sequences | sizes, growth, migration parameters | native public path |
+| **PHLASH** | Bayesian history with uncertainty and larger samples | `.psmcfa`, VCF/BCF, tree sequence | posterior `N_e(t)` and credible intervals | maintained external package with normalized smckit results |
 | **PSMC-SSM** | research and optimizer experimentation | `psmcfa`-style observations | differentiable PSMC | native-only framework |
 
 ## A simple decision path
@@ -32,7 +33,8 @@ implementation maturity.
 
 ### Many unphased genomes
 
-- use **SMC++**
+- use **SMC++** for deterministic composite-likelihood inference
+- use **PHLASH** when posterior uncertainty or tree-sequence input is central
 
 ### Structured demographic model files already exist
 
@@ -58,6 +60,7 @@ Start with:
 
 - **PSMC** for one diploid genome
 - **SMC++** for many unphased genomes
+- **PHLASH** for Bayesian uncertainty and large-sample inference
 - **ASMC** for pairwise local ancestry / TMRCA along the genome
 - **MSMC2** if another downstream step depends on MSMC-style output
 

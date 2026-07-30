@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Internals and Porting Notes" href="internals.html" />
+    <link rel="next" title="Quarterly method review" href="method-review.html" />
     <link rel="prev" title="Testing" href="testing.html" /> 
 </head>
 
@@ -109,6 +109,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -117,6 +119,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -181,6 +189,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -339,6 +348,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#models-and-figures">Models and figures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
@@ -364,6 +376,14 @@
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../methods/ssm.html">SSM Framework</a><ul>
@@ -420,17 +440,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Parity and Oracle Status</a><ul>
@@ -444,6 +456,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="internals.html#available-internals-pages">Available internals pages</a></li>
 </ul>
@@ -465,10 +479,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="internals-dical2.html#what-improved">What improved</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals-dical2.html#the-ode-relative-tolerance-must-match-the-java-oracle">12. The ODE relative tolerance must match the Java oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals-dical2.html#preserve-the-ethan-trunk-solver-s-asymmetric-infinity-check">13. Preserve the Ethan trunk solver’s asymmetric infinity check</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
-<li class="toctree-l2"><a class="reference internal" href="internals-dical2.html#next-steps">Next steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="internals-dical2.html#current-closure">Current closure</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="internals-psmc.html">PSMC Internals</a><ul>
@@ -568,6 +583,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -600,6 +619,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../api/io.html#dical2">diCal2</a><ul>
@@ -609,6 +632,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/io.html#smckit.io.write_dical2_output"><code class="docutils literal notranslate"><span class="pre">write_dical2_output()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -636,19 +660,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -735,11 +776,11 @@ and the remaining work before declaring the oracle complete.</p>
 </section>
 <section id="asmc">
 <h2>ASMC<a class="headerlink" href="#asmc" title="Link to this heading"></a></h2>
-<p><strong>Progress:</strong> The vendored <code class="docutils literal notranslate"><span class="pre">n300</span></code> fixture confirms MAP indices match ~99.84% of sites; posterior means still require a tighter <code class="docutils literal notranslate"><span class="pre">rtol=1e-3</span></code> match for a handful of sites.
-<strong>Decisions:</strong> Canonical decoding quantities (<code class="docutils literal notranslate"><span class="pre">.decodingQuantities.gz</span></code>) anchor the comparison, and we replay the same haplotypes/genetic positions as the reference.
+<p><strong>Progress:</strong> The vendored <code class="docutils literal notranslate"><span class="pre">n300</span></code> array fixture clears the strict gate: MAP indices agree at every tested site, median posterior-mean relative error is <code class="docutils literal notranslate"><span class="pre">9.12e-5</span></code>, and the maximum relative error is <code class="docutils literal notranslate"><span class="pre">2.99e-4</span></code>. A separate dense <code class="docutils literal notranslate"><span class="pre">n300</span></code> whole-genome sequence interval with CSFS emissions and 0.5 cM burn-in also clears the <code class="docutils literal notranslate"><span class="pre">1e-3</span></code> maximum posterior-mean error and 99.9% MAP-agreement gates.
+<strong>Decisions:</strong> Canonical decoding quantities (<code class="docutils literal notranslate"><span class="pre">.decodingQuantities.gz</span></code>) anchor the comparison, and we replay the same haplotypes/genetic positions as the reference. Sequence mode preserves ASMC 1.4’s batched intermediate-buffer semantics because those values affect the public posterior output.
 <strong>Context:</strong> ASMC extends PSMC by decoding per-pair coalescence times; it depends on optimized transition table decomposition and dense decoding quantization.
-<strong>Remaining tasks:</strong> Eliminate the remaining posterior drift, expand the fixture catalog beyond the n300 array, and harden the <code class="docutils literal notranslate"><span class="pre">smckit.tl.asmc</span></code> regression suite.
-<strong>References:</strong> :doc:<code class="docutils literal notranslate"><span class="pre">methods/asmc</span></code>, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_asmc_validation.py</span></code></p>
+<strong>Remaining tasks:</strong> Keep both array and dense-sequence oracles in the scheduled upstream matrix and add additional empirical sequence panels to the publication benchmark.
+<strong>References:</strong> :doc:<code class="docutils literal notranslate"><span class="pre">methods/asmc</span></code>, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_asmc_validation.py</span></code>, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_asmc_sequence_oracle.py</span></code></p>
 </section>
 <section id="msmc2">
 <h2>MSMC2<a class="headerlink" href="#msmc2" title="Link to this heading"></a></h2>
@@ -751,10 +792,10 @@ and the remaining work before declaring the oracle complete.</p>
 </section>
 <section id="msmc-im">
 <h2>MSMC-IM<a class="headerlink" href="#msmc-im" title="Link to this heading"></a></h2>
-<p><strong>Progress:</strong> The vendored Yoruba/French ceremony is now enforced as a four-case upstream-backed oracle matrix: native and the public upstream runner both match the vendored CLI outputs, and both paths now expose the same public payload fields for corrected/raw <code class="docutils literal notranslate"><span class="pre">N</span></code>, thresholded <code class="docutils literal notranslate"><span class="pre">m</span></code>, cumulative migration, split quantiles, and chi-square diagnostics.
+<p><strong>Progress:</strong> The vendored Yoruba/French ceremony is enforced as a four-case upstream-backed oracle matrix, and an independent synthetic split-migration family now broadens the input surface. Native and upstream match the public payload fields for corrected/raw <code class="docutils literal notranslate"><span class="pre">N</span></code>, thresholded <code class="docutils literal notranslate"><span class="pre">m</span></code>, cumulative migration, split quantiles, chi-square diagnostics, and persisted estimates.
 <strong>Decisions:</strong> The official <code class="docutils literal notranslate"><span class="pre">MSMC_IM.py</span></code> run remains the ceremony, the native fitter keeps the vendored TMRCA/objective semantics together with SciPy Powell, and the upstream bridge now always captures the vendored <code class="docutils literal notranslate"><span class="pre">.fittingdetails.txt</span></code> artifact so result normalization stays implementation-independent.
 <strong>Context:</strong> MSMC-IM is a thin reparameterization of MSMC2’s coalescence rates, so parity here is a downstream check on MSMC2’s output, the chi-square objective in <code class="docutils literal notranslate"><span class="pre">smckit.tl._msmc_im</span></code>, and the public upstream bridge semantics.
-<strong>Remaining tasks:</strong> Expand fixture diversity beyond the tracked Yoruba/French input, add heatmap diagnostics to monitor <code class="docutils literal notranslate"><span class="pre">m(t)</span></code> vs <code class="docutils literal notranslate"><span class="pre">M(t)</span></code>, and keep the helper-level oracle tests in sync if the upstream script changes. Upstream still remains the broader fidelity baseline outside the enforced matrix.
+<strong>Remaining tasks:</strong> Keep the helper-level oracle tests synchronized if the upstream script changes and add empirical nonhuman sensitivity runs in the frozen publication workflow.
 <strong>References:</strong> :doc:<code class="docutils literal notranslate"><span class="pre">methods/msmc-im</span></code>, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_msmc_im_validation.py</span></code></p>
 </section>
 <section id="esmc2">
@@ -767,10 +808,10 @@ and the remaining work before declaring the oracle complete.</p>
 </section>
 <section id="dical2">
 <h2>diCal2<a class="headerlink" href="#dical2" title="Link to this heading"></a></h2>
-<p><strong>Progress:</strong> The vendored README fixtures now share upstream/native result normalization, and the native search path runs independently again with Java-style RNG handling, exact Java <code class="docutils literal notranslate"><span class="pre">nextLong</span></code> spawning, and Java-style coordinatewise shuffle semantics. The native optimizer now reaches the same best-fit parameter vector as upstream on both README <code class="docutils literal notranslate"><span class="pre">exp</span></code> and README <code class="docutils literal notranslate"><span class="pre">IM</span></code>. The remaining fixed-point likelihood gap at the upstream best-fit parameters is about <code class="docutils literal notranslate"><span class="pre">7.45e-4</span></code> on <code class="docutils literal notranslate"><span class="pre">exp</span></code> and about <code class="docutils literal notranslate"><span class="pre">1.63e-3</span></code> on <code class="docutils literal notranslate"><span class="pre">IM</span></code>, after routing structured multi-deme native runs through <code class="docutils literal notranslate"><span class="pre">ODECore</span></code> instead of the less accurate no-growth structured <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code> path.
-<strong>Decisions:</strong> Keep the <code class="docutils literal notranslate"><span class="pre">diCal2.jar</span></code> bundle as the reference, normalize upstream results into the same plot-ready <code class="docutils literal notranslate"><span class="pre">time</span></code>/<code class="docutils literal notranslate"><span class="pre">ne</span></code> fields as native, and treat best-parameter parity and fixed-point likelihood parity as separate gates. Also keep the diagnostics script aligned with the upstream bridge by selecting the best oracle row, not merely the last printed row.
+<p><strong>Progress:</strong> The vendored README fixtures share upstream/native result normalization, and the native search path runs independently with Java-style RNG handling, exact Java <code class="docutils literal notranslate"><span class="pre">nextLong</span></code> spawning, and Java-style coordinatewise shuffle semantics. The native optimizer reaches the same best-fit parameter vector as upstream on both README <code class="docutils literal notranslate"><span class="pre">exp</span></code> and README <code class="docutils literal notranslate"><span class="pre">IM</span></code>. Matching the Java ODE tolerance and Ethan-trunk infinite-tail stopping rule closes the fixed-point likelihood differences to at most <code class="docutils literal notranslate"><span class="pre">5.38e-11</span></code>.
+<strong>Decisions:</strong> Keep the <code class="docutils literal notranslate"><span class="pre">diCal2.jar</span></code> bundle as the reference, normalize upstream results into the same plot-ready <code class="docutils literal notranslate"><span class="pre">time</span></code>/<code class="docutils literal notranslate"><span class="pre">ne</span></code> fields as native, and preserve upstream numerical quirks when they affect results. The former full-search expected failure is now a strict scheduled oracle.
 <strong>Context:</strong> diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer, stochastic optimizer replay, and Java-bridge validation path.
-<strong>Remaining tasks:</strong> Close the remaining fixed-point likelihood delta on the README <code class="docutils literal notranslate"><span class="pre">exp</span></code> and <code class="docutils literal notranslate"><span class="pre">IM</span></code> fixtures now that optimizer parity is in place. Only after those fit-value gates are restored should the native trust warning be reconsidered.
+<strong>Remaining tasks:</strong> Add independent structured/growth simulations, original-compatible native output artifacts, broader feature-ledger coverage, and performance evidence before reconsidering the native trust warning.
 <strong>References:</strong> :doc:<code class="docutils literal notranslate"><span class="pre">methods/dical2</span></code>, :doc:<code class="docutils literal notranslate"><span class="pre">internals-dical2</span></code>, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_dical2_upstream_validation.py</span></code></p>
 </section>
 <section id="smc">
@@ -796,7 +837,7 @@ and the remaining work before declaring the oracle complete.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="testing.html" class="btn btn-neutral float-left" title="Testing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="internals.html" class="btn btn-neutral float-right" title="Internals and Porting Notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="method-review.html" class="btn btn-neutral float-right" title="Quarterly method review" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

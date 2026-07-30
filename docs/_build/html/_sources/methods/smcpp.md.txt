@@ -22,8 +22,8 @@ when PSMC is too sample-limited at recent times.
 | Selector | Status | Notes |
 |---|---|---|
 | `implementation="native"` | Available | Defaults to the upstream-style one-pop interpretation and preprocessing path, and now clears the tracked one-pop parity matrix against upstream. |
-| `implementation="upstream"` | Available | Runs the vendored upstream source through the controlled side environment. |
-| `implementation="auto"` | Available | Currently prefers upstream when the side environment exists. |
+| `implementation="upstream"` | Available | Runs the vendored upstream source through the controlled side environment, including two-population split inference. |
+| `implementation="auto"` | Available | Uses native for promoted one-population workflows and routes two-population split requests to upstream. |
 
 Install contract:
 
@@ -73,7 +73,7 @@ smoke-test-scale fixture, not a realistic data volume.
 
 | Argument | What it means | When to change it | Default guidance |
 |---|---|---|---|
-| `implementation` | Choose `native`, `upstream`, or `auto`. | Force `upstream` when you want the vendored tool in its side environment. | `auto` prefers upstream when that environment exists. |
+| `implementation` | Choose `native`, `upstream`, or `auto`. | Force `upstream` when you want the vendored tool in its side environment. | `auto` uses promoted native one-population workflows. |
 | `backend` | Deprecated alias for `implementation`. | Only for legacy code. | Prefer `implementation`. |
 | `upstream_options` | Extra bridge controls for the upstream path. | Only when reproducing an upstream workflow. | Leave alone first. |
 | `native_options` | Extra controls for the native path. | Not part of routine use today. | Leave as `None`. |
@@ -101,6 +101,56 @@ smoke-test-scale fixture, not a realistic data volume.
 |---|---|---|---|
 | `regularization` | Smoothness penalty on the inferred history. | Increase to discourage noisy curves; decrease to allow more flexibility. | This is one of the first tuning knobs to learn. |
 | `seed` | Random seed for reproducibility. | Set for repeatable runs. | Good practice for examples and comparisons. |
+| `initial_model` | Reloadable SMC++ model path, mapping, or `SmcData`. | Resume from or compare a frozen history. | Omit for data-driven initialization. |
+| `split_models` | Two fitted marginal histories for a joint two-population input. | Run preserved upstream split inference after fitting each population. | Required only for split analysis; native split remains blocked. |
+| `output_prefix` | Prefix for normalized result and model JSON. | Use for reproducible analyses. | Artifacts are SHA-256 recorded in provenance. |
+
+## VCF preparation, masks, and multi-population files
+
+{func}`smckit.pp.smcpp_from_vcf` converts plain or gzip-compressed VCF input
+to `.smc`/`.smc.gz`. It supports one or two disjoint population sample lists,
+explicit distinguished haplotypes, 0-based half-open BED masks, conservative
+long-gap missingness, and deterministic headers. A frozen indexed-VCF oracle
+test requires the native observation stream to match preserved upstream
+`vcf2smc` exactly.
+
+{func}`smckit.io.read_smcpp_input` and
+{func}`smckit.io.write_smcpp_input` preserve every population triplet. Native
+two-population split inference is still a hard 1.0 blocker; requesting it fails
+explicitly rather than dropping the second population. The original split
+workflow is available through the typed upstream layer:
+
+```python
+joint = smckit.io.read_smcpp_input("joint-populations.smc.gz")
+joint = smckit.tl.smcpp(
+    joint,
+    implementation="upstream",
+    split_models=("population-a.model.json", "population-b.model.json"),
+    output_prefix="results/joint",
+)
+print(joint.results["smcpp"]["split_years"])
+```
+
+This writes `results/joint.smcpp.split.model.json` with the original
+two-population model and `results/joint.smcpp.split.json` with normalized
+population histories, split time, provenance, and hashes.
+
+## Cross-validation
+
+{func}`smckit.tl.smcpp_cross_validate` mirrors upstream contig-level
+cross-validation. Whole records are assigned to folds, candidate
+regularization penalties are fitted on the remaining records, held-out HMM log
+likelihood selects the penalty, and the winner is refitted to all records.
+
+## Models and figures
+
+{func}`smckit.io.write_smcpp_model` writes a versioned normalized model with an
+upstream-readable `SMCModel` block. The same file can be passed back through
+`initial_model`. `output_prefix` writes both model and complete result JSON.
+
+Use {func}`smckit.pl.smcpp_demographic_history` for the inferred history and
+{func}`smckit.pl.smcpp_cross_validation_scores` for fold-level model-selection
+evidence. Vector PDF/SVG/EPS and 600-dpi PNG/TIFF export are supported.
 
 ## What comes back in `data.results["smcpp"]`
 

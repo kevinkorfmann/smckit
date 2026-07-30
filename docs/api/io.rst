@@ -40,6 +40,10 @@ SMC++
 -----
 
 .. autofunction:: read_smcpp_input
+.. autofunction:: write_smcpp_input
+.. autofunction:: read_smcpp_model
+.. autofunction:: write_smcpp_model
+.. autofunction:: smcpp_model_payload
 
 diCal2
 ------
@@ -50,3 +54,4 @@ diCal2
 .. autofunction:: read_dical2_rates
 .. autofunction:: read_dical2_config
 .. autofunction:: read_dical2_sequences
+.. autofunction:: write_dical2_output

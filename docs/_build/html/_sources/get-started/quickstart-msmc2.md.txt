@@ -21,7 +21,11 @@ import smckit
 
 example = smckit.io.example_path("msmc2/msmc2_test.multihetsep")
 
-data = smckit.io.read_multihetsep(example)
+data = smckit.io.read_multihetsep(
+    example,
+    pair_indices=[(0, 1), (2, 3)],
+    skip_ambiguous=True,
+)
 
 data = smckit.tl.msmc2(
     data,
@@ -29,6 +33,8 @@ data = smckit.tl.msmc2(
     n_iterations=20,
     mu=1.25e-8,
     generation_time=25.0,
+    fixed_rho=False,
+    output_prefix="analysis/msmc2",
     implementation="native",
 )
 ```
@@ -36,6 +42,11 @@ data = smckit.tl.msmc2(
 `time_pattern="1*2+25*1+1*2+1*3"` is the standard starting layout and controls
 how much flexibility the time axis has. It is one of the first things to learn
 before tuning the rest of the signature.
+
+Pass a list of `.multihetsep` paths to analyze multiple chromosomes. The
+native path preserves called-site masks and ambiguous phasing, supports both
+documented pair-selection forms through `pair_indices`, and can write the
+original `.final.txt`, `.loop.txt`, and `.log` artifact set.
 
 ## Inspect the result
 

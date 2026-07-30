@@ -106,6 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -114,6 +116,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -163,6 +171,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#don-t-overinterpret-extremes">Don’t overinterpret extremes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#the-pattern-parameter-matters">The pattern parameter matters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#methods-are-not-interchangeable">Methods are not interchangeable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#ecological-and-migration-parameters-need-extra-caution">Ecological and migration parameters need extra caution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../guide/interpreting-results.html#bootstrap-cis">Bootstrap CIs</a></li>
 </ul>
 </li>
@@ -177,6 +186,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -232,8 +242,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#interpreting-the-result">Interpreting the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#time-grid-and-fit-controls">Time-grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/psmc.html#biological-scaling-and-initialization">Biological scaling and initialization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#what-comes-back-in-data-results-psmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;psmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/psmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -242,7 +260,16 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#what-to-decode">What to decode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/asmc.html#decoding-behavior-and-output-size">Decoding behavior and output size</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#what-comes-back-in-data-results-asmc">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;asmc&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/asmc.html#learn-more">Learn more</a></li>
 </ul>
@@ -251,7 +278,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#core-fit-controls">Core fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#scaling-and-rate-parameters">Scaling and rate parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc2.html#advanced-numerical-controls">Advanced numerical controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#what-comes-back-in-data-results-msmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc2.html#learn-more">Learn more</a></li>
 </ul>
@@ -260,8 +297,17 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#model-definition-and-scaling">Model definition and scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#optimization-starting-points">Optimization starting points</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/msmc-im.html#regularization-and-optimizer-tolerances">Regularization and optimizer tolerances</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#what-comes-back-in-data-results-msmc-im">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;msmc_im&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/msmc-im.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -269,15 +315,21 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#estimating-parameters">Estimating Parameters</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#what-can-be-estimated">What can be estimated</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#vendor-tutorial-mapping">Vendor Tutorial Mapping</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#common-estimation-patterns">Common Estimation Patterns</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#inspect-the-fitted-parameters">Inspect The Fitted Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#public-parity-matrix">Public parity matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-the-function-is-fitting">What the function is fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#model-size-and-run-length">Model size and run length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#scaling-and-baseline-rates">Scaling and baseline rates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#ecological-parameters">Ecological parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#recombination-fitting">Recombination fitting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/esmc2.html#advanced-grouping-and-search-bounds">Advanced grouping and search bounds</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#what-comes-back-in-data-results-esmc2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;esmc2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/esmc2.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -285,7 +337,20 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#model-size-and-fit-duration">Model size and fit duration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#time-grid-and-scaling-controls">Time-grid and scaling controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/smcpp.html#optimization-controls">Optimization controls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#models-and-figures">Models and figures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#practical-notes">Practical notes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/smcpp.html#learn-more">Learn more</a></li>
 </ul>
@@ -294,16 +359,38 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#implementations">Implementations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#input">Input</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#minimal-workflow">Minimal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#recommended-starting-call">Recommended starting call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#how-to-think-about-the-arguments">How to think about the arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#common-workflow-controls">Common workflow controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#core-demographic-grid-and-fit-controls">Core demographic grid and fit controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#biological-scaling">Biological scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#start-point-and-meta-start-controls">Start-point and meta-start controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../methods/dical2.html#search-constraints-and-reproducibility">Search constraints and reproducibility</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#what-comes-back-in-data-results-dical2">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;dical2&quot;]</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../methods/ssm.html">SSM Framework</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-it-gives-you">What it gives you</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#relationship-to-the-dual-implementation-philosophy">Relationship to the dual implementation philosophy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#minimal-workflow">Minimal workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#practical-notes">Practical notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#recommended-starting-workflow">Recommended starting workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#how-to-think-about-the-workflow">How to think about the workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-the-main-knobs-mean">What the main knobs mean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#what-to-inspect-after-fitting">What to inspect after fitting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../methods/ssm.html#learn-more">Learn more</a></li>
 </ul>
 </li>
@@ -350,17 +437,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/parity.html">Parity and Oracle Status</a><ul>
@@ -374,6 +453,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/parity.html#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../developer/internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals.html#available-internals-pages">Available internals pages</a></li>
 </ul>
@@ -388,9 +469,15 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-generation-was-tightened-toward-upstream-semantics">5. Meta-start generation was tightened toward upstream semantics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#gallery-rerun-used-a-targeted-dical2-only-render-path">6. Gallery rerun used a targeted diCal2-only render path</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#meta-start-replay-tracing-is-now-available-on-the-native-path">7. Meta-start replay tracing is now available on the native path</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#java-nextlong-and-coordinatewise-shuffle-semantics-were-still-off">8. Java <code class="docutils literal notranslate"><span class="pre">nextLong()</span></code> and coordinatewise shuffle semantics were still off</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#vcf-backed-native-configs-needed-to-be-compacted-after-filtering">9. VCF-backed native configs needed to be compacted after filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#the-remaining-im-mismatch-is-concentrated-in-cross-pop-pcl-cases">10. The remaining <code class="docutils literal notranslate"><span class="pre">IM</span></code> mismatch is concentrated in cross-pop PCL cases</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-improved">What improved</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../developer/internals-dical2.html#next-steps">Next steps</a></li>
 </ul>
@@ -492,6 +579,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -524,6 +615,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/io.html#dical2">diCal2</a><ul>
@@ -560,19 +655,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -665,6 +777,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
@@ -676,7 +789,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">fmin_powell</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmcData</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._msmc_im</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_msmc_im_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit._provenance</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._msmc_im</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_msmc_im_output</span><span class="p">,</span> <span class="n">write_msmc_im_output</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.io._multihetsep</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_msmc_combined_output</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">smckit.tl._implementation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">annotate_result</span><span class="p">,</span>
@@ -1707,6 +1821,7 @@
     <span class="n">beta</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-8</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">),</span>
     <span class="n">xtol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
     <span class="n">ftol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-2</span><span class="p">,</span>
+    <span class="n">output_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">implementation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
     <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">native_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1742,6 +1857,8 @@
 <span class="sd">        Powell optimizer parameter tolerance. Default ``1e-4``.</span>
 <span class="sd">    ftol : float</span>
 <span class="sd">        Powell optimizer function tolerance. Default ``1e-2``.</span>
+<span class="sd">    output_prefix : str or Path, optional</span>
+<span class="sd">        Write an original-compatible ``.MSMC_IM.estimates.txt`` artifact.</span>
 <span class="sd">    implementation : {&quot;auto&quot;, &quot;native&quot;, &quot;upstream&quot;}</span>
 <span class="sd">        Algorithm provenance selector. ``&quot;native&quot;`` runs the in-repo fitter.</span>
 <span class="sd">        ``&quot;upstream&quot;`` runs the vendored ``MSMC_IM.py`` oracle when it is</span>
@@ -1753,10 +1870,18 @@
 <span class="sd">    SmcData</span>
 <span class="sd">        Input data with results stored in ``data.results[&quot;msmc_im&quot;]``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
     <span class="n">implementation</span> <span class="o">=</span> <span class="n">normalize_implementation</span><span class="p">(</span><span class="n">implementation</span><span class="p">)</span>
+    <span class="n">requested_capabilities</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">requested_capabilities</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">upstream_options</span><span class="p">:</span>
+        <span class="n">requested_capabilities</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;upstream_options&quot;</span><span class="p">)</span>
     <span class="n">implementation_used</span> <span class="o">=</span> <span class="n">choose_implementation</span><span class="p">(</span>
         <span class="n">implementation</span><span class="p">,</span>
         <span class="n">upstream_available</span><span class="o">=</span><span class="n">method_upstream_available</span><span class="p">(</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">),</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">,</span>
+        <span class="n">requested_capabilities</span><span class="o">=</span><span class="n">requested_capabilities</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">warn_if_native_not_trusted</span><span class="p">(</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">,</span> <span class="n">implementation_used</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">implementation_used</span> <span class="o">==</span> <span class="s2">&quot;upstream&quot;</span><span class="p">:</span>
@@ -1768,6 +1893,7 @@
             <span class="n">N2_init</span><span class="o">=</span><span class="n">N2_init</span><span class="p">,</span>
             <span class="n">m_init</span><span class="o">=</span><span class="n">m_init</span><span class="p">,</span>
             <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+            <span class="n">output_prefix</span><span class="o">=</span><span class="n">output_prefix</span><span class="p">,</span>
             <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
             <span class="n">upstream_options</span><span class="o">=</span><span class="n">upstream_options</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1885,6 +2011,28 @@
         <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="n">artifacts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output_prefix</span><span class="si">}</span><span class="s2">.b1_</span><span class="si">{</span><span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.b2_</span><span class="si">{</span><span class="n">beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.MSMC_IM.estimates.txt&quot;</span>
+        <span class="p">)</span>
+        <span class="n">output_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">write_msmc_im_output</span><span class="p">(</span>
+            <span class="n">output_path</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">left_boundary</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">N1_corrected</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">N2_corrected</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">M</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">artifacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
+                <span class="s2">&quot;sha256&quot;</span><span class="p">:</span> <span class="n">sha256_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;msmc-im-estimates&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
     <span class="n">data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">(</span>
         <span class="n">_build_msmc_im_payload</span><span class="p">(</span>
             <span class="n">left_boundary</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">left_boundary</span><span class="p">,</span>
@@ -1900,8 +2048,23 @@
             <span class="n">pattern</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">pattern</span><span class="p">,</span>
             <span class="n">beta</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
         <span class="p">),</span>
+        <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">,</span>
         <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span>
         <span class="n">implementation_used</span><span class="o">=</span><span class="n">implementation_used</span><span class="p">,</span>
+        <span class="n">effective_args</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="n">pattern</span><span class="p">,</span>
+            <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span>
+            <span class="s2">&quot;N1_init&quot;</span><span class="p">:</span> <span class="n">N1_init</span><span class="p">,</span>
+            <span class="s2">&quot;N2_init&quot;</span><span class="p">:</span> <span class="n">N2_init</span><span class="p">,</span>
+            <span class="s2">&quot;m_init&quot;</span><span class="p">:</span> <span class="n">m_init</span><span class="p">,</span>
+            <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">beta</span><span class="p">,</span>
+            <span class="s2">&quot;xtol&quot;</span><span class="p">:</span> <span class="n">xtol</span><span class="p">,</span>
+            <span class="s2">&quot;ftol&quot;</span><span class="p">:</span> <span class="n">ftol</span><span class="p">,</span>
+            <span class="s2">&quot;output_prefix&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="n">input_paths</span><span class="o">=</span><span class="p">[</span><span class="n">msmc_data</span><span class="p">[</span><span class="s2">&quot;source_path&quot;</span><span class="p">]]</span> <span class="k">if</span> <span class="n">msmc_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_path&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">runtime_seconds</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span>
+        <span class="n">artifacts</span><span class="o">=</span><span class="n">artifacts</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>
 
@@ -1944,9 +2107,11 @@
     <span class="n">N2_init</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">m_init</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">beta</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">output_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">implementation_requested</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">upstream_options</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmcData</span><span class="p">:</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
     <span class="n">script</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;vendor/MSMC-IM/MSMC_IM.py&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">script</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="n">require_upstream_available</span><span class="p">(</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">)</span>
@@ -1998,7 +2163,12 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;smckit-msmc-im-&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
             <span class="n">tmpdir_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span>
-            <span class="n">out_prefix</span> <span class="o">=</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;msmc_im&quot;</span>
+            <span class="n">out_prefix</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;msmc_im&quot;</span>
+            <span class="p">)</span>
+            <span class="n">out_prefix</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">env</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;MPLCONFIGDIR&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">tmpdir_path</span> <span class="o">/</span> <span class="s2">&quot;mplconfig&quot;</span><span class="p">))</span>
             <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
@@ -2048,12 +2218,18 @@
                     <span class="sa">f</span><span class="s2">&quot;stdout:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;stderr:</span><span class="se">\n</span><span class="si">{</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
-            <span class="n">candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tmpdir_path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.MSMC_IM.estimates.txt&quot;</span><span class="p">))</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="n">out_prefix</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_prefix</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.b1_*.b2_*.MSMC_IM.estimates.txt&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">candidates</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Upstream MSMC-IM did not produce an estimates file.&quot;</span><span class="p">)</span>
             <span class="n">estimates_path</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">parsed</span> <span class="o">=</span> <span class="n">read_msmc_im_output</span><span class="p">(</span><span class="n">estimates_path</span><span class="p">)</span>
-            <span class="n">fittingdetails_candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tmpdir_path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.MSMC_IM.fittingdetails.txt&quot;</span><span class="p">))</span>
+            <span class="n">fittingdetails_candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="n">out_prefix</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_prefix</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.b1_*.b2_*.MSMC_IM.fittingdetails.txt&quot;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">fittingdetails_candidates</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
                     <span class="s2">&quot;Upstream MSMC-IM did not produce a fittingdetails file.&quot;</span>
@@ -2085,6 +2261,19 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">right_boundary</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;left_boundary&quot;</span><span class="p">]):</span>
                 <span class="n">right_boundary</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;left_boundary&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">4.0</span>
 
+            <span class="n">artifacts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">output_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">estimates_path</span><span class="p">,</span> <span class="s2">&quot;msmc-im-estimates&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">fittingdetails_path</span><span class="p">,</span> <span class="s2">&quot;msmc-im-fitting-details&quot;</span><span class="p">),</span>
+                <span class="p">):</span>
+                    <span class="n">artifacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+                            <span class="s2">&quot;sha256&quot;</span><span class="p">:</span> <span class="n">sha256_file</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+                            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
             <span class="n">smc_data</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotate_result</span><span class="p">(</span>
                 <span class="n">_build_msmc_im_payload</span><span class="p">(</span>
                     <span class="n">left_boundary</span><span class="o">=</span><span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;left_boundary&quot;</span><span class="p">],</span>
@@ -2115,8 +2304,13 @@
                         <span class="p">),</span>
                     <span class="p">},</span>
                 <span class="p">),</span>
+                <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;msmc_im&quot;</span><span class="p">,</span>
                 <span class="n">implementation_requested</span><span class="o">=</span><span class="n">implementation_requested</span><span class="p">,</span>
                 <span class="n">implementation_used</span><span class="o">=</span><span class="s2">&quot;upstream&quot;</span><span class="p">,</span>
+                <span class="n">effective_args</span><span class="o">=</span><span class="n">effective_args</span><span class="p">,</span>
+                <span class="n">input_paths</span><span class="o">=</span><span class="p">[</span><span class="n">input_path</span><span class="p">],</span>
+                <span class="n">runtime_seconds</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span>
+                <span class="n">artifacts</span><span class="o">=</span><span class="n">artifacts</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">smc_data</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>
             <span class="k">return</span> <span class="n">smc_data</span>

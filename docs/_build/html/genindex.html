@@ -106,6 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#what-the-input-file-is">What the input file is</a></li>
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#run-smc">Run SMC++</a></li>
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#inspect-the-result">Inspect the result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#start-from-vcf">Start from VCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#select-regularization-by-held-out-contigs">Select regularization by held-out contigs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-smcpp.html#next-steps">Next steps</a></li>
 </ul>
 </li>
@@ -114,6 +116,12 @@
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-dical2.html#run-dical2">Run diCal2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-dical2.html#inspect-the-result">Inspect the result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-dical2.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="get-started/quickstart-phlash.html">Quickstart: PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-phlash.html#psmcfa-input">PSMCFA input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-phlash.html#vcf-bcf-input">VCF/BCF input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="get-started/quickstart-phlash.html#reproducibility-controls">Reproducibility controls</a></li>
 </ul>
 </li>
 </ul>
@@ -178,6 +186,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guide/plotting.html#axis-scaling">Axis scaling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/plotting.html#bootstrap-confidence-intervals">Bootstrap confidence intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/plotting.html#customizing-with-matplotlib-kwargs">Customizing with matplotlib kwargs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/plotting.html#method-specific-publication-plots">Method-specific publication plots</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guide/plotting.html#see-also">See also</a></li>
 </ul>
 </li>
@@ -336,6 +345,9 @@
 <li class="toctree-l3"><a class="reference internal" href="methods/smcpp.html#optimization-controls">Optimization controls</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#vcf-preparation-masks-and-multi-population-files">VCF preparation, masks, and multi-population files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#cross-validation">Cross-validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#models-and-figures">Models and figures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#what-comes-back-in-data-results-smcpp">What comes back in <code class="docutils literal notranslate"><span class="pre">data.results[&quot;smcpp&quot;]</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#how-to-tell-if-the-run-behaved-sensibly">How to tell if the run behaved sensibly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/smcpp.html#common-confusion-points">Common confusion points</a></li>
@@ -361,6 +373,14 @@
 <li class="toctree-l2"><a class="reference internal" href="methods/dical2.html#common-confusion-points">Common confusion points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/dical2.html#current-parity-snapshot">Current parity snapshot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/dical2.html#learn-more">Learn more</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="methods/phlash.html">PHLASH</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="methods/phlash.html#installation-and-implementation-contract">Installation and implementation contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/phlash.html#supported-inputs">Supported inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/phlash.html#normalized-results">Normalized results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/phlash.html#phlash-1-0-6-psmcfa-compatibility">PHLASH 1.0.6 PSMCFA compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/phlash.html#current-validation">Current validation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="methods/ssm.html">SSM Framework</a><ul>
@@ -417,17 +437,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer/testing.html">Testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#test-organization">Test organization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="developer/testing.html#unit-tests-tests-unit">Unit tests (<code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="developer/testing.html#integration-tests-tests-integration">Integration tests (<code class="docutils literal notranslate"><span class="pre">tests/integration/</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="developer/testing.html#gpu-tests-tests-gpu">GPU tests (<code class="docutils literal notranslate"><span class="pre">tests/gpu/</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#the-three-tier-validation-principle">The three-tier validation principle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#writing-a-new-test">Writing a new test</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#running-everything">Running everything</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#continuous-integration">Continuous integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#see-also">See also</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#tiers-and-budgets">Tiers and budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#numerical-acceptance">Numerical acceptance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/testing.html#required-edge-cases">Required edge cases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer/parity.html">Parity and Oracle Status</a><ul>
@@ -441,6 +453,8 @@
 <li class="toctree-l2"><a class="reference internal" href="developer/parity.html#ssm">SSM</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="developer/method-review.html">Quarterly method review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer/release-policy.html">Release policy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer/internals.html">Internals and Porting Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="developer/internals.html#available-internals-pages">Available internals pages</a></li>
 </ul>
@@ -462,10 +476,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#what-improved">What improved</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#structured-no-growth-native-runs-needed-odecore-not-eigencore">11. Structured no-growth native runs needed <code class="docutils literal notranslate"><span class="pre">ODECore</span></code>, not <code class="docutils literal notranslate"><span class="pre">EigenCore</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#the-ode-relative-tolerance-must-match-the-java-oracle">12. The ODE relative tolerance must match the Java oracle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developer/internals-dical2.html#preserve-the-ethan-trunk-solver-s-asymmetric-infinity-check">13. Preserve the Ethan trunk solver’s asymmetric infinity check</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#what-still-does-not-match">What still does not match</a></li>
-<li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#next-steps">Next steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/internals-dical2.html#current-closure">Current closure</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer/internals-psmc.html">PSMC Internals</a><ul>
@@ -565,6 +580,10 @@
 <li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.results"><code class="docutils literal notranslate"><span class="pre">SmcData.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.uns"><code class="docutils literal notranslate"><span class="pre">SmcData.uns</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.n_sites"><code class="docutils literal notranslate"><span class="pre">SmcData.n_sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.result"><code class="docutils literal notranslate"><span class="pre">SmcData.result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.times"><code class="docutils literal notranslate"><span class="pre">SmcData.times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.effective_population_size"><code class="docutils literal notranslate"><span class="pre">SmcData.effective_population_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/core.html#smckit.SmcData.log_likelihood"><code class="docutils literal notranslate"><span class="pre">SmcData.log_likelihood()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -597,6 +616,10 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/io.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.read_smcpp_input"><code class="docutils literal notranslate"><span class="pre">read_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.write_smcpp_input"><code class="docutils literal notranslate"><span class="pre">write_smcpp_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.read_smcpp_model"><code class="docutils literal notranslate"><span class="pre">read_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.write_smcpp_model"><code class="docutils literal notranslate"><span class="pre">write_smcpp_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.smcpp_model_payload"><code class="docutils literal notranslate"><span class="pre">smcpp_model_payload()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/io.html#dical2">diCal2</a><ul>
@@ -606,6 +629,7 @@
 <li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.read_dical2_rates"><code class="docutils literal notranslate"><span class="pre">read_dical2_rates()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.read_dical2_config"><code class="docutils literal notranslate"><span class="pre">read_dical2_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.read_dical2_sequences"><code class="docutils literal notranslate"><span class="pre">read_dical2_sequences()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/io.html#smckit.io.write_dical2_output"><code class="docutils literal notranslate"><span class="pre">write_dical2_output()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -633,19 +657,36 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/tl.html#smc">SMC++</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/tl.html#smckit.tl.smcpp"><code class="docutils literal notranslate"><span class="pre">smcpp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/tl.html#smckit.tl.smcpp_cross_validate"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validate()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/tl.html#dical2">diCal2</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/tl.html#smckit.tl.dical2"><code class="docutils literal notranslate"><span class="pre">dical2()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="api/tl.html#phlash">PHLASH</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/tl.html#smckit.tl.phlash"><code class="docutils literal notranslate"><span class="pre">phlash()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="api/pl.html">Plotting</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.demographic_history"><code class="docutils literal notranslate"><span class="pre">demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.asmc_posterior_heatmap"><code class="docutils literal notranslate"><span class="pre">asmc_posterior_heatmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.asmc_recent_coalescence_density"><code class="docutils literal notranslate"><span class="pre">asmc_recent_coalescence_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.phlash_demographic_history"><code class="docutils literal notranslate"><span class="pre">phlash_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.save_asmc_figure"><code class="docutils literal notranslate"><span class="pre">save_asmc_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.save_phlash_figure"><code class="docutils literal notranslate"><span class="pre">save_phlash_figure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.smcpp_demographic_history"><code class="docutils literal notranslate"><span class="pre">smcpp_demographic_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.smcpp_cross_validation_scores"><code class="docutils literal notranslate"><span class="pre">smcpp_cross_validation_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pl.html#smckit.pl.save_smcpp_figure"><code class="docutils literal notranslate"><span class="pre">save_smcpp_figure()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="api/pp.html">Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/pp.html">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/pp.html#smckit.pp.psmcfa_from_consensus"><code class="docutils literal notranslate"><span class="pre">psmcfa_from_consensus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/pp.html#smckit.pp.smcpp_from_vcf"><code class="docutils literal notranslate"><span class="pre">smcpp_from_vcf()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="api/ssm.html">Extensions: State-Space Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/ssm.html#smckit.ext.ssm.SmcStateSpace"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/ssm.html#smckit.ext.ssm.SmcStateSpace.n_states"><code class="docutils literal notranslate"><span class="pre">SmcStateSpace.n_states</span></code></a></li>
@@ -745,6 +786,12 @@
       <li><a href="api/tl.html#smckit.tl.asmc">asmc() (in module smckit.tl)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pl.html#smckit.pl.asmc_posterior_heatmap">asmc_posterior_heatmap() (in module smckit.pl)</a>
+</li>
+      <li><a href="api/pl.html#smckit.pl.asmc_recent_coalescence_density">asmc_recent_coalescence_density() (in module smckit.pl)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
@@ -778,6 +825,8 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#smckit.SmcData.effective_population_size">effective_population_size() (smckit.SmcData method)</a>
+</li>
       <li><a href="api/ssm.html#smckit.ext.ssm.PsmcSSM.emission_matrix">emission_matrix() (smckit.ext.ssm.PsmcSSM method)</a>
 
       <ul>
@@ -831,7 +880,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ssm.html#smckit.ext.ssm.SmcStateSpace.log_likelihood">log_likelihood() (smckit.ext.ssm.SmcStateSpace method)</a>
+
+      <ul>
+        <li><a href="api/core.html#smckit.SmcData.log_likelihood">(smckit.SmcData method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -840,13 +893,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ssm.html#smckit.ext.ssm.PsmcSSM.make_initial_params">make_initial_params() (smckit.ext.ssm.PsmcSSM method)</a>
 </li>
-      <li>
-    module
-
-      <ul>
-        <li><a href="api/pp.html#module-smckit.pp">smckit.pp</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/tl.html#smckit.tl.msmc2">msmc2() (in module smckit.tl)</a>
@@ -883,9 +929,15 @@
         <li><a href="api/core.html#smckit.SmcData.params">(smckit.SmcData attribute)</a>
 </li>
       </ul></li>
+      <li><a href="api/tl.html#smckit.tl.phlash">phlash() (in module smckit.tl)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pl.html#smckit.pl.phlash_demographic_history">phlash_demographic_history() (in module smckit.pl)</a>
+</li>
       <li><a href="api/tl.html#smckit.tl.psmc">psmc() (in module smckit.tl)</a>
+</li>
+      <li><a href="api/pp.html#smckit.pp.psmcfa_from_consensus">psmcfa_from_consensus() (in module smckit.pp)</a>
 </li>
       <li><a href="api/ssm.html#smckit.ext.ssm.PsmcSSM">PsmcSSM (class in smckit.ext.ssm)</a>
 </li>
@@ -913,10 +965,10 @@
 </li>
       <li><a href="api/io.html#smckit.io.read_hap">read_hap() (in module smckit.io)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/io.html#smckit.io.read_map">read_map() (in module smckit.io)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/io.html#smckit.io.read_msmc_combined_output">read_msmc_combined_output() (in module smckit.io)</a>
 </li>
       <li><a href="api/io.html#smckit.io.read_msmc_im_output">read_msmc_im_output() (in module smckit.io)</a>
@@ -933,6 +985,10 @@
 </li>
       <li><a href="api/io.html#smckit.io.read_smcpp_input">read_smcpp_input() (in module smckit.io)</a>
 </li>
+      <li><a href="api/io.html#smckit.io.read_smcpp_model">read_smcpp_model() (in module smckit.io)</a>
+</li>
+      <li><a href="api/core.html#smckit.SmcData.result">result() (smckit.SmcData method)</a>
+</li>
       <li><a href="api/core.html#smckit.SmcData.results">results (smckit.SmcData attribute)</a>
 </li>
   </ul></td>
@@ -941,6 +997,12 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pl.html#smckit.pl.save_asmc_figure">save_asmc_figure() (in module smckit.pl)</a>
+</li>
+      <li><a href="api/pl.html#smckit.pl.save_phlash_figure">save_phlash_figure() (in module smckit.pl)</a>
+</li>
+      <li><a href="api/pl.html#smckit.pl.save_smcpp_figure">save_smcpp_figure() (in module smckit.pl)</a>
+</li>
       <li><a href="api/settings.html#smckit.settings.Settings.seed">seed (smckit.settings.Settings attribute)</a>
 </li>
       <li><a href="api/core.html#smckit.SmcData.sequences">sequences (smckit.SmcData attribute)</a>
@@ -951,14 +1013,17 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
-    smckit.pp
-
-      <ul>
-        <li><a href="api/pp.html#module-smckit.pp">module</a>
-</li>
-      </ul></li>
       <li><a href="api/tl.html#smckit.tl.smcpp">smcpp() (in module smckit.tl)</a>
+</li>
+      <li><a href="api/tl.html#smckit.tl.smcpp_cross_validate">smcpp_cross_validate() (in module smckit.tl)</a>
+</li>
+      <li><a href="api/pl.html#smckit.pl.smcpp_cross_validation_scores">smcpp_cross_validation_scores() (in module smckit.pl)</a>
+</li>
+      <li><a href="api/pl.html#smckit.pl.smcpp_demographic_history">smcpp_demographic_history() (in module smckit.pl)</a>
+</li>
+      <li><a href="api/pp.html#smckit.pp.smcpp_from_vcf">smcpp_from_vcf() (in module smckit.pp)</a>
+</li>
+      <li><a href="api/io.html#smckit.io.smcpp_model_payload">smcpp_model_payload() (in module smckit.io)</a>
 </li>
       <li><a href="api/ssm.html#smckit.ext.ssm.SmcStateSpace">SmcStateSpace (class in smckit.ext.ssm)</a>
 </li>
@@ -968,6 +1033,8 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#smckit.SmcData.times">times() (smckit.SmcData method)</a>
+</li>
       <li><a href="api/ssm.html#smckit.ext.ssm.PsmcSSM.to_physical_units">to_physical_units() (smckit.ext.ssm.PsmcSSM method)</a>
 </li>
   </ul></td>
@@ -1010,11 +1077,17 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#smckit.SmcData.window_size">window_size (smckit.SmcData attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/io.html#smckit.io.write_dical2_output">write_dical2_output() (in module smckit.io)</a>
+</li>
       <li><a href="api/io.html#smckit.io.write_msmc_im_output">write_msmc_im_output() (in module smckit.io)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/io.html#smckit.io.write_psmc_output">write_psmc_output() (in module smckit.io)</a>
+</li>
+      <li><a href="api/io.html#smckit.io.write_smcpp_input">write_smcpp_input() (in module smckit.io)</a>
+</li>
+      <li><a href="api/io.html#smckit.io.write_smcpp_model">write_smcpp_model() (in module smckit.io)</a>
 </li>
   </ul></td>
 </tr></table>
