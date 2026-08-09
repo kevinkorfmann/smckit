@@ -1,0 +1,7 @@
+Python 3.12.11 (Clang 20.1.4)
+smckit 0.0.1b2
+numpy 2.4.4
+scipy 1.17.1
+msprime 1.4.1
+psutil 7.2.2
+OpenJDK 25.0.2 Homebrew

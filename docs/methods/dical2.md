@@ -219,19 +219,24 @@ and refined into a stochastic pulse epoch. Pulse transitions are applied to
 all native lineage-state surfaces, and the independent introgression
 fixed-point now agrees with the Java EigenCore oracle within the frozen
 `1e-5` total-likelihood tolerance. This closes fixed-point correctness only;
-fitted introgression remains unpromoted because the native M-step is still
-materially slower than Java.
+the one-step fitted endpoint is now also frozen and returns the same parameter
+vector as Java within `1e-14`, with the likelihood inside the same strict
+tolerance. On the frozen macOS ARM64 benchmark, native was `1.1381x` faster
+(paired-bootstrap 95% CI `1.1343-1.1433x`) and used `0.4909x` peak process-tree
+memory across ten warmed repetitions. This capability remains unpromoted until
+broader structured families and Linux evidence close.
 
 The authoritative option-by-option status is recorded in
 [the diCal2 feature ledger](../parity/dical2-feature-ledger.json). PAC
 permutation controls and generated grid/random starts are implemented but
 remain unpromoted. Direct Java checks now cover generated fixed-point and
 one-step PAC EM, two file-backed per-contig permutation sets, and exact grid and
-seeded-random start sequences, plus four passing independent structured fixed
-points, including pulse introgression. Independent growth inference, fitted
-structured/empirical breadth, and the performance gate are still missing.
-Native parallel execution remains upstream-only; use exact upstream execution
-when those workflows are scientifically consequential.
+seeded-random start sequences, four passing independent structured fixed
+points, and fitted pulse introgression. Independent growth inference, broader
+fitted structured/empirical coverage, and the complete cross-platform
+performance gate are still missing. Native parallel execution remains
+upstream-only; use exact upstream execution when those workflows are
+scientifically consequential.
 
 ## Learn more
 
@@ -240,3 +245,5 @@ when those workflows are scientifically consequential.
 - [Interpreting results](../guide/interpreting-results.md)
 - [Parity notes](../developer/parity.md)
 - [Developer parity notes](../developer/internals-dical2.md)
+- Frozen fitted-introgression performance evidence:
+  `workflow/publication/evidence/dical2-introgression/sha256-c339dbb6/`

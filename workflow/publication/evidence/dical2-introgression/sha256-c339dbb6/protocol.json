@@ -1,0 +1,43 @@
+{
+  "config": {
+    "empirical": {
+      "human": "1000 Genomes accession and deterministic sample manifest required",
+      "nonhuman": "Arabidopsis 1001 Genomes plus a public goat cohort require accession and sample manifests; VarGoats additionally requires publication/data-use clearance"
+    },
+    "metrics": [
+      "log_integrated_trajectory_error",
+      "parameter_error",
+      "likelihood_difference",
+      "posterior_coverage",
+      "runtime_seconds",
+      "peak_memory_bytes",
+      "installation_success"
+    ],
+    "mutation_rate": 1.25e-08,
+    "platforms": [
+      "linux-x86_64",
+      "macos-arm64",
+      "nvidia-gpu"
+    ],
+    "recombination_rate": 1e-08,
+    "replicates": 20,
+    "scenarios": [
+      "constant",
+      "bottleneck",
+      "expansion",
+      "split_with_migration",
+      "structure",
+      "selfing_dormancy"
+    ],
+    "schema_version": 1,
+    "seed": 1729,
+    "sequence_length": 1000000,
+    "timing_repetitions": 5
+  },
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "schema_version": 1,
+  "source": {
+    "path": "config.yaml",
+    "sha256": "68d9fc6217e3fe3723752d93d38ffc89905c5699bedd9e834b36d6076363a178"
+  }
+}

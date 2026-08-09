@@ -1,0 +1,79 @@
+{
+  "accuracy_records": [],
+  "aggregate_sha256": "504a8b7ed9b717bb4ef29665ca72934bea793e76740222f80284f80ee0557733",
+  "benchmark_records": [
+    {
+      "dataset": "introgression-msprime-seed109-v1",
+      "implementation": "native",
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "method": "dical2",
+      "platform": {
+        "logical_cpu_count": 11,
+        "machine": "arm64",
+        "processor": "arm",
+        "python": "3.12.11",
+        "release": "25.2.0",
+        "system": "Darwin"
+      },
+      "record_sha256": "6a8506fd787618d4bf968545ecc21c403adedd738ac590d9d1bf9c04245c0536",
+      "threads": 1
+    },
+    {
+      "dataset": "introgression-msprime-seed109-v1",
+      "implementation": "upstream",
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "method": "dical2",
+      "platform": {
+        "logical_cpu_count": 11,
+        "machine": "arm64",
+        "processor": "arm",
+        "python": "3.12.11",
+        "release": "25.2.0",
+        "system": "Darwin"
+      },
+      "record_sha256": "278c85d93a47ea6c60a01fc03efba4cad2f3a65c86a6464a0b9ac678b3e8fe3f",
+      "threads": 1
+    }
+  ],
+  "input_record_sha256": [
+    "278c85d93a47ea6c60a01fc03efba4cad2f3a65c86a6464a0b9ac678b3e8fe3f",
+    "6a8506fd787618d4bf968545ecc21c403adedd738ac590d9d1bf9c04245c0536"
+  ],
+  "performance_comparisons": [
+    {
+      "cold_runtime_ratio_upstream_over_native": 1.1651984780118747,
+      "confidence": 0.95,
+      "dataset": "introgression-msprime-seed109-v1",
+      "faster_with_confidence": true,
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "memory_ratio": 0.49092236715456866,
+      "memory_within_25_percent": true,
+      "method": "dical2",
+      "native_cold_seconds": 1.2953837079694495,
+      "native_startup_seconds": 1.0250323750078678,
+      "native_warm_peak_memory_bytes": 242335744,
+      "platform": {
+        "machine": "arm64",
+        "processor": "arm",
+        "system": "Darwin"
+      },
+      "promotable": true,
+      "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+      "schema_version": 1,
+      "speedup": 1.1380959524638916,
+      "speedup_confidence_interval": [
+        1.1342672615548994,
+        1.143333496627506
+      ],
+      "startup_runtime_ratio_upstream_over_native": 0.9813051026627959,
+      "threads": 1,
+      "upstream_cold_seconds": 1.5093791249673814,
+      "upstream_startup_seconds": 1.0058694999897853,
+      "upstream_warm_peak_memory_bytes": 493633536,
+      "warm_repetitions": 10
+    }
+  ],
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "required_warm_repetitions": 10,
+  "schema_version": 1
+}

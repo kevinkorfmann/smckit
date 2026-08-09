@@ -104,8 +104,16 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   mutation, marginal, and EigenCore transition surfaces. Independent simulated
   introgression now meets the pinned Java EigenCore fixed-point oracle, and
   exact ancient-recombination tensors use batched linear algebra with reusable
-  core matrices. Fitted introgression remains unpromoted pending further
-  optimizer-performance work.
+  core matrices. The shared optimizer contract now applies Java's implicit
+  one-iteration M-step default to both implementations, fitted introgression
+  has a strict one-step oracle, physical VCF blocks and objective values are
+  cached, and constant-size zero-migration Ethan trunk epochs use their exact
+  solution. A persistent worker records paired runtime and memory evidence.
+- Frozen macOS ARM64 fitted-introgression evidence shows native diCal2 at
+  `1.1381x` the preserved Java speed (paired-bootstrap 95% CI
+  `1.1343-1.1433x`) with a `0.4909` peak-memory ratio across ten warmed
+  repetitions. This is capability-specific evidence, not whole-method
+  promotion.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

@@ -230,7 +230,8 @@
         "independent clean-split simulation",
         "independent migration-window simulation",
         "independent three-population simulation",
-        "independent introgression simulation with pulse migration and Java EigenCore"
+        "independent introgression simulation with pulse migration and Java EigenCore",
+        "independent fitted introgression one-step EM"
       ],
       "workflows": [
         "external and VCF-header references",
@@ -239,6 +240,7 @@
         "LOL, PCL, and PAC composite likelihoods",
         "generated, file-backed, and per-contig PAC permutations",
         "posterior-weighted PAC one-step EM",
+        "fitted pulse-introgression one-step EM",
         "generated log-grid and seeded log-uniform starts",
         "explicit and iterative meta-start searches",
         "parser-compatible objective and normalized JSON artifacts"
