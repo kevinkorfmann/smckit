@@ -306,6 +306,7 @@ Quickstarts
    developer/release-policy
    developer/internals
    developer/internals-dical2
+   parity/dical2-output-catalogue
    developer/internals-psmc
    developer/internals-smcpp
    developer/smcpp-parity-closure
