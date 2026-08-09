@@ -469,3 +469,28 @@ the null trunk while constructing the core. Exact upstream execution preserves
 that `NullPointerException`. Native intentionally evaluates all non-empty CSDs;
 its deterministic endpoint and Java failure are frozen. This repaired default
 remains unpromoted pending empirical validation.
+
+### 21. Trunk-family parity needs both lineage-count and migration oracles
+
+The native trunk layer now implements the original `oldCake`, `meanCake`,
+`multiCake`, `multiCakeUpdating`, `migratingMultiCake`,
+`migMultiCakeUpdating`, and single-population `exactCake` choices in addition
+to `simple` and `migratingEthan`. The implementation evaluates Kingman
+lineage-count expectations directly; the exact-cake ancestral-count
+distribution is computed through an independent pure-death matrix exponential.
+This avoids depending on the vendored implementation while reproducing its
+scientific contract.
+
+The oracle matrix separates three questions. A one-population fixture covers
+every valid beginning, middle, end, and average cake convention. One-step EM
+fits cover each newly implemented family. A structured isolation-migration
+fixture verifies per-deme masses, migration wrapping, and the original
+half-migration-rate convention. Across the frozen cases, likelihood agreement
+is within `1e-7` and fitted parameters within `1e-12`.
+
+The `recursive` name is not a runnable normal-CLI oracle in the pinned jar.
+That CLI selects a factory whose ordinary constructor deliberately does not
+build the recursive trunk, then later dereferences the resulting null value.
+Middle cake is rejected earlier as invalid. Exact upstream execution preserves
+these failures; native reports the unsupported recursive path explicitly and
+does not silently substitute another trunk.

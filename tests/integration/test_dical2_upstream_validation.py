@@ -46,6 +46,22 @@ IM_COMMON = {
     "seed": 60643714832,
 }
 
+CAKE_TRUNK_STYLES = [
+    "oldCake",
+    "meanCake",
+    "multiCake",
+    "multiCakeUpdating",
+    "migratingMultiCake",
+    "migMultiCakeUpdating",
+]
+CAKE_STYLES = ["beginning", "middle", "end", "average"]
+TRUNK_FIXED_POINT_CASES = (
+    [("simple", None)]
+    + [(trunk, cake) for trunk in CAKE_TRUNK_STYLES for cake in CAKE_STYLES]
+    + [("migratingEthan", cake) for cake in ["beginning", "end", "average"]]
+    + [("exactCake", None)]
+)
+
 
 pytestmark = pytest.mark.skipif(
     not smckit.upstream.status("dical2")["runtime_ready"],
@@ -163,6 +179,153 @@ def test_dical2_upstream_im_backend_runs_end_to_end() -> None:
     np.testing.assert_allclose(np.asarray(res["best_params"]), np.asarray(res["ordered_params"]))
     assert len(np.asarray(res["time"])) > 0
     assert len(res["structured_ne"]) > 0
+
+
+@pytest.mark.oracle
+@pytest.mark.parametrize(
+    ("trunk_style", "cake_style"),
+    TRUNK_FIXED_POINT_CASES,
+)
+def test_dical2_native_trunk_style_fixed_points_match_upstream(
+    trunk_style: str,
+    cake_style: str | None,
+) -> None:
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "lol",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": trunk_style,
+    }
+    if cake_style is not None:
+        options["cake_style"] = cake_style
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-7)
+
+
+@pytest.mark.oracle
+@pytest.mark.parametrize("trunk_style", CAKE_TRUNK_STYLES + ["exactCake"])
+def test_dical2_native_trunk_style_one_step_matches_upstream(trunk_style: str) -> None:
+    common = {
+        "n_em_iterations": 1,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "lol",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "number_iterations_mstep": 1,
+        "trunk_style": trunk_style,
+    }
+    if trunk_style != "exactCake":
+        options["cake_style"] = "average"
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-7)
+
+
+@pytest.mark.oracle
+@pytest.mark.parametrize("trunk_style", CAKE_TRUNK_STYLES)
+def test_dical2_native_structured_trunk_fixed_points_match_upstream(
+    trunk_style: str,
+) -> None:
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "IM.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 4,
+        "composite_mode": "lol",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "trunk_style": trunk_style,
+        "cake_style": "average",
+    }
+    upstream = dical2(
+        _read_im_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_im_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-7)
+
+
+@pytest.mark.oracle
+def test_dical2_recursive_trunk_characterizes_upstream_null_trunk_failure() -> None:
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "lol",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": "recursive",
+        "cake_style": "beginning",
+    }
+    with pytest.raises(RuntimeError, match="trunk.*null"):
+        dical2(
+            _read_exp_data(),
+            implementation="upstream",
+            upstream_options=options,
+            **common,
+        )
+    with pytest.raises(NotImplementedError, match="recursive"):
+        dical2(
+            _read_exp_data(),
+            implementation="native",
+            native_options=options,
+            **common,
+        )
 
 
 @pytest.mark.oracle

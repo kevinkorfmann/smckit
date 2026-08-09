@@ -229,8 +229,9 @@ On the tracked README fixtures, parity is materially tighter than before:
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
-Native promotion still requires structured PAC/trunk-control families,
-remaining feature-ledger closure, and cross-platform performance gates.
+Native promotion still requires empirical PAC validation, remaining
+ancient-state/additional-trunk-interval and artifact closure, and
+cross-platform performance gates.
 
 Parameterized instantaneous migration is preserved by the native demo reader
 and refined into a stochastic pulse epoch. Pulse transitions are applied to
@@ -242,7 +243,7 @@ vector as Java within `1e-14`, with the likelihood inside the same strict
 tolerance. On the frozen macOS ARM64 benchmark, native was `1.1381x` faster
 (paired-bootstrap 95% CI `1.1343-1.1433x`) and used `0.4909x` peak process-tree
 memory across ten warmed repetitions. This capability remains unpromoted until
-structured PAC/trunk-control families and Linux evidence close.
+empirical PAC validation, remaining feature closure, and Linux evidence close.
 
 The independent fitted-growth capability also clears its macOS ARM64 gate.
 Across ten warmed paired repetitions, native was `1.3052x` faster than Java
@@ -263,10 +264,16 @@ pulse introgression, exponential growth, and transition-type conditioning.
 Marginal-KL is explicitly experimental because the pinned Java oracle crashes.
 The pinned jar also crashes when PAC's default all-CSD set includes an empty
 trunk; native evaluates the scientifically meaningful non-empty CSDs and keeps
-that repaired behavior unpromoted. Broader empirical coverage and the complete cross-platform
-performance gate are still missing. Native parallel execution remains
-upstream-only; use exact upstream execution when those workflows are
-scientifically consequential.
+that repaired behavior unpromoted. Native implementations now cover the
+original simple, old/mean/multi cake, updating-cake, migrating-cake,
+exact-cake, and migrating-Ethan trunk families. Every valid cake sampling mode
+has a fixed-point Java oracle, and the new cake/exact families have fitted
+one-step coverage. The pinned normal CLI cannot construct its recursive trunk
+and returns a null-trunk exception; exact upstream preserves that behavior and
+native fails explicitly instead of substituting a different approximation.
+Broader empirical coverage and the complete cross-platform performance gate
+are still missing. Native parallel execution remains upstream-only; use exact
+upstream execution when those workflows are scientifically consequential.
 
 ## Learn more
 

@@ -136,6 +136,12 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   The native M-step now skips impossible zero-trunk states instead of producing
   `0 * NaN`. The pinned jar's separate null-trunk crash for the default all-CSD
   set is frozen while native's non-empty-CSD repair remains unpromoted.
+- Add native diCal2 `oldCake`, `meanCake`, `multiCake`,
+  `multiCakeUpdating`, `migratingMultiCake`, `migMultiCakeUpdating`, and
+  `exactCake` trunks. All valid beginning/middle/end/average cake modes have
+  fixed-point Java oracles, every new family has a fitted one-step oracle, and
+  structured fixtures cover every non-exact family. The original `recursive`
+  normal-CLI null-trunk failure is frozen and native fails explicitly.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.
