@@ -59,8 +59,8 @@
      - ✓
      - planned
      - ✗
-     - `frozen typed fit oracle at 1e-8 plus live normalized posterior/recombination decode oracle`
-     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. The NumPy 2 compatibility shim does not modify upstream code. Native implementation remains planned.
+     - `typed fit/decode oracles, exact native preprocessing arrays, and native HMM intermediates within floating-point precision`
+     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. Independent native multihetsep/map preprocessing matches a frozen upstream oracle without chromosome-sized allocations, and native Numba HMM kernels match frozen upstream intermediates. Optimization, artifacts, and end-to-end native parity remain gated. The NumPy 2 compatibility shim does not modify upstream code.
    * - SSM
      - n/a
      - ✓

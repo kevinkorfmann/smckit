@@ -15,11 +15,11 @@ and the remaining work before declaring the oracle complete.
 
 ## PSMC+
 
-**Progress:** The MIT-licensed source is pinned at commit `032168f2ceed3c0e46b7f214f890faf83dff41ae`, both original Python entry points are exposed through the shell-free raw runner, and a frozen constant-population fixture validates one upstream EM iteration numerically. The runtime compatibility policy records the narrow `numpy.math` alias restored for NumPy 2 without modifying upstream source.
-**Decisions:** Preserve every original argument and artifact before designing the normalized typed interface. Keep `auto` on upstream and reject `native` until an independently implemented method has a complete oracle ledger.
+**Progress:** The MIT-licensed source is pinned at commit `032168f2ceed3c0e46b7f214f890faf83dff41ae`, both original Python entry points are exposed through the shell-free raw runner, and typed upstream fit/decode workflows normalize results and provenance. Independent native preprocessing matches frozen upstream multihetsep mask counts and mutation/recombination map factors while avoiding chromosome-sized arrays. The first Numba kernel layer matches frozen upstream time grids, conditional and local-rate transitions, locus-specific emissions, scaled forward/backward arrays, EM evidence, posterior states, and marginal-recombination probabilities within floating-point precision. The runtime compatibility policy records the narrow `numpy.math` alias restored for NumPy 2 without modifying upstream source.
+**Decisions:** Preserve every original argument and artifact before promoting native execution. Build the native method from published SMC and locus-rescaling equations, use the pinned source only to freeze external numeric oracles, keep `auto` on upstream, and continue rejecting public `native` execution until optimization, artifacts, and final fit/decode parity close.
 **Context:** PSMC+ extends pairwise inference to local mutation, recombination, and coalescence-rate heterogeneity, which directly exercises smckit's preservation-first handling of maps, multi-file data, decoding, and original artifacts.
-**Remaining tasks:** Complete typed upstream normalization, exercise all documented inference/simulation branches, build and test the pinned OCI/Apptainer runtime, then implement and optimize the native method feature by feature.
-**References:** :doc:`methods/psmcplus`, ``tests/integration/test_psmcplus_upstream_validation.py``
+**Remaining tasks:** Implement grouped/fixed-parameter optimization, multi-file fitting, original-compatible artifacts, and full typed fit/decode execution; close final-output and stochastic simulation oracles before measuring promotion performance. Build and test the pinned OCI/Apptainer runtime in parallel.
+**References:** :doc:`methods/psmcplus`, ``tests/unit/test_psmcplus_native_preprocessing.py``, ``tests/unit/test_psmcplus_native_kernels.py``, ``tests/integration/test_psmcplus_upstream_validation.py``
 
 ## ASMC
 

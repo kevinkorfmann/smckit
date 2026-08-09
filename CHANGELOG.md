@@ -14,6 +14,12 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   surface, normalized demographic and posterior/recombination results, physical
   scaling, persistent hashed artifacts, common result accessors, and live fit
   and decoding oracles while keeping native execution explicitly unavailable.
+- Add independently written native PSMC+ preprocessing and Numba HMM kernels:
+  memory-efficient multihetsep masks and mutation/recombination maps, time
+  discretization, local-rate transitions and emissions, forward/backward and EM
+  evidence, posterior decoding, and marginal recombination. Both layers are
+  locked to frozen content-addressed upstream oracles while public native
+  execution remains gated on full workflow parity.
 - Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
   99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
   sequence decoding unpromoted until its WGS oracle is closed.

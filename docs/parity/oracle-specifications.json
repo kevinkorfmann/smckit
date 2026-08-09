@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-07-29",
+  "updated": "2026-08-09",
   "global": {
     "deterministic_kernel": {"rtol": 1e-12, "atol": 1e-14},
     "scalar_parameter_relative_error": 0.001,
@@ -42,6 +42,50 @@
         "mutation-class and interval masks",
         "sequence-probability output and HMM simulation",
         "original-compatible result output"
+      ],
+      "status": "enforced_partial"
+    },
+    "psmcplus": {
+      "fixtures": [
+        "frozen four-state kernel oracle from pinned commit 032168f2",
+        "frozen masked multihetsep and local-rate preprocessing oracle",
+        "constant-population one-iteration fit",
+        "constant-population posterior and marginal-recombination decode"
+      ],
+      "intermediates": [
+        "binned heterozygote and masked-base counts",
+        "mutation and recombination factor indices and values",
+        "time boundaries and conditional interval means",
+        "conditional and local-rate transition matrices",
+        "locus-specific Poisson emissions",
+        "stationary distribution",
+        "scaled forward and backward arrays",
+        "EM transition evidence",
+        "posterior state and marginal-recombination probabilities"
+      ],
+      "workflows": [
+        "homogeneous and heterogeneous mutation factors",
+        "homogeneous and heterogeneous recombination factors",
+        "masked and multi-heterozygote bins",
+        "exponential and nonexponential recombination controls",
+        "midpoint and conditional-mean time representatives",
+        "fit and decode result normalization"
+      ],
+      "kernel_acceptance": {
+        "rtol": 5e-13,
+        "atol": 3e-14,
+        "fixture_sha256": "5ae0680152bb5b68ccaeffa834688fca7bdadd12a4047dce1f9d20b423ad6a64"
+      },
+      "preprocessing_acceptance": {
+        "comparison": "exact arrays",
+        "fixture_sha256": "6e0a12847a60fa1ece6307f16325376ffa0ef95f8ac1a72adf7bc0d71cb92de9"
+      },
+      "final_metrics": [
+        "theta and rho",
+        "lambda and effective-size trajectory",
+        "per-site log likelihood",
+        "posterior and marginal-recombination agreement",
+        "warmed runtime and peak memory"
       ],
       "status": "enforced_partial"
     },

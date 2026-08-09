@@ -155,6 +155,11 @@
         "normalized_result_schema": "upstream_only",
         "typed_fit_oracle": "upstream_only",
         "typed_decode_oracle": "upstream_only",
+        "native_multihetsep_preprocessing": "native",
+        "native_local_rate_maps": "native",
+        "native_preprocessing_oracle": "native",
+        "native_hmm_kernels": "native",
+        "native_kernel_oracle": "native",
         "native_implementation": "planned",
         "parity_oracles": "planned",
         "performance_promotion": "planned"

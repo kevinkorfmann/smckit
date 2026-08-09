@@ -145,3 +145,14 @@ decoding oracle independently validates posterior normalization and marginal
 recombination probabilities. On the one-thread Sesame validation environment,
 both typed fit and decode completed successfully against the pinned source.
 Native/default eligibility and performance remain explicitly unclaimed.
+
+The independent native implementation has begun below the public execution
+surface. Its preprocessing and Numba kernel layers are locked to frozen,
+content-addressed oracles generated from the pinned source. The native parser
+reproduces multihetsep mask counts and local mutation/recombination map factors
+without upstream's chromosome-sized per-base arrays. Time grids, interval
+expectations, local-rate transition matrices, mutation-rate-adjusted Poisson
+emissions, forward/backward arrays, EM evidence, state posteriors, and marginal
+recombination probabilities agree within floating-point precision. Parameter
+optimization, full artifacts, and final fit/decode parity are not complete, so
+`implementation="native"` remains unavailable and `auto` remains upstream.
