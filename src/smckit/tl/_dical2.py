@@ -355,6 +355,41 @@ def _resolve_dical2_options(
         ),
         default=False,
     )
+    resolved_number_iterations_em = int(
+        _lookup_option(
+            method_options,
+            "number_iterations_em",
+            "numberIterationsEM",
+            default=n_em_iterations,
+        )
+    )
+    raw_number_iterations_mstep = _lookup_option(
+        method_options,
+        "number_iterations_mstep",
+        "numberIterationsMstep",
+    )
+    raw_relative_error_m = _lookup_option(
+        method_options,
+        "relative_error_m",
+        "relativeErrorM",
+    )
+    if raw_number_iterations_mstep is not None and raw_relative_error_m is not None:
+        raise ValueError("Specify exactly one of number_iterations_mstep or relative_error_m.")
+    resolved_number_iterations_mstep = (
+        None if raw_number_iterations_mstep is None else int(raw_number_iterations_mstep)
+    )
+    resolved_relative_error_m = (
+        None if raw_relative_error_m is None else float(raw_relative_error_m)
+    )
+    if (
+        resolved_number_iterations_em > 0
+        and resolved_number_iterations_mstep is None
+        and resolved_relative_error_m is None
+    ):
+        # The typed upstream bridge has always supplied this Java-compatible
+        # default. Resolve it once so native and upstream execute the same
+        # optimization rather than leaving native Nelder-Mead unbounded.
+        resolved_number_iterations_mstep = 1
     return DiCal2ResolvedOptions(
         composite_mode=str(
             _lookup_option(
@@ -397,30 +432,8 @@ def _resolve_dical2_options(
             default=False,
         ),
         bounds=_lookup_option(method_options, "bounds", default=bounds),
-        number_iterations_em=int(
-            _lookup_option(
-                method_options,
-                "number_iterations_em",
-                "numberIterationsEM",
-                default=n_em_iterations,
-            )
-        ),
-        number_iterations_mstep=(
-            None
-            if _lookup_option(
-                method_options,
-                "number_iterations_mstep",
-                "numberIterationsMstep",
-            )
-            is None
-            else int(
-                _lookup_option(
-                    method_options,
-                    "number_iterations_mstep",
-                    "numberIterationsMstep",
-                )
-            )
-        ),
+        number_iterations_em=resolved_number_iterations_em,
+        number_iterations_mstep=resolved_number_iterations_mstep,
         relative_error_e=(
             None
             if _lookup_option(
@@ -437,22 +450,7 @@ def _resolve_dical2_options(
                 )
             )
         ),
-        relative_error_m=(
-            None
-            if _lookup_option(
-                method_options,
-                "relative_error_m",
-                "relativeErrorM",
-            )
-            is None
-            else float(
-                _lookup_option(
-                    method_options,
-                    "relative_error_m",
-                    "relativeErrorM",
-                )
-            )
-        ),
+        relative_error_m=resolved_relative_error_m,
         coordinatewise_mstep=bool(coordinatewise),
         coordinate_order=_coerce_coordinate_order(
             _lookup_option(
@@ -1184,6 +1182,34 @@ class SimpleTrunk:
             if migration_matrix is None
             else np.asarray(migration_matrix, dtype=np.float64)
         )
+        growth = (
+            np.zeros(len(start_sizes), dtype=np.float64)
+            if growth_rates is None
+            else np.asarray(growth_rates, dtype=np.float64)
+        )
+        if np.all(np.abs(migration) <= EPS) and np.all(np.abs(growth) <= EPS):
+            # With no migration or growth, Ethan's lineage-count ODE separates
+            # by deme and has an exact logistic solution.  The Java infinity
+            # path performs one five-unit segment before its deliberately
+            # asymmetric equilibrium check stops on all-negative derivatives;
+            # preserve that effective interval here as well.
+            duration = (
+                _ODE_INTEGRATION_LENGTH
+                if end_time >= DICAL2_T_INF - EPS
+                else max(float(end_time - start_time), 0.0)
+            )
+            result = np.asarray(start_sizes, dtype=np.float64).copy()
+            active = result > 1.0
+            if np.any(active):
+                active_sizes = result[active]
+                active_pop_sizes = np.maximum(
+                    np.asarray(pop_sizes, dtype=np.float64)[active],
+                    EPS,
+                )
+                decay = np.exp(-duration / (2.0 * active_pop_sizes))
+                ratio = (active_sizes - 1.0) / active_sizes
+                result[active] = 1.0 / (1.0 - ratio * decay)
+            return result
 
         def rhs(t: float, y: np.ndarray) -> np.ndarray:
             y_dot = migration.T @ y
@@ -3465,38 +3491,6 @@ def _expanded_state_block_emission_log(
     return float(value)
 
 
-def _pair_count_emission_log(
-    core: CoreMatrices,
-    pair_counts: np.ndarray,
-) -> np.ndarray:
-    log_em = np.zeros(core.n_states, dtype=np.float64)
-    present = np.argwhere(pair_counts > 0)
-    for add_allele, trunk_allele in present:
-        count = int(pair_counts[add_allele, trunk_allele])
-        log_em += (
-            count
-            * core.log_emission[
-                np.arange(core.n_states),
-                int(trunk_allele),
-                int(add_allele),
-            ]
-        )
-    return log_em
-
-
-def _expanded_state_pair_count_emission_log(
-    core: CoreMatrices,
-    base_state: int,
-    pair_counts: np.ndarray,
-) -> float:
-    value = 0.0
-    present = np.argwhere(pair_counts > 0)
-    for add_allele, trunk_allele in present:
-        count = int(pair_counts[add_allele, trunk_allele])
-        value += count * core.log_emission[base_state, int(trunk_allele), int(add_allele)]
-    return float(value)
-
-
 def _scaled_transition_logs(
     core: CoreMatrices,
     step_size: int,
@@ -3803,23 +3797,28 @@ def _expanded_expected_counts(
     if step_sizes is None:
         step_sizes = np.ones(L, dtype=np.int64)
 
+    base_states = np.asarray(expanded.expanded_to_base, dtype=np.int64)
+    if pair_counts is not None:
+        emission_by_expanded_state = core.log_emission[base_states]
+        emission_logs = np.einsum(
+            "hlat,hta->lh",
+            pair_counts,
+            emission_by_expanded_state,
+            optimize=True,
+        )
+    else:
+        emission_logs = np.empty((L, H), dtype=np.float64)
+        for ll_i in range(L):
+            for h in range(H):
+                emission_logs[ll_i, h] = _expanded_state_block_emission_log(
+                    core,
+                    int(base_states[h]),
+                    obs_additional[ll_i],
+                    expanded.trunk_sequences[h][ll_i],
+                )
+
     logF = np.full((L, H), LOG_ZERO, dtype=np.float64)
-    em0 = np.zeros(H, dtype=np.float64)
-    for h in range(H):
-        if pair_counts is not None:
-            em0[h] = _expanded_state_pair_count_emission_log(
-                core,
-                int(expanded.expanded_to_base[h]),
-                pair_counts[h, 0],
-            )
-        else:
-            em0[h] = _expanded_state_block_emission_log(
-                core,
-                int(expanded.expanded_to_base[h]),
-                obs_additional[0],
-                expanded.trunk_sequences[h][0],
-            )
-    logF[0] = expanded.log_initial + em0
+    logF[0] = expanded.log_initial + emission_logs[0]
 
     for ll in range(1, L):
         log_no_reco_step, log_reco_step = _scaled_transition_logs_expanded(
@@ -3828,42 +3827,13 @@ def _expanded_expected_counts(
         )
         logR = logsumexp(log_reco_step + logF[ll - 1][:, None], axis=0)
         log_nr = log_no_reco_step + logF[ll - 1]
-        em = np.zeros(H, dtype=np.float64)
-        for h in range(H):
-            if pair_counts is not None:
-                em[h] = _expanded_state_pair_count_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    pair_counts[h, ll],
-                )
-            else:
-                em[h] = _expanded_state_block_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    obs_additional[ll],
-                    expanded.trunk_sequences[h][ll],
-                )
-        logF[ll] = np.logaddexp(log_nr, logR) + em
+        logF[ll] = np.logaddexp(log_nr, logR) + emission_logs[ll]
 
     ll = logsumexp(logF[-1])
     logB = np.full((L, H), LOG_ZERO, dtype=np.float64)
     logB[-1] = 0.0
     for ll_i in range(L - 2, -1, -1):
-        nxt_em = np.zeros(H, dtype=np.float64)
-        for h in range(H):
-            if pair_counts is not None:
-                nxt_em[h] = _expanded_state_pair_count_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    pair_counts[h, ll_i + 1],
-                )
-            else:
-                nxt_em[h] = _expanded_state_block_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    obs_additional[ll_i + 1],
-                    expanded.trunk_sequences[h][ll_i + 1],
-                )
+        nxt_em = emission_logs[ll_i + 1]
         nxt = logB[ll_i + 1] + nxt_em
         log_no_reco_step, log_reco_step = _scaled_transition_logs_expanded(
             expanded,
@@ -3878,15 +3848,22 @@ def _expanded_expected_counts(
     no_reco_expect = np.zeros(core.n_states, dtype=np.float64)
     reco_expect = np.zeros((core.n_states, core.n_states), dtype=np.float64)
     emission_expect = np.zeros((core.n_states, n_alleles, n_alleles), dtype=np.float64)
+    base_aggregation = np.zeros((H, core.n_states), dtype=np.float64)
+    base_aggregation[np.arange(H), base_states] = 1.0
 
-    for h in range(H):
-        initial_expect[expanded.expanded_to_base[h]] += post[0, h]
-    for ll_i in range(L):
-        for h in range(H):
-            base = expanded.expanded_to_base[h]
-            if pair_counts is not None:
-                emission_expect[base] += post[ll_i, h] * pair_counts[h, ll_i].T
-            else:
+    initial_expect[:] = post[0] @ base_aggregation
+    if pair_counts is not None:
+        weighted_pair_counts = np.einsum(
+            "lh,hlat->hta",
+            post,
+            pair_counts,
+            optimize=True,
+        )
+        np.add.at(emission_expect, base_states, weighted_pair_counts)
+    else:
+        for ll_i in range(L):
+            for h in range(H):
+                base = base_states[h]
                 add_block = np.atleast_1d(obs_additional[ll_i])
                 trunk_block = expanded.trunk_sequences[h][ll_i]
                 for a_o, a_t in zip(add_block, np.atleast_1d(trunk_block)):
@@ -3894,36 +3871,17 @@ def _expanded_expected_counts(
                         emission_expect[base, int(a_t), int(a_o)] += post[ll_i, h]
 
     for ll_i in range(L - 1):
-        nxt_em = np.zeros(H, dtype=np.float64)
-        for h in range(H):
-            if pair_counts is not None:
-                nxt_em[h] = _expanded_state_pair_count_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    pair_counts[h, ll_i + 1],
-                )
-            else:
-                nxt_em[h] = _expanded_state_block_emission_log(
-                    core,
-                    int(expanded.expanded_to_base[h]),
-                    obs_additional[ll_i + 1],
-                    expanded.trunk_sequences[h][ll_i + 1],
-                )
+        nxt_em = emission_logs[ll_i + 1]
         log_no_reco_step, log_reco_step = _scaled_transition_logs_expanded(
             expanded,
             int(step_sizes[ll_i]),
         )
         xi_no = np.exp(logF[ll_i] + log_no_reco_step + nxt_em + logB[ll_i + 1] - ll)
-        for h in range(H):
-            no_reco_expect[expanded.expanded_to_base[h]] += xi_no[h]
+        no_reco_expect += xi_no @ base_aggregation
         xi_re = np.exp(
             logF[ll_i][:, None] + log_reco_step + nxt_em[None, :] + logB[ll_i + 1][None, :] - ll
         )
-        for src in range(H):
-            src_base = expanded.expanded_to_base[src]
-            for dst in range(H):
-                dst_base = expanded.expanded_to_base[dst]
-                reco_expect[src_base, dst_base] += xi_re[src, dst]
+        reco_expect += base_aggregation.T @ xi_re @ base_aggregation
 
     return ExpectedCounts(
         log_likelihood=float(ll),
@@ -5454,6 +5412,11 @@ def _run_dical2_em(
     prev_ll = -np.inf
     prev_point: np.ndarray | None = None
     selected_core_type = "eigen"
+    grouped_observation_cache: dict[
+        tuple[int, int],
+        tuple[np.ndarray, np.ndarray],
+    ] = {}
+    physical_pair_count_cache: dict[tuple[int, int, int], np.ndarray] = {}
 
     for em_iter in range(number_iterations_em + 1):
         current_demo = params.to_demo(demo)
@@ -5472,7 +5435,9 @@ def _run_dical2_em(
             tuple[EigenCore | ODECore, CoreMatrices, str],
         ] = {}
 
-        for contig, csd_groups in zip(contigs, csd_groups_by_contig, strict=True):
+        for contig_idx, (contig, csd_groups) in enumerate(
+            zip(contigs, csd_groups_by_contig, strict=True)
+        ):
             sequences = np.asarray(contig.sequences, dtype=np.int8)
             if sequences.shape[0] != n_hap:
                 raise ValueError("All diCal2 contigs must contain the same haplotypes.")
@@ -5515,10 +5480,17 @@ def _run_dical2_em(
                         )
                     else:
                         core_obj, core, selected_core_type = cached_core
-                    grouped_trunks = {
-                        h: _group_observations(sequences[h], loci_per_hmm_step)[0]
-                        for h in trunk_idxs
-                    }
+                    grouped_trunks = {}
+                    for h in trunk_idxs:
+                        grouped_key = (contig_idx, int(h))
+                        grouped = grouped_observation_cache.get(grouped_key)
+                        if grouped is None:
+                            grouped = _group_observations(
+                                sequences[h],
+                                loci_per_hmm_step,
+                            )
+                            grouped_observation_cache[grouped_key] = grouped
+                        grouped_trunks[h] = grouped[0]
                     expanded = _build_expanded_core(
                         core_obj,
                         core,
@@ -5533,9 +5505,12 @@ def _run_dical2_em(
                         and contig.reference_length is not None
                         and contig.reference_alleles is not None
                     ):
-                        pair_counts = np.array(
-                            [
-                                _physical_block_pair_counts(
+                        cached_pair_counts = []
+                        for h in expanded.trunk_hap_indices:
+                            pair_key = (contig_idx, int(additional_idx), int(h))
+                            current_pair_counts = physical_pair_count_cache.get(pair_key)
+                            if current_pair_counts is None:
+                                current_pair_counts = _physical_block_pair_counts(
                                     sequences[additional_idx],
                                     sequences[int(h)],
                                     seg_positions=contig.seg_positions,
@@ -5544,19 +5519,23 @@ def _run_dical2_em(
                                     loci_per_hmm_step=loci_per_hmm_step,
                                     n_alleles=n_alleles,
                                 )
-                                for h in expanded.trunk_hap_indices
-                            ],
-                            dtype=np.int64,
-                        )
+                                physical_pair_count_cache[pair_key] = current_pair_counts
+                            cached_pair_counts.append(current_pair_counts)
+                        pair_counts = np.asarray(cached_pair_counts, dtype=np.int64)
                         step_sizes = np.full(
                             pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64
                         )
                         obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
                     else:
-                        obs_add, step_sizes = _group_observations(
-                            sequences[additional_idx],
-                            loci_per_hmm_step,
-                        )
+                        grouped_key = (contig_idx, int(additional_idx))
+                        grouped = grouped_observation_cache.get(grouped_key)
+                        if grouped is None:
+                            grouped = _group_observations(
+                                sequences[additional_idx],
+                                loci_per_hmm_step,
+                            )
+                            grouped_observation_cache[grouped_key] = grouped
+                        obs_add, step_sizes = grouped
 
                     counts = _expanded_expected_counts(
                         core,
@@ -5619,10 +5598,16 @@ def _run_dical2_em(
             break
 
         objective_params = _clone_demo_parameters(params)
+        objective_cache: dict[tuple[float, ...], float] = {}
 
         def objective(point):
-            return _q_function_ordered(
-                np.asarray(point, dtype=np.float64),
+            ordered_point = np.asarray(point, dtype=np.float64)
+            cache_key = tuple(float(value) for value in ordered_point)
+            cached_value = objective_cache.get(cache_key)
+            if cached_value is not None:
+                return cached_value
+            value = _q_function_ordered(
+                ordered_point,
                 objective_params,
                 demo,
                 interval_boundaries,
@@ -5636,6 +5621,8 @@ def _run_dical2_em(
                 cake_style,
                 half_migration_rate,
             )
+            objective_cache[cache_key] = value
+            return value
 
         mstep_trace: dict[str, object] | None = {} if record_mstep_trace else None
         try:

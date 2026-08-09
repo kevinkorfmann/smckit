@@ -332,8 +332,24 @@ log-likelihood, inside the frozen `1e-5` tolerance and well inside the `1e-6`
 per-base criterion.
 
 The exact ancient-recombination calculation now builds interval tensors with
-batched contractions and reuses equivalent core matrices across CSDs. This
-removes the worst scalar Python nesting, but a one-step fitted introgression
-diagnostic still exceeded two minutes versus roughly 1.3 seconds for Java.
-Accordingly, fitted introgression and the performance gate remain explicit
-promotion blockers even though fixed-point correctness is now enforced.
+batched contractions and reuses equivalent core matrices across CSDs. The
+original fitted diagnostic exceeded two minutes because native optimization
+continued Nelder-Mead to convergence while the typed Java bridge implicitly
+supplied `--numberIterationsMstep 1`. Option resolution now makes that shared
+default explicit and rejects conflicting iteration/error termination modes.
+
+The E-step precomputes each expanded-state emission matrix once, aggregates
+sufficient statistics with matrix contractions, and reuses physical VCF block
+counts across equivalent CSDs and EM rounds. Objective values are memoized
+within an M-step. For constant-size epochs with no continuous migration, the
+Ethan lineage-count ODE is replaced by its exact separated solution while
+preserving Java's effective five-unit infinity interval.
+
+The independent one-step introgression oracle now returns the same fitted
+parameters as Java (`[0.08, 0.02999998]` within `1e-14`) and differs by about
+`4.33e-6` total log likelihood. A persistent publication worker separates
+fixture preparation, startup, cold inference, and warmed inference while
+sampling process-tree memory. This closes the fitted introgression slice, but
+does not promote all diCal2 capabilities: growth inference, broader fitted
+structured families, artifacts, parallelism, and cross-platform evidence
+remain open.

@@ -146,12 +146,12 @@ class TestIntervalFactories:
 
 class TestResolvedOptions:
     @staticmethod
-    def resolve(method_options):
+    def resolve(method_options, *, n_em_iterations=2):
         return _resolve_dical2_options(
             n_intervals=11,
             max_t=4.0,
             alpha=0.1,
-            n_em_iterations=2,
+            n_em_iterations=n_em_iterations,
             composite_mode="pac",
             loci_per_hmm_step=3,
             start_point=None,
@@ -183,6 +183,21 @@ class TestResolvedOptions:
         )
         assert resolved.nm_fraction == pytest.approx(0.2)
 
+    def test_mstep_defaults_match_typed_java_bridge(self):
+        fitted = self.resolve({})
+        fixed_point = self.resolve({}, n_em_iterations=0)
+
+        assert fitted.number_iterations_mstep == 1
+        assert fitted.relative_error_m is None
+        assert fixed_point.number_iterations_mstep is None
+        assert fixed_point.relative_error_m is None
+
+    def test_explicit_relative_error_suppresses_iteration_default(self):
+        resolved = self.resolve({"relative_error_m": 1e-5})
+
+        assert resolved.number_iterations_mstep is None
+        assert resolved.relative_error_m == pytest.approx(1e-5)
+
     def test_generated_grid_controls_are_resolved(self):
         resolved = self.resolve(
             {
@@ -210,6 +225,10 @@ class TestResolvedOptions:
             (
                 {"meta_num_iterations": 2, "meta_num_points": 2},
                 "require multiple start points",
+            ),
+            (
+                {"number_iterations_mstep": 2, "relative_error_m": 1e-5},
+                "exactly one of number_iterations_mstep or relative_error_m",
             ),
         ],
     )
@@ -423,6 +442,27 @@ class TestRefineDemography:
                 ]
             ),
         )
+
+
+class TestSimpleTrunk:
+    def test_zero_migration_constant_epoch_uses_exact_lineage_solution(self):
+        config = read_dical2_config(f"{VENDOR_EXAMPLES}/fromReadme/exp.config")
+        trunk = SimpleTrunk(config=config, additional_hap_idx=0)
+        start_sizes = np.array([4.0, 0.5])
+        pop_sizes = np.array([2.0, 3.0])
+
+        observed = trunk._solve_ethan_epoch(
+            None,
+            pop_sizes,
+            None,
+            start_sizes,
+            1.0,
+            3.0,
+        )
+        decay = np.exp(-2.0 / (2.0 * pop_sizes[0]))
+        expected_active = 1.0 / (1.0 - ((start_sizes[0] - 1.0) / start_sizes[0]) * decay)
+
+        np.testing.assert_allclose(observed, [expected_active, 0.5], rtol=1e-14, atol=1e-14)
 
 
 class TestRatesReader:
