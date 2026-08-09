@@ -2,8 +2,9 @@
 
 PSMC+ is a pairwise SMC method designed to account for genomic heterogeneity,
 including local mutation, recombination, and coalescence-rate variation. smckit
-currently preserves the complete original implementation; an independent
-native implementation is planned but has not started.
+preserves the complete original implementation and adds a typed upstream
+adapter with normalized fit and decoding results. An independent native
+implementation remains the next stage and is not yet claimed.
 
 ## Preservation and implementation contract
 
@@ -20,11 +21,70 @@ Install the Python dependency stack used by the raw preservation runner:
 uv pip install "smckit[psmcplus]"
 ```
 
-`implementation="upstream"` will mean the original tool,
-`implementation="native"` will mean the future in-repo implementation, and
-`implementation="auto"` will continue to choose upstream until a native
-capability has passed its correctness and performance promotion gates. There is
-currently no typed PSMC+ inference function and no native parity claim.
+`implementation="upstream"` executes the original tool,
+`implementation="native"` is rejected clearly until the future in-repo
+implementation exists, and `implementation="auto"` chooses upstream until a
+native capability has passed its correctness and performance promotion gates.
+There is no native parity or speed claim yet.
+
+## Typed inference and normalized results
+
+Read one or more original multihetsep files and fit the preserved model through
+the typed API:
+
+```python
+import smckit
+
+data = smckit.io.read_multihetsep("chromosome.multihetsep")
+smckit.tl.psmcplus(
+    data,
+    options=smckit.tl.PSMCPlusOptions(
+        number_time_windows=32,
+        bin_size=100,
+        iterations=20,
+        cores=1,
+    ),
+    mutation_rate=1.25e-8,
+    generation_time=25,
+    output_prefix="results/psmcplus_",
+    implementation="auto",
+)
+```
+
+The result is stored at `data.results["psmcplus"]`. Fit results expose common
+fields including `time`, `ne`, `lambda`, `theta`, `rho`, and
+`log_likelihood`, alongside the original scaled boundaries, hashed artifacts,
+the exact executed command, input hashes, runtime, environment, and recorded
+compatibility adjustments. Supplying `mutation_rate` converts population size
+to individuals; supplying both `mutation_rate` and `generation_time` reports
+time in years.
+
+Posterior decoding and optional marginal recombination output use the same
+interface:
+
+```python
+smckit.tl.psmcplus(
+    data,
+    options=smckit.tl.PSMCPlusOptions(
+        mode="decode",
+        number_time_windows=32,
+        lambda_initial=[1.0] * 32,
+        decode_downsample=10,
+        cores=1,
+    ),
+    output_prefix="results/posterior.txt",
+    marginal_recombination_path="results/recombination.txt",
+    implementation="upstream",
+)
+```
+
+Decoding results include genomic positions, normalized state posteriors, time
+boundaries, posterior mean coalescence time, likelihood, and—when requested—the
+marginal probabilities of recombination and no recombination. The typed option
+object forwards all scientifically meaningful inference controls from the
+original CLI, including matched mutation/recombination maps, interval grouping,
+fixed or estimated recombination, optimizer and convergence controls,
+approximation switches, and iteration artifacts.
 
 ## Exact original interface
 
@@ -60,9 +120,10 @@ recombination output, and controlled parallelism. The simulation entry point
 generates variant and latent coalescence histories under a supplied PSMC'
 history.
 
-The feature ledger distinguishes exact upstream preservation from future
-normalized and native coverage. A scientifically meaningful preserved option
-cannot be silently dropped from the eventual typed interface.
+The feature ledger distinguishes exact upstream preservation and normalized
+typed coverage from future native coverage. The HMM simulator remains available
+through the exact raw CLI because it has a distinct command surface. No
+scientifically meaningful original option is silently substituted or dropped.
 
 ## Runtime compatibility and containers
 
@@ -77,6 +138,10 @@ upstream and can be converted for Apptainer-based HPC use.
 
 The frozen constant-population oracle runs one EM iteration with four time
 windows and compares final likelihood, likelihood change, theta, rho, time
-boundaries, and demographic parameters numerically. The fixture proves exact
-preserved execution only. Native/default eligibility and performance remain
-explicitly unclaimed.
+boundaries, and demographic parameters numerically. The same oracle now runs
+through the typed adapter and validates normalized physical scaling, persistent
+artifacts, common accessors, input hashes, and runtime provenance. A live
+decoding oracle independently validates posterior normalization and marginal
+recombination probabilities. On the one-thread Sesame validation environment,
+both typed fit and decode completed successfully against the pinned source.
+Native/default eligibility and performance remain explicitly unclaimed.

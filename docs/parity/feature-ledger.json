@@ -151,7 +151,10 @@
         "iteration_and_convergence_controls": "upstream_only",
         "parallel_execution": "upstream_only",
         "iteration_and_final_artifacts": "upstream_only",
-        "normalized_result_schema": "planned",
+        "typed_normalized_inference": "upstream_only",
+        "normalized_result_schema": "upstream_only",
+        "typed_fit_oracle": "upstream_only",
+        "typed_decode_oracle": "upstream_only",
         "native_implementation": "planned",
         "parity_oracles": "planned",
         "performance_promotion": "planned"

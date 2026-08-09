@@ -64,3 +64,15 @@ and ``implementation="upstream"`` execute the installed PHLASH package;
 ``implementation="native"`` is intentionally unsupported.
 
 .. autofunction:: phlash
+
+PSMC+
+-----
+
+PSMC+ currently provides a typed, normalized adapter to the immutable upstream
+implementation. Native execution remains unavailable until its independent
+implementation passes the parity and performance gates.
+
+.. autoclass:: PSMCPlusOptions
+   :members:
+
+.. autofunction:: psmcplus

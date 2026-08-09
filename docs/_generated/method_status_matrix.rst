@@ -59,8 +59,8 @@
      - ✓
      - planned
      - ✗
-     - `preserved commit and exact raw CLI; native parity not started`
-     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points, all original arguments, isolated artifacts, stdout/stderr/exit status, and a NumPy 2 compatibility shim that does not modify upstream code. Native implementation remains planned.
+     - `frozen typed fit oracle at 1e-8 plus live normalized posterior/recombination decode oracle`
+     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. The NumPy 2 compatibility shim does not modify upstream code. Native implementation remains planned.
    * - SSM
      - n/a
      - ✓
