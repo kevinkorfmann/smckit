@@ -1,0 +1,60 @@
+{
+  "bootstrap_replicates": 20000,
+  "bootstrap_seed": 1729,
+  "comparisons": [
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_ratio": 0.3941188987349592,
+      "memory_within_25_percent": true,
+      "mode": "fit",
+      "native_cold_wall_seconds": 0.20610069669783115,
+      "native_peak_memory_median_bytes": 235184128,
+      "native_warm_median_seconds": 0.02531273290514946,
+      "promotable_performance": true,
+      "speedup": 504.64968766717664,
+      "speedup_confidence_interval": [
+        498.2139199839712,
+        507.2703870168798
+      ],
+      "upstream_median_seconds": 12.774062754586339,
+      "upstream_peak_memory_median_bytes": 596733952,
+      "warm_repetitions": 5
+    },
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_ratio": 0.3929248823087944,
+      "memory_within_25_percent": true,
+      "mode": "decode",
+      "native_cold_wall_seconds": 0.22970244102180004,
+      "native_peak_memory_median_bytes": 235892736,
+      "native_warm_median_seconds": 0.040874479338526726,
+      "promotable_performance": true,
+      "speedup": 364.14680309742124,
+      "speedup_confidence_interval": [
+        317.64958942178185,
+        482.46541963776593
+      ],
+      "upstream_median_seconds": 14.884310979396105,
+      "upstream_peak_memory_median_bytes": 600350720,
+      "warm_repetitions": 5
+    }
+  ],
+  "dataset": "pinned-upstream-constant-population",
+  "method": "psmcplus",
+  "performance_gate_passed": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "schema_version": 1,
+  "source_sha256": {
+    "decode": {
+      "native": "f0d30135687b58b9a8fc5f737184edf28487b111f97e42a7c6da96d261945e0e",
+      "upstream": "dd08bd79870d462faabd44d04e68f78d77220ec250f6daf7ffba89de9cd47f2a"
+    },
+    "fit": {
+      "native": "dd4764aca75bce30c146766547164d1c087d1e1e54e05ba66a400da6a6d31fc5",
+      "upstream": "e4f87ecef4048293e88f15a0af5d1672ac1aafe3825f028a4e490f7b7295f279"
+    }
+  },
+  "threads": 1
+}

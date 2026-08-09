@@ -117,7 +117,7 @@ Fast Decision Path (VCF + Metadata)
 3. **Do you have one diploid genome (or one pairwise sequence)?**
 
    - **Yes** -> :doc:`PSMC <methods/psmc>`
-   - Need local mutation/recombination/coalescence-rate heterogeneity -> :doc:`PSMC+ <methods/psmcplus>` (preserved upstream CLI; typed/native work in progress)
+   - Need local mutation/recombination/coalescence-rate heterogeneity -> :doc:`PSMC+ <methods/psmcplus>` (preserved upstream plus parity-enforced native fit/decode)
    - If dormancy/selfing is biologically important -> :doc:`eSMC2 <methods/esmc2>`
    - **No** -> continue
 
@@ -189,7 +189,7 @@ Quick Feature-to-Tool Table
      - one diploid genome with genomic-rate heterogeneity
      - one or more multihetsep files plus optional rate maps
      - `N_e(t)`, posterior TMRCA, and marginal recombination
-     - exact original inference/simulation CLI is preserved; typed normalization and native implementation remain in progress
+     - exact original inference/simulation CLI is preserved; independent native fit/decode is parity-enforced and faster on the frozen Linux benchmark
    * - :doc:`eSMC2 <methods/esmc2>`
      - one diploid genome with dormancy or selfing
      - `.psmcfa` or pairwise sequence input

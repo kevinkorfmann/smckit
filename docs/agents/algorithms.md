@@ -16,7 +16,10 @@
 - Upstream status: immutable MIT-licensed Python source, exact inference and HMM
   simulation entry points, shell-free raw runner, frozen numeric oracle, and a
   pinned OCI/Apptainer runtime definition.
-- Native status: planned; no native or default-eligibility claim exists.
+- Native status: public fit/decode engine with frozen constant-rate and mapped
+  final-output parity. Warmed Linux x86-64 core benchmarks show 2.27x fit and
+  1.25x decode speedups with bootstrap intervals excluding parity; `auto`
+  remains upstream until broader empirical validation closes.
 - Main outputs: time boundaries, inverse coalescence rates, theta, rho,
   likelihood history, posterior TMRCA decoding, and marginal recombination.
 

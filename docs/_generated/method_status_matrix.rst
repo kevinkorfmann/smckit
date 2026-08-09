@@ -57,10 +57,10 @@
      - Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.
    * - PSMC+
      - ✓
-     - planned
+     - ✓
      - ✗
-     - `typed fit/decode oracles, exact native preprocessing arrays, and native HMM intermediates within floating-point precision`
-     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. Independent native multihetsep/map preprocessing matches a frozen upstream oracle without chromosome-sized allocations, and native Numba HMM kernels match frozen upstream intermediates. Optimization, artifacts, and end-to-end native parity remain gated. The NumPy 2 compatibility shim does not modify upstream code.
+     - `constant and mapped fit/decode final outputs agree at floating-point precision; warmed native core is 2.27x faster for fit and 1.25x for decode`
+     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. The independent native engine covers multi-file fitting, local mutation/recombination maps, grouped and fixed parameters, fixed or estimated recombination, approximation controls, decoding, parallel likelihoods, and original-compatible artifacts. Frozen constant and mapped oracles enforce final-output parity. A five-repetition, one-thread Linux x86-64 benchmark found warmed-core speedups of 2.27x for fit (95% bootstrap CI 2.22-2.32) and 1.25x for decode (1.21-1.27), with end-to-end peak memory below upstream. Auto remains conservative until the broader empirical matrix closes. The NumPy 2 compatibility shim does not modify upstream code.
    * - SSM
      - n/a
      - ✓

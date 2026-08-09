@@ -2,9 +2,8 @@
 
 PSMC+ is a pairwise SMC method designed to account for genomic heterogeneity,
 including local mutation, recombination, and coalescence-rate variation. smckit
-preserves the complete original implementation and adds a typed upstream
-adapter with normalized fit and decoding results. An independent native
-implementation remains the next stage and is not yet claimed.
+preserves the complete original implementation and adds typed upstream and
+independent native fit/decoding engines with a shared normalized result schema.
 
 ## Preservation and implementation contract
 
@@ -21,11 +20,11 @@ Install the Python dependency stack used by the raw preservation runner:
 uv pip install "smckit[psmcplus]"
 ```
 
-`implementation="upstream"` executes the original tool,
-`implementation="native"` is rejected clearly until the future in-repo
-implementation exists, and `implementation="auto"` chooses upstream until a
-native capability has passed its correctness and performance promotion gates.
-There is no native parity or speed claim yet.
+`implementation="upstream"` executes the original tool and
+`implementation="native"` executes the independent in-repo engine. The
+conservative `implementation="auto"` policy still chooses upstream while the
+empirical validation matrix is expanded. Exact raw simulation remains an
+upstream-only capability and is permanently available.
 
 ## Typed inference and normalized results
 
@@ -47,7 +46,7 @@ smckit.tl.psmcplus(
     mutation_rate=1.25e-8,
     generation_time=25,
     output_prefix="results/psmcplus_",
-    implementation="auto",
+    implementation="native",
 )
 ```
 
@@ -74,7 +73,7 @@ smckit.tl.psmcplus(
     ),
     output_prefix="results/posterior.txt",
     marginal_recombination_path="results/recombination.txt",
-    implementation="upstream",
+    implementation="native",
 )
 ```
 
@@ -85,6 +84,12 @@ object forwards all scientifically meaningful inference controls from the
 original CLI, including matched mutation/recombination maps, interval grouping,
 fixed or estimated recombination, optimizer and convergence controls,
 approximation switches, and iteration artifacts.
+
+For mapped mutation rates, the native result preserves the original marginal
+recombination calculation under `marginal_recombination` and also exposes a
+`corrected_marginal_recombination` field that applies the local mutation factor
+to the marginal calculation. This makes the compatibility behavior explicit
+without silently inheriting the upstream inconsistency.
 
 ## Exact original interface
 
@@ -144,15 +149,23 @@ artifacts, common accessors, input hashes, and runtime provenance. A live
 decoding oracle independently validates posterior normalization and marginal
 recombination probabilities. On the one-thread Sesame validation environment,
 both typed fit and decode completed successfully against the pinned source.
-Native/default eligibility and performance remain explicitly unclaimed.
+The independent native implementation is public and locked to frozen,
+content-addressed oracles generated from the pinned source. Constant-rate and
+mapped workflows validate preprocessing, time grids, interval expectations,
+local-rate transition matrices, mutation-adjusted emissions, forward/backward
+arrays, EM evidence, fitted parameters, likelihood, state posteriors, and
+original marginal-recombination probabilities within floating-point precision.
+Multi-file likelihoods, parameter grouping/fixing, optimizer bounds and
+tolerances, alternative time/transition approximations, original-compatible
+iteration/final artifacts, and fixed/estimated recombination are exercised by
+the native suite.
 
-The independent native implementation has begun below the public execution
-surface. Its preprocessing and Numba kernel layers are locked to frozen,
-content-addressed oracles generated from the pinned source. The native parser
-reproduces multihetsep mask counts and local mutation/recombination map factors
-without upstream's chromosome-sized per-base arrays. Time grids, interval
-expectations, local-rate transition matrices, mutation-rate-adjusted Poisson
-emissions, forward/backward arrays, EM evidence, state posteriors, and marginal
-recombination probabilities agree within floating-point precision. Parameter
-optimization, full artifacts, and final fit/decode parity are not complete, so
-`implementation="native"` remains unavailable and `auto` remains upstream.
+The frozen one-thread Linux x86-64 benchmark uses five repetitions and 20,000
+bootstrap resamples. With both engines warmed in the same Python process, native
+fit is 2.27x faster (95% CI 2.22--2.32) and decoding is 1.25x faster (95% CI
+1.21--1.27). The separate end-to-end measurement reports native peak memory at
+0.394x upstream or lower and records cold JIT cost independently. The immutable
+records, raw timings, checksums, and reproduction scripts are under
+`benchmarks/psmcplus/`. These results support the frozen fixture only; broader
+simulation, empirical, and macOS ARM64 results remain required before changing
+`auto`.

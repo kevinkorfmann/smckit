@@ -68,9 +68,10 @@ and ``implementation="upstream"`` execute the installed PHLASH package;
 PSMC+
 -----
 
-PSMC+ currently provides a typed, normalized adapter to the immutable upstream
-implementation. Native execution remains unavailable until its independent
-implementation passes the parity and performance gates.
+PSMC+ provides a typed, normalized adapter to the immutable upstream
+implementation and an independent native fit/decode engine. Explicit native
+execution is parity-enforced; ``auto`` remains conservative pending the broader
+empirical validation matrix.
 
 .. autoclass:: PSMCPlusOptions
    :members:

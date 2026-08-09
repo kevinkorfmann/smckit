@@ -278,9 +278,33 @@ def test_invalid_options_fail_before_execution(options: PSMCPlusOptions) -> None
         options.validate()
 
 
-def test_native_mode_is_explicitly_unavailable() -> None:
-    with pytest.raises(NotImplementedError, match=r"native PSMC\+"):
-        psmcplus(SmcData(), implementation="native")
+def test_explicit_native_mode_routes_without_requiring_upstream(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = _path_backed_data(tmp_path)
+
+    def fake_native(**kwargs):
+        assert kwargs["inputs"] == [Path(data.uns["source_paths"][0])]
+        return (
+            {
+                "mode": "fit",
+                "backend": "native",
+                "time": np.array([0.0]),
+                "ne": np.array([1.0]),
+                "log_likelihood": -1.0,
+            },
+            [],
+            0.01,
+        )
+
+    monkeypatch.setattr(module, "_run_native_psmcplus", fake_native)
+    result = psmcplus(data, implementation="native").results["psmcplus"]
+    assert result["implementation"] == "native"
+    assert result["implementation_requested"] == "native"
+    assert result["backend"] == "native"
+    assert "upstream" not in result
+    assert result["provenance"]["runtime_seconds"] == pytest.approx(0.01)
 
 
 def test_path_backing_and_map_cardinality_are_validated(

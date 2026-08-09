@@ -50,7 +50,9 @@
         "frozen four-state kernel oracle from pinned commit 032168f2",
         "frozen masked multihetsep and local-rate preprocessing oracle",
         "constant-population one-iteration fit",
-        "constant-population posterior and marginal-recombination decode"
+        "constant-population posterior and marginal-recombination decode",
+        "mapped mutation/recombination one-iteration fit",
+        "mapped posterior and original/corrected marginal-recombination decode"
       ],
       "intermediates": [
         "binned heterozygote and masked-base counts",
@@ -79,6 +81,31 @@
       "preprocessing_acceptance": {
         "comparison": "exact arrays",
         "fixture_sha256": "6e0a12847a60fa1ece6307f16325376ffa0ef95f8ac1a72adf7bc0d71cb92de9"
+      },
+      "fit_acceptance": {
+        "theta": "exact",
+        "rho_rtol": 1e-11,
+        "lambda_rtol": 1e-8,
+        "log_likelihood_atol": 1e-9,
+        "mapped_final_parameters_sha256": "1ecb917f8b660e54d834ec3efa67220290a8e61c2e4a985ee1c93cea89e83084"
+      },
+      "decode_acceptance": {
+        "posterior_atol": 4e-14,
+        "log_likelihood_atol": 1e-9,
+        "constant_fixture_sha256": "0477f9d45bc7a3be057356a449ee8ba130a0d422b7c2e8dda27b3a2e2065b228",
+        "mapped_fixture_sha256": "61740fba1b25dbd9ffd2399c9492ce145dab7ad2d6c51cc0f3d21079a8e838d2"
+      },
+      "performance_acceptance": {
+        "environment": "Linux x86-64, Python 3.12.3, NumPy 2.4.4, one thread",
+        "repetitions": 5,
+        "bootstrap_replicates": 20000,
+        "fit_warmed_core_speedup": 2.2743384419672372,
+        "fit_speedup_95_ci": [2.222791456785878, 2.3248236334235335],
+        "decode_warmed_core_speedup": 1.2481042528695359,
+        "decode_speedup_95_ci": [1.2090267115916833, 1.26645186287447],
+        "warm_core_sha256": "5b30e242cb200fbf946d454f4a7c8c52e5b9c0d7ba5285b21a58402efa905ebf",
+        "end_to_end_peak_memory_ratio_max": 0.39412,
+        "end_to_end_aggregate_sha256": "56c3dcbda4adbb579a48420404fe3a0c5697143fb3274e2846e2a78978049ed1"
       },
       "final_metrics": [
         "theta and rho",
