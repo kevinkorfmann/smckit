@@ -19,3 +19,25 @@ jobs:
       - run: pixi run -e upstream uv-sync
       - run: pixi run -e upstream uv run python scripts/verify_upstreams.py
       - run: pixi run -e upstream uv run pytest -q tests -m oracle
+
+  phlash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      JAX_PLATFORMS: cpu
+      MKL_NUM_THREADS: "1"
+      NUMBA_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      XLA_FLAGS: "--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install smckit with the pinned PHLASH integration
+        run: uv sync --extra dev --extra phlash
+      - name: Exercise real PSMCFA, tree-sequence, and indexed-VCF inputs
+        run: >-
+          uv run pytest -q tests/integration/test_phlash_external.py

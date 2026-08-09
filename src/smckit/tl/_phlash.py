@@ -354,7 +354,14 @@ def phlash(
             if test_input is not None
             else None
         )
-        models = package.fit(contigs, test_data=test_contig, **effective_options)
+        if test_contig is None and hold_out and len(contigs) > 1:
+            test_contig = contigs.pop(0)
+        models = package.fit(
+            contigs,
+            test_data=test_contig,
+            window_size=window_size,
+            **effective_options,
+        )
 
     result = _posterior_payload(
         models,

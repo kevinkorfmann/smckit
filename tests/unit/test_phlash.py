@@ -92,6 +92,28 @@ def test_phlash_constructs_vcf_contigs_and_test_data(monkeypatch, tmp_path) -> N
     assert len(contig_calls) == 2
     assert fit_calls[0][0] == ["contig:train.vcf.gz"]
     assert fit_calls[0][1] == "contig:test.vcf.gz"
+    assert fit_calls[0][2]["window_size"] == 100
+
+
+def test_phlash_holds_out_first_constructed_contig(monkeypatch) -> None:
+    fit_calls = []
+
+    def fit(contigs, *, test_data, **options):
+        fit_calls.append((contigs, test_data, options))
+        return _models()
+
+    fake = SimpleNamespace(__version__="1.0.6", fit=fit)
+    monkeypatch.setattr(adapter, "_load_phlash", lambda: fake)
+    contigs = [SimpleNamespace(name=name) for name in ("first", "second", "third")]
+
+    phlash(
+        contigs,
+        input_kind="contig",
+        random_seed=None,
+        window_size=250,
+    )
+
+    assert fit_calls == [([contigs[1], contigs[2]], contigs[0], {"window_size": 250})]
 
 
 def test_phlash_writes_hashed_json_and_npz(monkeypatch, tmp_path) -> None:
