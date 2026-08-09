@@ -160,12 +160,19 @@ tolerances, alternative time/transition approximations, original-compatible
 iteration/final artifacts, and fixed/estimated recombination are exercised by
 the native suite.
 
+A separate clean-commit Linux x86-64 capability matrix covers twelve
+deterministic constant, bottleneck, and expansion cases. It adds missing data,
+multi-file input, grouped/fixed parameters, estimated recombination, local
+maps, every approximation control independently and in combination, the
+original final-time-grid behavior, and fit/decode outputs. All cases pass the
+strict gate; the frozen JSON and checksum are under
+`workflow/publication/evidence/psmcplus-promotion/sha256-5aa89ae3/`.
+
 The frozen one-thread Linux x86-64 benchmark uses five repetitions and 20,000
 bootstrap resamples. With both engines warmed in the same Python process, native
 fit is 2.27x faster (95% CI 2.22--2.32) and decoding is 1.25x faster (95% CI
 1.21--1.27). The separate end-to-end measurement reports native peak memory at
 0.394x upstream or lower and records cold JIT cost independently. The immutable
 records, raw timings, checksums, and reproduction scripts are under
-`benchmarks/psmcplus/`. These results support the frozen fixture only; broader
-simulation, empirical, and macOS ARM64 results remain required before changing
-`auto`.
+`benchmarks/psmcplus/`. Human/nonhuman empirical and macOS ARM64 results remain
+required before changing `auto`.

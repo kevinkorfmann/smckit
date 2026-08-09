@@ -74,6 +74,30 @@ def test_short_map_is_padded_and_variable_recombination_is_truncated(tmp_path: P
     )
 
 
+def test_rate_map_binning_preserves_upstream_float_reduction_order(tmp_path: Path) -> None:
+    multihetsep = tmp_path / "long.mhs"
+    multihetsep.write_text("chr1\t25\t25\tAT\nchr1\t110\t85\tAG\n", encoding="utf-8")
+    rate_map = tmp_path / "rates.bed"
+    rate_map.write_text(
+        "chr1\t0\t50\t0.4\nchr1\t50\t100\t1.35\nchr1\t100\t210\t1.0\n",
+        encoding="utf-8",
+    )
+
+    sequence = prepare_psmcplus_sequence(
+        multihetsep,
+        bin_size=50,
+        recombination_map_path=rate_map,
+    )
+
+    # The preserved implementation expands each bin before averaging. Its
+    # float64 reduction yields 0.399... and 1.349..., then truncates those
+    # values to 0.39 and 1.34 rather than the algebraic 0.40 and 1.35.
+    np.testing.assert_array_equal(
+        sequence.recombination_factor_sequence(),
+        np.array([0.39, 1.34, 1.0, 1.0]),
+    )
+
+
 @pytest.mark.parametrize(
     ("contents", "message"),
     [

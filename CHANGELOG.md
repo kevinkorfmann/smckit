@@ -25,6 +25,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   oracles enforce parity, and checksum-locked Linux evidence records warmed-core
   speedups of 2.27x for fit and 1.25x for decode with bootstrap intervals above
   parity while retaining conservative upstream `auto` selection.
+- Add a checksum-locked, clean-commit PSMC+ promotion matrix spanning twelve
+  deterministic simulation workflows. Repair native compatibility for the
+  upstream rate-map reduction order and its distinct final-time emission and
+  transition grids; all matrix cases now pass strict fit/decode parity.
 - Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
   99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
   sequence decoding unpromoted until its WGS oracle is closed.

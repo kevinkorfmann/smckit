@@ -200,36 +200,78 @@ def _bin_rate_map(
             f"{path}: map is more than {_MAP_LENGTH_TOLERANCE} bases shorter than the sequence."
         )
 
-    weighted = np.zeros(number_bins, dtype=np.float64)
+    # PSMC+ expands the map to one float per base and calls ``np.average`` on
+    # each bin.  Computing a weighted sum is mathematically equivalent, but it
+    # can round on the other side of the upstream two-decimal truncation (for
+    # example, a bin filled with 0.4 averages to 0.3999999999999999).  Retain
+    # the upstream reduction order while keeping memory proportional to bins
+    # and map boundaries rather than chromosome length.
+    full_bin_values = np.full(number_bins, np.nan, dtype=np.float64)
+    partial_runs: dict[int, list[tuple[int, int, float]]] = {}
     covered = np.zeros(number_bins, dtype=np.int64)
     retained_length = number_bins * bin_size
+
+    def record_interval(start: int, stop: int, value: float) -> None:
+        if start >= stop:
+            return
+        first_full_bin = (start + bin_size - 1) // bin_size
+        after_last_full_bin = stop // bin_size
+        if first_full_bin >= after_last_full_bin:
+            first_bin = start // bin_size
+            last_bin = (stop - 1) // bin_size
+            for bin_index in range(first_bin, last_bin + 1):
+                local_start = max(start, bin_index * bin_size) - bin_index * bin_size
+                local_stop = min(stop, (bin_index + 1) * bin_size) - bin_index * bin_size
+                partial_runs.setdefault(bin_index, []).append((local_start, local_stop, value))
+                covered[bin_index] += local_stop - local_start
+            return
+
+        prefix_stop = first_full_bin * bin_size
+        if start < prefix_stop:
+            bin_index = start // bin_size
+            partial_runs.setdefault(bin_index, []).append(
+                (start - bin_index * bin_size, bin_size, value)
+            )
+            covered[bin_index] += prefix_stop - start
+
+        full_bin_values[first_full_bin:after_last_full_bin] = value
+        covered[first_full_bin:after_last_full_bin] = bin_size
+
+        suffix_start = after_last_full_bin * bin_size
+        if suffix_start < stop:
+            bin_index = suffix_start // bin_size
+            partial_runs.setdefault(bin_index, []).append((0, stop - suffix_start, value))
+            covered[bin_index] += stop - suffix_start
+
     for start, stop, value in zip(starts, stops, values, strict=True):
         interval_stop = min(int(stop), retained_length)
         interval_start = int(start)
         if interval_start >= interval_stop:
             break
-        first_bin = interval_start // bin_size
-        last_bin = (interval_stop - 1) // bin_size
-        for bin_index in range(first_bin, last_bin + 1):
-            overlap_start = max(interval_start, bin_index * bin_size)
-            overlap_stop = min(interval_stop, (bin_index + 1) * bin_size)
-            overlap = overlap_stop - overlap_start
-            weighted[bin_index] += overlap * value
-            covered[bin_index] += overlap
+        record_interval(interval_start, interval_stop, float(value))
 
     if map_length < retained_length:
-        padding_start = map_length
-        for bin_index in range(padding_start // bin_size, number_bins):
-            overlap_start = max(padding_start, bin_index * bin_size)
-            overlap_stop = (bin_index + 1) * bin_size
-            overlap = overlap_stop - overlap_start
-            if overlap > 0:
-                weighted[bin_index] += overlap
-                covered[bin_index] += overlap
+        record_interval(map_length, retained_length, 1.0)
     if np.any(covered != bin_size):
         raise ValueError(f"{path}: rate map does not cover all retained sequence bins.")
 
-    factors_by_bin = weighted / bin_size
+    factors_by_bin = np.empty(number_bins, dtype=np.float64)
+    constant_average_cache: dict[float, float] = {}
+    for bin_index in range(number_bins):
+        value = full_bin_values[bin_index]
+        if np.isfinite(value):
+            numeric_value = float(value)
+            if numeric_value not in constant_average_cache:
+                constant_average_cache[numeric_value] = float(
+                    np.average(np.full(bin_size, numeric_value, dtype=np.float64))
+                )
+            factors_by_bin[bin_index] = constant_average_cache[numeric_value]
+            continue
+
+        expanded_bin = np.empty(bin_size, dtype=np.float64)
+        for local_start, local_stop, run_value in partial_runs[bin_index]:
+            expanded_bin[local_start:local_stop] = run_value
+        factors_by_bin[bin_index] = float(np.average(expanded_bin))
     if decimate and not np.all(factors_by_bin == factors_by_bin[0]):
         factors_by_bin = np.trunc(100.0 * factors_by_bin) / 100.0
         factors_by_bin[factors_by_bin == 0.0] = 1e-5

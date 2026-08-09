@@ -164,6 +164,47 @@ def test_rate_map_decode_matches_upstream_and_exposes_corrected_marginal() -> No
 
 
 @pytest.mark.slow
+def test_final_time_factor_decode_matches_upstream_transition_grid_contract() -> None:
+    fixtures = ROOT / "tests/data/psmcplus"
+    decode = decode_psmcplus_native(
+        fixtures / "preprocessing_masked.mhs",
+        number_states=4,
+        bin_size=10,
+        scaled_recombination_rate=0.0005,
+        lambda_initial=[0.7, 0.9, 1.4, 1.1],
+        final_time_factor=3.0,
+        downsample=1,
+    )
+
+    # Frozen from the pinned upstream commit. Upstream uses the custom grid for
+    # emissions/output while retaining its default grid for transitions.
+    assert decode.boundaries[-1] == decode.boundaries[-2] * 3.0
+    assert decode.log_likelihood == pytest.approx(-6.738403574763081, abs=5e-12)
+    np.testing.assert_allclose(
+        decode.posterior,
+        [
+            [
+                4.0492251933703016e-07,
+                0.0011028984702955156,
+                0.6428763799723198,
+                0.3560203166348654,
+            ],
+            [
+                3.109287867693253e-07,
+                0.0010922581367361457,
+                0.6434697719505399,
+                0.35543765898393725,
+            ],
+            [3.198475801174263e-07, 0.0010980960783360874, 0.644295431168896, 0.3546061529051877],
+            [8.780260297657805e-07, 0.001166174690514078, 0.6466554470086726, 0.3521775002747836],
+            [9.812387871022075e-06, 0.001374079859371954, 0.6486856091575597, 0.34993049859519726],
+        ],
+        rtol=2e-13,
+        atol=2e-14,
+    )
+
+
+@pytest.mark.slow
 def test_one_iteration_native_fit_matches_frozen_upstream_result() -> None:
     fit = fit_psmcplus_native(
         [CONSTPOP],
