@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import msprime
@@ -12,6 +13,18 @@ import pytest
 from smckit.tl import phlash
 
 pytestmark = pytest.mark.integration
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _load_publication_script(name: str):
+    path = ROOT / "workflow" / "publication" / "scripts" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"smckit_integration_{name}", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.mark.skipif(importlib.util.find_spec("phlash") is None, reason="PHLASH is not installed")
@@ -122,3 +135,65 @@ def test_installed_phlash_indexed_vcf_smoke(tmp_path: Path) -> None:
     )
 
     _assert_real_input_result(data.results["phlash"], "vcf")
+
+
+@pytest.mark.skipif(importlib.util.find_spec("phlash") is None, reason="PHLASH is not installed")
+def test_installed_phlash_publication_runner_smoke(tmp_path: Path) -> None:
+    """Exercise the evidence runner with real independent train/holdout inputs."""
+    simulator = _load_publication_script("simulate")
+    runner = _load_publication_script("run_phlash_accuracy")
+    tree_path = tmp_path / "constant.trees"
+    holdout_path = tmp_path / "constant.holdout.trees"
+    truth_path = tmp_path / "constant.truth.json"
+    truth = simulator.simulate_scenario(
+        scenario_name="constant",
+        replicate=1,
+        seed=1_001,
+        sequence_length=500_000,
+        recombination_rate=1e-8,
+        mutation_rate=1.25e-8,
+        tree_output=tree_path,
+        holdout_tree_output=holdout_path,
+        truth_output=truth_path,
+    )
+    protocol = {
+        "protocol_id": "smoke-test-not-publication-evidence",
+        "source": {"sha256": "smoke-test"},
+        "config": {
+            "replicates": 1,
+            "mutation_rate": 1.25e-8,
+            "phlash": {
+                "scenarios": ["constant"],
+                "window_size": 100,
+                "grid_size": 16,
+                "credible_level": 0.95,
+                "niter": 1,
+                "num_particles": 4,
+                "num_workers": 1,
+                "max_samples": 1,
+                "overlap": 20,
+                "hold_out": True,
+                "inference_seed": 2_718,
+                "evaluation_min_generations": 100,
+                "evaluation_max_generations": 1_000_000,
+            },
+        },
+    }
+    output_path = tmp_path / "constant.validation.json"
+    record = runner.run_phlash_accuracy(
+        protocol=protocol,
+        truth_payload=truth,
+        truth_path=truth_path,
+        tree_path=tree_path,
+        holdout_tree_path=holdout_path,
+        artifact_prefix=tmp_path / "constant",
+        output_path=output_path,
+    )
+
+    assert record["method"] == "phlash"
+    assert record["protocol_id"] == "smoke-test-not-publication-evidence"
+    assert record["inference"]["phlash_version"] == "1.0.6"
+    assert record["inference"]["arguments"]["hold_out"] is True
+    assert record["posterior"]["n_samples"] == 4
+    assert np.isfinite(record["metrics"]["log_integrated_trajectory_error"])
+    assert output_path.is_file()

@@ -59,3 +59,18 @@ def test_protocol_rejects_weakened_acceptance_gates(key, value, message) -> None
     config[key] = value
     with pytest.raises(ValueError, match=message):
         MODULE.validate_protocol(config)
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "message"),
+    [
+        ("niter", 999, "at least 1000"),
+        ("num_particles", 499, "at least 500"),
+        ("hold_out", False, "independent holdout"),
+    ],
+)
+def test_protocol_rejects_weakened_phlash_gates(key, value, message) -> None:
+    config = yaml.safe_load(CONFIG.read_text())
+    config["phlash"][key] = value
+    with pytest.raises(ValueError, match=message):
+        MODULE.validate_protocol(config)

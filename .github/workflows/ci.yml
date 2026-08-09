@@ -53,11 +53,13 @@ jobs:
             scripts/build_dical2_repaired_oracle.py \
             scripts/verify_upstreams.py \
             workflow/publication/scripts/aggregate_results.py \
+            workflow/publication/scripts/aggregate_phlash_validation.py \
             workflow/publication/scripts/benchmark_smcpp_split.py \
             workflow/publication/scripts/freeze_protocol.py \
             workflow/publication/scripts/plot_architecture.py \
             workflow/publication/scripts/plot_figure1.py \
             workflow/publication/scripts/run_benchmark.py \
+            workflow/publication/scripts/run_phlash_accuracy.py \
             workflow/publication/scripts/validate_psmcplus_matrix.py
           uv run ruff check \
             src/smckit/_capabilities.py \
@@ -68,11 +70,13 @@ jobs:
             scripts/build_dical2_repaired_oracle.py \
             scripts/verify_upstreams.py \
             workflow/publication/scripts/aggregate_results.py \
+            workflow/publication/scripts/aggregate_phlash_validation.py \
             workflow/publication/scripts/benchmark_smcpp_split.py \
             workflow/publication/scripts/freeze_protocol.py \
             workflow/publication/scripts/plot_architecture.py \
             workflow/publication/scripts/plot_figure1.py \
             workflow/publication/scripts/run_benchmark.py \
+            workflow/publication/scripts/run_phlash_accuracy.py \
             workflow/publication/scripts/validate_psmcplus_matrix.py
       - name: Validate workflow contracts
         run: |
@@ -83,6 +87,11 @@ jobs:
           uv run python -m json.tool docs/parity/dical2-feature-ledger.json > /dev/null
           uv run python -m json.tool docs/parity/oracle-specifications.json > /dev/null
           uv run python -m json.tool preservation/upstreams.json > /dev/null
+      - name: Resolve the frozen PHLASH publication DAG
+        run: |
+          cd workflow/publication
+          uv run --project ../.. --extra dev --extra docs --extra publication \
+            snakemake --dry-run --cores 1 results/phlash/summary.json > /dev/null
       - name: Rebuild deterministic diCal2 repaired oracle
         run: |
           repair_dir="$(mktemp -d)"

@@ -5,6 +5,24 @@ seed: 1729
 sequence_length: 1000000
 recombination_rate: 1.0e-8
 mutation_rate: 1.25e-8
+phlash:
+  scenarios:
+    - constant
+    - bottleneck
+    - expansion
+    - selfing_dormancy
+  window_size: 100
+  grid_size: 200
+  credible_level: 0.95
+  niter: 1000
+  num_particles: 500
+  num_workers: 1
+  max_samples: 20
+  overlap: 500
+  hold_out: true
+  inference_seed: 2718
+  evaluation_min_generations: 100
+  evaluation_max_generations: 1000000
 scenarios:
   - constant
   - bottleneck

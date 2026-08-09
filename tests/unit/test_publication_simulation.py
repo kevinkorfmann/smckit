@@ -11,11 +11,7 @@ import pytest
 import tskit
 
 SCRIPT = (
-    Path(__file__).resolve().parents[2]
-    / "workflow"
-    / "publication"
-    / "scripts"
-    / "simulate.py"
+    Path(__file__).resolve().parents[2] / "workflow" / "publication" / "scripts" / "simulate.py"
 )
 SPEC = importlib.util.spec_from_file_location("smckit_publication_simulate", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
@@ -37,6 +33,7 @@ SPEC.loader.exec_module(SIMULATE)
 )
 def test_publication_scenario_generates_tree_and_truth(scenario, tmp_path) -> None:
     tree_path = tmp_path / f"{scenario}.trees"
+    holdout_path = tmp_path / f"{scenario}.holdout.trees"
     truth_path = tmp_path / f"{scenario}.truth.json"
     payload = SIMULATE.simulate_scenario(
         scenario_name=scenario,
@@ -47,13 +44,19 @@ def test_publication_scenario_generates_tree_and_truth(scenario, tmp_path) -> No
         mutation_rate=1.25e-8,
         tree_output=tree_path,
         truth_output=truth_path,
+        holdout_tree_output=holdout_path,
     )
 
     trees = tskit.load(tree_path)
+    holdout = tskit.load(holdout_path)
     assert truth_path.is_file()
     assert trees.sequence_length == 20_000
     assert payload["scenario"] == scenario
     assert payload["tree_sequence"]["sha256"]
+    assert payload["holdout_tree_sequence"]["sha256"]
+    assert payload["holdout_ancestry_seed"] == 102
+    assert payload["holdout_mutation_seed"] == 103
+    assert holdout.sequence_length == trees.sequence_length
     assert np.isfinite(payload["diversity"])
 
 

@@ -89,9 +89,7 @@ def demographic_scenario(name: str, recombination_rate: float = 1e-8) -> Scenari
                 "effective_population_size": effective_size,
                 "baseline_recombination_rate": recombination_rate,
                 "effective_recombination_rate": effective_recombination,
-                "transform_source": (
-                    "vendored eSMC2 Tutorial_2_git(simulation)/mspts_SS_TS.py"
-                ),
+                "transform_source": ("vendored eSMC2 Tutorial_2_git(simulation)/mspts_SS_TS.py"),
             },
         )
 
@@ -141,6 +139,7 @@ def simulate_scenario(
     mutation_rate: float,
     tree_output: Path,
     truth_output: Path,
+    holdout_tree_output: Path | None = None,
 ) -> dict[str, Any]:
     """Simulate and persist one publication replicate."""
     if replicate < 1:
@@ -162,15 +161,34 @@ def simulate_scenario(
         rate=mutation_rate,
         random_seed=seed + 1,
     )
+    holdout = None
+    if holdout_tree_output is not None:
+        holdout_ancestry = msprime.sim_ancestry(
+            samples=scenario.samples,
+            demography=scenario.demography,
+            sequence_length=sequence_length,
+            recombination_rate=scenario.recombination_rate,
+            random_seed=seed + 2,
+        )
+        holdout = msprime.sim_mutations(
+            holdout_ancestry,
+            rate=mutation_rate,
+            random_seed=seed + 3,
+        )
     tree_output.parent.mkdir(parents=True, exist_ok=True)
     truth_output.parent.mkdir(parents=True, exist_ok=True)
     mutated.dump(tree_output)
+    if holdout is not None:
+        holdout_tree_output.parent.mkdir(parents=True, exist_ok=True)
+        holdout.dump(holdout_tree_output)
     payload = {
         "schema_version": 1,
         "scenario": scenario_name,
         "replicate": replicate,
         "ancestry_seed": seed,
         "mutation_seed": seed + 1,
+        "holdout_ancestry_seed": seed + 2 if holdout is not None else None,
+        "holdout_mutation_seed": seed + 3 if holdout is not None else None,
         "sequence_length": float(mutated.sequence_length),
         "mutation_rate": mutation_rate,
         "recombination_rate": scenario.recombination_rate,
@@ -186,6 +204,14 @@ def simulate_scenario(
             "sha256": sha256_file(tree_output),
         },
     }
+    if holdout is not None:
+        payload["holdout_tree_sequence"] = {
+            "path": str(holdout_tree_output.resolve()),
+            "sha256": sha256_file(holdout_tree_output),
+            "n_trees": holdout.num_trees,
+            "n_sites": holdout.num_sites,
+            "diversity": float(holdout.diversity()),
+        }
     truth_output.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -203,6 +229,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mutation-rate", type=float, default=1.25e-8)
     parser.add_argument("--tree-output", required=True)
     parser.add_argument("--truth-output", required=True)
+    parser.add_argument("--holdout-tree-output")
     return parser
 
 
@@ -217,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         mutation_rate=args.mutation_rate,
         tree_output=Path(args.tree_output),
         truth_output=Path(args.truth_output),
+        holdout_tree_output=(Path(args.holdout_tree_output) if args.holdout_tree_output else None),
     )
     return 0
 

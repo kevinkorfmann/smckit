@@ -7,7 +7,9 @@ reviewed manifests before enabling empirical and full publication targets.
 configfile: "config.yaml"
 
 SCENARIOS = config["scenarios"]
+PHLASH_SCENARIOS = config["phlash"]["scenarios"]
 REPLICATES = range(1, config["replicates"] + 1)
+SCENARIO_INDEX = {scenario: index for index, scenario in enumerate(SCENARIOS)}
 
 
 rule all:
@@ -23,6 +25,12 @@ rule all:
             scenario=SCENARIOS,
             replicate=REPLICATES,
         ),
+        expand(
+            "results/simulations/{scenario}/{replicate}.holdout.trees",
+            scenario=SCENARIOS,
+            replicate=REPLICATES,
+        ),
+        "results/phlash/summary.json",
 
 
 rule protocol:
@@ -37,13 +45,58 @@ rule protocol:
 rule simulate:
     output:
         truth="results/simulations/{scenario}/{replicate}.truth.json",
-        trees="results/simulations/{scenario}/{replicate}.trees"
+        trees="results/simulations/{scenario}/{replicate}.trees",
+        holdout="results/simulations/{scenario}/{replicate}.holdout.trees"
     params:
-        seed=lambda wildcards: config["seed"] + int(wildcards.replicate)
+        seed=lambda wildcards: (
+            config["seed"]
+            + 4
+            * (
+                SCENARIO_INDEX[wildcards.scenario] * config["replicates"]
+                + int(wildcards.replicate)
+                - 1
+            )
+            + 1
+        )
     shell:
         "python scripts/simulate.py --scenario {wildcards.scenario} "
         "--replicate {wildcards.replicate} --seed {params.seed} "
         "--sequence-length {config[sequence_length]} "
         "--recombination-rate {config[recombination_rate]} "
         "--mutation-rate {config[mutation_rate]} "
-        "--tree-output {output.trees} --truth-output {output.truth}"
+        "--tree-output {output.trees} --holdout-tree-output {output.holdout} "
+        "--truth-output {output.truth}"
+
+
+rule phlash_accuracy:
+    input:
+        protocol="results/protocol.json",
+        truth="results/simulations/{scenario}/{replicate}.truth.json",
+        trees="results/simulations/{scenario}/{replicate}.trees",
+        holdout="results/simulations/{scenario}/{replicate}.holdout.trees"
+    output:
+        validation="results/phlash/{scenario}/{replicate}.validation.json",
+        normalized="results/phlash/{scenario}/{replicate}.phlash.json",
+        posterior="results/phlash/{scenario}/{replicate}.phlash.posterior.npz"
+    params:
+        prefix=lambda wildcards: (
+            f"results/phlash/{wildcards.scenario}/{wildcards.replicate}"
+        )
+    shell:
+        "python scripts/run_phlash_accuracy.py "
+        "--protocol {input.protocol} --truth {input.truth} "
+        "--tree {input.trees} --holdout-tree {input.holdout} "
+        "--artifact-prefix {params.prefix} --output {output.validation}"
+
+
+rule phlash_aggregate:
+    input:
+        expand(
+            "results/phlash/{scenario}/{replicate}.validation.json",
+            scenario=PHLASH_SCENARIOS,
+            replicate=REPLICATES,
+        )
+    output:
+        "results/phlash/summary.json"
+    shell:
+        "python scripts/aggregate_phlash_validation.py --output {output} {input}"

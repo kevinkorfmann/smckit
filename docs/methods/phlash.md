@@ -62,5 +62,10 @@ deterministic msprime tree sequence, and an indexed VCF generated from the same
 simulation. These run in a dedicated scheduled Python 3.12 environment in
 addition to deterministic option and input-contract tests, posterior quantile
 checks, artifact round trips, and plot exports. The publication workflow will
-still add multi-replicate accuracy and posterior-coverage evidence before the
-1.0 release.
+run 20 replicates of each applicable frozen scenario with 500 posterior
+particles, 1,000 iterations, per-generation mutation-rate scaling, and an
+independent simulated holdout contig. It records log-time trajectory error,
+log-scale RMSE, median bias, raw-grid and log-time-weighted posterior coverage,
+credible-interval width, runtime, input hashes, and posterior hashes. That
+workflow is now enforced in code, but its complete retained CPU/GPU evidence
+still has to be generated before the 1.0 release.

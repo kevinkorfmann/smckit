@@ -139,7 +139,7 @@
     "native": "n/a",
     "native_default_eligible": false,
     "native_trusted_for_docs": false,
-    "tracked_agreement": "real-package PSMCFA smoke plus normalized posterior contract",
+    "tracked_agreement": "real-package PSMCFA, tree-sequence, and indexed-VCF inference plus normalized posterior contract",
     "notes": "Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.",
     "install_extra": "phlash",
     "native_warning": null

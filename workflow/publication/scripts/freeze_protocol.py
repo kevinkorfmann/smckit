@@ -28,6 +28,12 @@ REQUIRED_METRICS = {
     "peak_memory_bytes",
     "installation_success",
 }
+PHLASH_SCENARIOS = {
+    "constant",
+    "bottleneck",
+    "expansion",
+    "selfing_dormancy",
+}
 
 
 def _positive_number(config: dict[str, Any], name: str) -> float:
@@ -69,6 +75,40 @@ def validate_protocol(config: dict[str, Any]) -> None:
     empirical = config.get("empirical")
     if not isinstance(empirical, dict) or not {"human", "nonhuman"}.issubset(empirical):
         raise ValueError("empirical must define human and nonhuman datasets.")
+
+    phlash = config.get("phlash")
+    if not isinstance(phlash, dict):
+        raise ValueError("phlash must define the frozen PHLASH inference protocol.")
+    if set(phlash.get("scenarios", [])) != PHLASH_SCENARIOS:
+        raise ValueError("phlash scenarios must contain every applicable scenario exactly once.")
+    if len(phlash["scenarios"]) != len(set(phlash["scenarios"])):
+        raise ValueError("phlash scenarios must not contain duplicates.")
+    for name in (
+        "window_size",
+        "grid_size",
+        "niter",
+        "num_particles",
+        "num_workers",
+        "max_samples",
+        "overlap",
+        "inference_seed",
+    ):
+        value = phlash.get(name)
+        if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+            raise ValueError(f"phlash.{name} must be a positive integer.")
+    if phlash["num_particles"] < 500:
+        raise ValueError("Publication PHLASH inference requires at least 500 particles.")
+    if phlash["niter"] < 1000:
+        raise ValueError("Publication PHLASH inference requires at least 1000 iterations.")
+    if phlash.get("hold_out") is not True:
+        raise ValueError("Publication PHLASH inference requires an independent holdout contig.")
+    credible_level = phlash.get("credible_level")
+    if not isinstance(credible_level, int | float) or not 0 < credible_level < 1:
+        raise ValueError("phlash.credible_level must lie strictly between zero and one.")
+    evaluation_min = _positive_number(phlash, "evaluation_min_generations")
+    evaluation_max = _positive_number(phlash, "evaluation_max_generations")
+    if evaluation_min >= evaluation_max:
+        raise ValueError("PHLASH evaluation time bounds must be strictly increasing.")
 
 
 def freeze_protocol(source: Path, target: Path) -> dict[str, Any]:

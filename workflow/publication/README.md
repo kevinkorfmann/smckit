@@ -3,6 +3,29 @@
 This directory contains public workflow code and immutable evidence schemas.
 It does not contain the private manuscript, supplement, or submission files.
 
+## PHLASH accuracy and posterior coverage
+
+Install the publication and pinned PHLASH environments together, then run the
+workflow from this directory:
+
+```bash
+uv sync --extra publication --extra phlash
+uv run snakemake --cores 1 results/phlash/summary.json
+```
+
+For each of 20 constant, bottleneck, expansion, and selfing/dormancy
+replicates, the workflow simulates independent training and holdout contigs,
+runs PHLASH 1.0.6 with its paper-scale 500 particles and 1,000 iterations, and
+writes the normalized posterior plus a compact validation record. The
+aggregate reports mean absolute log-size error integrated over log time,
+log-scale RMSE, median bias, raw and log-time-weighted 95% posterior coverage,
+credible-interval width, and runtime. Every record retains the frozen protocol
+ID, input checksums, seed, platform, PHLASH version, and posterior-array hash.
+
+The single `summary.json` target is deliberately expensive. A reduced run is
+not publication evidence: test reduced settings only through temporary config
+copies, and never retain them under `evidence/`.
+
 ## PSMC+ promotion capability matrix
 
 Run the deterministic native-versus-upstream matrix from a clean checkout with

@@ -342,8 +342,26 @@
         "finite population-size trajectories",
         "theta and rho posterior summaries",
         "credible-interval quantiles",
-        "input and artifact hashes"
+        "input and artifact hashes",
+        "mean absolute log-size error integrated over log time",
+        "log-scale root-mean-squared trajectory error",
+        "raw-grid and log-time-weighted posterior coverage",
+        "credible-interval width and runtime across at least 20 replicates"
       ],
+      "publication_protocol": {
+        "scenarios": [
+          "constant",
+          "bottleneck",
+          "expansion",
+          "selfing_dormancy"
+        ],
+        "replicates_per_scenario": 20,
+        "posterior_particles": 500,
+        "iterations": 1000,
+        "independent_holdout": true,
+        "evaluation_generations": [100, 1000000],
+        "evidence_status": "workflow_enforced_run_pending"
+      },
       "status": "enforced_partial"
     }
   }
