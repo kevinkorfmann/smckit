@@ -25,6 +25,14 @@ def test_psmcplus_source_and_oracle_hashes_match_manifest() -> None:
         sha256_file(ROOT / "tests/data/psmcplus/constpop_D4_1iter.final_parameters.txt")
         == entry["oracle_fixture_sha256"]
     )
+    assert (
+        sha256_file(ROOT / "tests/data/psmcplus/kernel_oracle_v1.npz")
+        == entry["kernel_oracle_sha256"]
+    )
+    assert (
+        sha256_file(ROOT / "tests/data/psmcplus/preprocessing_oracle_v1.npz")
+        == entry["preprocessing_oracle_sha256"]
+    )
 
 
 def test_psmcplus_container_uses_manifest_base_and_hash_lock() -> None:
