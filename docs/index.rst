@@ -46,6 +46,14 @@ Start Here
        <strong>Choose a method</strong>
        <span>Pick the right SMC tool by sample type, inference target, and current implementation status.</span>
      </a>
+     <a class="smckit-card" href="get-started/project-status.html">
+       <strong>See where the project stands</strong>
+       <span>Review completed production foundations, method-level gates, and the critical path to 1.0.</span>
+     </a>
+     <a class="smckit-card" href="guide/runtime-estimates.html">
+       <strong>Plan runtime and memory</strong>
+       <span>Separate frozen smckit timings, published whole-genome anchors, and benchmark-pending methods.</span>
+     </a>
      <a class="smckit-card" href="api/tl.html">
        <strong>See the tool API</strong>
        <span>Review the public inference functions and the shared <code>implementation=</code> selector.</span>
@@ -254,6 +262,7 @@ Quickstarts
 
    get-started/introduction
    get-started/installation
+   get-started/project-status
    get-started/quickstart-psmc
    get-started/quickstart-asmc
    get-started/quickstart-msmc2
@@ -271,6 +280,7 @@ Quickstarts
    guide/smcdata
    guide/io-formats
    guide/choosing-a-method
+   guide/runtime-estimates
    guide/interpreting-results
    guide/plotting
    guide/gallery
@@ -331,24 +341,35 @@ Quickstarts
 Benchmarks
 ----------
 
-On NA12878 chr22 (10 EM iterations):
+The retained comparison matrix currently covers PSMC+ fit/decode on Linux and
+macOS, SMC++ split inference on Linux, and two diCal2 structured fits on macOS.
+It records repeated warm timings, cold cost, process-tree peak memory, hardware,
+threads, commands, hashes, and paired-bootstrap uncertainty.
 
 .. list-table::
    :header-rows: 1
 
-   * - Backend
-     - E-step
-     - Full run
-     - vs C
-   * - **Numba JIT**
-     - 0.52s
-     - **5.4s**
-     - **0.85x (17% faster)**
-   * - C PSMC (reference)
-     - --
-     - 6.3s
-     - 1.0x
-   * - NumPy (pure Python)
-     - 6.1s
-     - ~65s
-     - 10.2x
+   * - Method/capability
+     - Frozen native speedup
+     - Native/upstream peak memory
+     - Scope
+   * - PSMC+ fit
+     - 2.16x Linux; 2.32x macOS
+     - 0.387x Linux; 0.363x macOS
+     - warmed core fixture
+   * - PSMC+ decode
+     - 1.10x Linux; 1.11x macOS
+     - 0.385x Linux; 0.366x macOS
+     - warmed core fixture
+   * - SMC++ split
+     - 11.01x (95% CI 9.47–11.11x)
+     - 0.512x
+     - one-thread Linux split control
+   * - diCal2 fitted growth
+     - 1.305x (95% CI 1.283–1.354x)
+     - 0.596x
+     - one-thread macOS one-step fit
+
+See :doc:`guide/runtime-estimates` for absolute fixture timings, published
+whole-genome planning anchors, caveats, and the methods whose production
+benchmarks are still pending.

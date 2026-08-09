@@ -76,7 +76,7 @@ configuration:
   model to MSMC2 cross-population coalescence rates.
 - **diCal2** (Steinrücken, Kamm & Song, 2019) — fits structured demographic
   models with population sizes, migration, and growth from phased haplotypes.
-- **PHLASH** (Nasrallah et al., 2024) — provides Bayesian population-size
+- **PHLASH** (Nasrallah et al., 2025) — provides Bayesian population-size
   inference, posterior uncertainty, and scaling to large samples.
 
 These tools are written in a mix of C, C++, D, R, and Python; they have
@@ -94,8 +94,9 @@ catch up later.
 - **A central data container** ({class}`smckit.SmcData`) that carries input
   sequences, parameters, and results through the analysis pipeline.
 - **JIT-accelerated kernels** via Numba, with gradient-based variants via JAX
-  for the SSM extensions. The Numba PSMC implementation is roughly 17% faster
-  than the original C reference on real data.
+  for the SSM extensions. Performance claims are capability-specific and link
+  to retained timing/memory evidence; see [Runtime and resource
+  planning](../guide/runtime-estimates.md).
 - **Extensible state-space model framework** ({mod}`smckit.ext.ssm`) for
   building new SMC-flavored models by composing transition and emission
   components.
@@ -122,6 +123,10 @@ plot or further analyze the results.
 
 - **[Installation](installation.md)** — install smckit from PyPI or from a
   source checkout, with optional dependencies.
+- **[Project status](project-status.md)** — see which production and publication
+  gates are complete and what remains.
+- **[Runtime and resource planning](../guide/runtime-estimates.md)** — review
+  measured comparisons, whole-genome anchors, and pending benchmarks.
 - **[Quickstart: PSMC](quickstart-psmc.md)** — run your first PSMC analysis
   end-to-end.
 - **[Quickstart: ASMC](quickstart-asmc.md)** — decode pairwise coalescence
