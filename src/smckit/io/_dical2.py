@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -76,6 +77,20 @@ class DiCal2Config:
     haplotypes_to_include: list[bool]
     haplotype_multiplicities: np.ndarray  # (n_haplotypes, n_populations)
     sample_sizes: np.ndarray  # (n_populations,) — samples per pop
+
+
+@dataclass
+class DiCal2Contig:
+    """One independent diCal2 sequence/VCF likelihood contribution."""
+
+    sequences: np.ndarray
+    seg_positions: np.ndarray | None = None
+    reference_length: int | None = None
+    reference_alleles: np.ndarray | None = None
+    source_path: str | None = None
+    reference_file: str | None = None
+    bed_file: str | None = None
+    vcf_offset: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +167,7 @@ def read_dical2_param(path: str | Path) -> DiCal2Params:
 # ---------------------------------------------------------------------------
 # .demo file parser
 # ---------------------------------------------------------------------------
+
 
 def _parse_partition(text: str) -> list[list[int]]:
     """Parse a partition string like ``{{0},{1,2}}`` into a list of lists.
@@ -287,9 +303,7 @@ def read_dical2_demo(
                 for x in lines[idx].split():
                     value, is_placeholder = _parse_value(x, default=1.0)
                     pop_values.append(value)
-                    pop_param_ids.append(
-                        int(x.strip()[1:]) if is_placeholder else None
-                    )
+                    pop_param_ids.append(int(x.strip()[1:]) if is_placeholder else None)
                 pop_sizes = np.array(
                     pop_values,
                     dtype=np.float64,
@@ -340,8 +354,7 @@ def read_dical2_demo(
                     # Ensure rows sum to 0 (proper rate matrix)
                     for i in range(migration_matrix.shape[0]):
                         off_diag = (
-                            migration_matrix[i, :i].sum()
-                            + migration_matrix[i, i + 1 :].sum()
+                            migration_matrix[i, :i].sum() + migration_matrix[i, i + 1 :].sum()
                         )
                         migration_matrix[i, i] = -off_diag
 
@@ -400,9 +413,7 @@ def read_dical2_rates(
                 None if epoch.pop_size_param_ids is None else list(epoch.pop_size_param_ids)
             ),
             migration_matrix=(
-                None
-                if epoch.migration_matrix is None
-                else epoch.migration_matrix.copy()
+                None if epoch.migration_matrix is None else epoch.migration_matrix.copy()
             ),
             migration_param_ids=(
                 None
@@ -488,9 +499,7 @@ def read_dical2_config(path: str | Path) -> DiCal2Config:
     for ln in lines[1:]:
         indicators = [int(x) for x in ln.split()]
         if len(indicators) != n_populations:
-            raise ValueError(
-                f"Config row has {len(indicators)} columns, expected {n_populations}"
-            )
+            raise ValueError(f"Config row has {len(indicators)} columns, expected {n_populations}")
         include = any(indicators)
         haplotypes_to_include.append(include)
         multiplicities.append(indicators)
@@ -556,9 +565,12 @@ def read_dical2_sequences(
 
 def read_dical2_vcf(
     vcf_file: str | Path,
-    reference_file: str | Path,
+    reference_file: str | Path | None,
     config: DiCal2Config,
     filter_pass_string: str = ".",
+    *,
+    bed_file: str | Path | None = None,
+    vcf_offset: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, int, np.ndarray]:
     """Read a diCal2-style VCF plus reference into a haplotype matrix.
 
@@ -569,6 +581,19 @@ def read_dical2_vcf(
     allele carried at each physical locus after VCF preprocessing.
     """
     vcf_file = Path(vcf_file)
+    if reference_file is None:
+        reference_from_header = None
+        with vcf_file.open() as fh:
+            for line in fh:
+                if line.startswith("##reference=file://"):
+                    reference_from_header = line.strip().split("file://", 1)[1]
+                    break
+                if line.startswith("#CHROM"):
+                    break
+        if reference_from_header is None:
+            raise ValueError("VCF input requires reference_file or a ##reference=file:// header.")
+        candidate = Path(reference_from_header)
+        reference_file = candidate if candidate.is_absolute() else vcf_file.parent / candidate
     reference_lines = []
     for line in Path(reference_file).read_text().splitlines():
         stripped = line.strip()
@@ -592,8 +617,34 @@ def read_dical2_vcf(
             [base_to_idx.get(base, -1) for base in reference],
             dtype=np.int8,
         )
+
+    bed_regions: list[tuple[int, int]] = []
+    if bed_file is not None:
+        previous_end = 0
+        for line_number, line in enumerate(Path(bed_file).read_text().splitlines(), start=1):
+            fields = line.split()
+            if len(fields) != 3:
+                raise ValueError(
+                    f"BED row {line_number} in {bed_file} must contain exactly 3 columns."
+                )
+            start, end = int(fields[1]), int(fields[2])
+            if start < 0 or end < start or end > len(reference):
+                raise ValueError(
+                    f"BED interval [{start}, {end}) is outside reference length {len(reference)}."
+                )
+            if bed_regions and start < previous_end:
+                raise ValueError("BED intervals must be sorted and non-overlapping.")
+            bed_regions.append((start, end))
+            reference_alleles[start:end] = -1
+            previous_end = end
+
+    def _is_masked(position: int) -> bool:
+        return any(start <= position < end for start, end in bed_regions)
+
     selected_variants: list[np.ndarray] = []
     seg_positions: list[int] = []
+    previous_pos = -1
+    saw_header = False
 
     with vcf_file.open() as fh:
         n_haps_total = None
@@ -602,20 +653,38 @@ def read_dical2_vcf(
                 continue
             if line.startswith("#CHROM"):
                 parts = line.rstrip().split("\t")
-                n_haps_total = 2 * (len(parts) - 9)
-                if n_haps_total != len(include_mask):
-                    raise ValueError(
-                        f"VCF exposes {n_haps_total} haplotypes but config has {len(include_mask)}"
-                    )
+                if len(parts) < 10 or parts[3:9] != [
+                    "REF",
+                    "ALT",
+                    "QUAL",
+                    "FILTER",
+                    "INFO",
+                    "FORMAT",
+                ]:
+                    raise ValueError("VCF header does not contain the required diCal2 columns.")
+                n_haps_total = None
+                saw_header = True
                 continue
             if not line.strip():
                 continue
+            if not saw_header:
+                raise ValueError("VCF has variant records before its #CHROM header.")
             fields = line.rstrip().split("\t")
-            pos = int(fields[1]) - 1
+            if len(fields) < 10:
+                raise ValueError("VCF record has fewer than 10 columns.")
+            pos = int(fields[1]) - 1 - int(vcf_offset)
             if pos < 0 or pos >= len(reference):
                 raise ValueError(
-                    f"VCF position {pos + 1} is outside reference length {len(reference)}"
+                    "VCF position corrected for vcf_offset is outside reference length "
+                    f"{len(reference)}."
                 )
+            if pos <= previous_pos:
+                if pos == previous_pos:
+                    raise ValueError(f"VCF contains a duplicate entry at position {fields[1]}.")
+                raise ValueError("VCF positions must be sorted after applying vcf_offset.")
+            previous_pos = pos
+            if _is_masked(pos):
+                continue
             ref_allele = fields[3].upper()
             alt_field = fields[4].upper()
             filt = fields[6]
@@ -626,22 +695,32 @@ def read_dical2_vcf(
             if len(alt_alleles) > config.n_alleles - 1:
                 reference_alleles[pos] = -1
                 continue
+            if len(ref_allele) != 1 or any(len(alt) != 1 for alt in alt_alleles):
+                raise ValueError("diCal2 VCF input does not support structural alleles.")
             if reference[pos] != ref_allele:
                 raise ValueError(
-                    f"Reference allele mismatch at position {pos + 1}: VCF has {ref_allele}, "
+                    f"Reference allele mismatch at position {pos + 1 + int(vcf_offset)}: "
+                    f"VCF has {ref_allele}, "
                     f"reference has {reference[pos]}"
                 )
 
-            allele_map = {"0": -1 if ref_allele in missing_bases else 0}
-            for idx, _alt in enumerate(alt_alleles, start=1):
-                allele_map[str(idx)] = -1 if _alt in missing_bases else idx
+            if config.n_alleles == 4:
+                base_to_idx = {"A": 0, "C": 1, "G": 2, "T": 3}
+                allele_map = {"0": base_to_idx.get(ref_allele, -1)}
+                for idx, alt in enumerate(alt_alleles, start=1):
+                    allele_map[str(idx)] = base_to_idx.get(alt, -1)
+            else:
+                allele_map = {"0": -1 if ref_allele in missing_bases else 0}
+                for idx, alt in enumerate(alt_alleles, start=1):
+                    allele_map[str(idx)] = -1 if alt in missing_bases else idx
+            if len(set(allele_map.values())) != len(allele_map):
+                raise ValueError("Reference and alternative VCF alleles must be distinct.")
+            if fields[8] != "GT":
+                raise ValueError("diCal2 requires the VCF FORMAT column to equal 'GT'.")
 
             full_column: list[int] = []
             for sample in fields[9:]:
-                gt = sample.split(":", 1)[0]
-                if gt in {"./.", ".|."}:
-                    full_column.extend([-1, -1])
-                    continue
+                gt = sample
                 if "|" in gt:
                     a, b = gt.split("|")
                 elif "/" in gt:
@@ -650,12 +729,19 @@ def read_dical2_vcf(
                         full_column.extend([-1, -1])
                         continue
                 else:
-                    a = b = gt
+                    a = gt
+                    full_column.append(allele_map.get(a, -1))
+                    continue
                 if a == "." or b == ".":
                     full_column.extend([-1, -1])
                     continue
                 full_column.extend([allele_map.get(a, -1), allele_map.get(b, -1)])
 
+            n_haps_total = len(full_column)
+            if n_haps_total != len(include_mask):
+                raise ValueError(
+                    f"VCF exposes {n_haps_total} haplotypes but config has {len(include_mask)}"
+                )
             column = np.array(full_column, dtype=np.int8)[include_mask]
             uniq = set(int(x) for x in column)
             if len(uniq) <= 1:
@@ -674,19 +760,45 @@ def read_dical2_vcf(
     return seqs, np.asarray(seg_positions, dtype=np.int64), len(reference), reference_alleles
 
 
+def _dical2_contig_inputs(
+    sequences: str | Path | np.ndarray | Sequence[str | Path | np.ndarray],
+) -> tuple[list[str | Path | np.ndarray], bool]:
+    if isinstance(sequences, (str, Path, np.ndarray)):
+        return [sequences], False
+    values = list(sequences)
+    if not values:
+        raise ValueError("At least one diCal2 sequence input is required.")
+    return values, True
+
+
+def _dical2_per_contig_values(value, count: int, name: str) -> list:
+    if value is None:
+        return [None] * count
+    if isinstance(value, (str, Path)) or not isinstance(value, Sequence):
+        return [value] * count
+    values = list(value)
+    if len(values) == 1:
+        return values * count
+    if len(values) != count:
+        raise ValueError(f"{name} must contain one value or one value per contig ({count}).")
+    return values
+
+
 # ---------------------------------------------------------------------------
 # Combined reader → SmcData
 # ---------------------------------------------------------------------------
 
 
 def read_dical2(
-    sequences: str | Path | np.ndarray,
+    sequences: str | Path | np.ndarray | Sequence[str | Path | np.ndarray],
     param_file: str | Path | None = None,
     demo_file: str | Path | None = None,
     rates_file: str | Path | None = None,
     config_file: str | Path | None = None,
-    reference_file: str | Path | None = None,
+    reference_file: str | Path | Sequence[str | Path] | None = None,
     filter_pass_string: str = ".",
+    bed_files: str | Path | Sequence[str | Path] | None = None,
+    vcf_offsets: int | Sequence[int] = 0,
     theta: float = 0.0005,
     rho: float = 0.0005,
     n_alleles: int = 2,
@@ -695,9 +807,9 @@ def read_dical2(
 
     Parameters
     ----------
-    sequences : path or ndarray
+    sequences : path, ndarray, or sequence of paths/ndarrays
         Haplotype matrix (n_haplotypes, seq_length) of allele indices, or
-        path to a sequence file.
+        path to a sequence file. Multiple entries are independent contigs.
     param_file : path, optional
         Path to a ``.param`` file. If None, *theta* and *rho* are used
         with a default symmetric mutation matrix.
@@ -710,6 +822,14 @@ def read_dical2(
     config_file : path, optional
         Path to a ``.config`` file. If None, all haplotypes are placed
         in a single population.
+    reference_file : path or sequence of paths, optional
+        External VCF reference(s). A single value is reused for every contig.
+        If omitted, each VCF must contain a ``##reference=file://`` header.
+    bed_files : path or sequence of paths, optional
+        Zero-based, half-open BED masks, one value or one per VCF contig.
+    vcf_offsets : int or sequence of int
+        Coordinate offset subtracted from VCF positions, one value or one per
+        VCF contig.
     theta : float
         Mutation rate (used only when *param_file* is None).
     rho : float
@@ -744,32 +864,66 @@ def read_dical2(
     else:
         config = None
 
-    # Load sequences
-    if isinstance(sequences, (str, Path)):
-        seq_path = Path(sequences)
-        if seq_path.suffix.lower() == ".vcf":
-            if reference_file is None:
-                raise ValueError("reference_file is required when reading a VCF")
-            if config is None:
-                raise ValueError("config_file is required when reading a VCF")
-            seqs, seg_positions, reference_length, reference_alleles = read_dical2_vcf(
-                seq_path,
-                reference_file,
-                config,
-                filter_pass_string=filter_pass_string,
-            )
+    # Load independent sequence/VCF contributions.
+    sequence_inputs, multiple_inputs = _dical2_contig_inputs(sequences)
+    reference_inputs = _dical2_per_contig_values(
+        reference_file, len(sequence_inputs), "reference_file"
+    )
+    bed_inputs = _dical2_per_contig_values(bed_files, len(sequence_inputs), "bed_files")
+    offset_inputs = _dical2_per_contig_values(vcf_offsets, len(sequence_inputs), "vcf_offsets")
+    contigs: list[DiCal2Contig] = []
+    for sequence_input, reference_input, bed_input, offset_input in zip(
+        sequence_inputs, reference_inputs, bed_inputs, offset_inputs, strict=True
+    ):
+        source_path = None
+        if isinstance(sequence_input, (str, Path)):
+            seq_path = Path(sequence_input)
+            source_path = str(seq_path)
+            if seq_path.suffix.lower() == ".vcf":
+                if config is None:
+                    raise ValueError("config_file is required when reading a VCF")
+                seqs, seg_positions, reference_length, reference_alleles = read_dical2_vcf(
+                    seq_path,
+                    reference_input,
+                    config,
+                    filter_pass_string=filter_pass_string,
+                    bed_file=bed_input,
+                    vcf_offset=int(offset_input or 0),
+                )
+            else:
+                if bed_input is not None or int(offset_input or 0) != 0:
+                    raise ValueError("BED masks and VCF offsets require VCF sequence input.")
+                seqs = read_dical2_sequences(seq_path, n_alleles=n_alleles)
+                seg_positions = None
+                reference_length = None
+                reference_alleles = None
         else:
-            seqs = read_dical2_sequences(seq_path, n_alleles=n_alleles)
+            if reference_input is not None or bed_input is not None or int(offset_input or 0) != 0:
+                raise ValueError("Reference, BED, and offset controls require VCF sequence input.")
+            seqs = np.asarray(sequence_input, dtype=np.int8)
             seg_positions = None
             reference_length = None
             reference_alleles = None
-    else:
-        seqs = np.asarray(sequences, dtype=np.int8)
-        seg_positions = None
-        reference_length = None
-        reference_alleles = None
+        if seqs.ndim != 2:
+            raise ValueError("Each diCal2 sequence input must be a two-dimensional matrix.")
+        contigs.append(
+            DiCal2Contig(
+                sequences=seqs,
+                seg_positions=seg_positions,
+                reference_length=reference_length,
+                reference_alleles=reference_alleles,
+                source_path=source_path,
+                reference_file=(None if reference_input is None else str(Path(reference_input))),
+                bed_file=None if bed_input is None else str(Path(bed_input)),
+                vcf_offset=int(offset_input or 0),
+            )
+        )
 
-    n_hap, seq_len = seqs.shape
+    n_hap = int(contigs[0].sequences.shape[0])
+    if any(contig.sequences.shape[0] != n_hap for contig in contigs):
+        raise ValueError("All diCal2 contigs must contain the same number of haplotypes.")
+    seqs = np.concatenate([contig.sequences for contig in contigs], axis=1)
+    seq_len = int(seqs.shape[1])
 
     if config is None:
         config = DiCal2Config(
@@ -802,21 +956,38 @@ def read_dical2(
             "config": config,
             "n_haplotypes": n_hap,
             "seq_length": seq_len,
-            "seg_positions": seg_positions,
-            "reference_length": reference_length,
-            "reference_alleles": reference_alleles,
+            "contigs": contigs,
+            "n_contigs": len(contigs),
+            "seg_positions": contigs[0].seg_positions if len(contigs) == 1 else None,
+            "reference_length": contigs[0].reference_length if len(contigs) == 1 else None,
+            "reference_alleles": contigs[0].reference_alleles if len(contigs) == 1 else None,
             "n_alleles": n_alleles,
+            "filter_pass_string": filter_pass_string,
             "source_paths": {
-            "sequences": (
-                None
-                if not isinstance(sequences, (str, Path))
-                else str(Path(sequences))
-            ),
+                "sequences": (
+                    [contig.source_path for contig in contigs]
+                    if multiple_inputs
+                    else contigs[0].source_path
+                ),
                 "param_file": None if param_file is None else str(Path(param_file)),
                 "demo_file": None if demo_file is None else str(Path(demo_file)),
                 "rates_file": None if rates_file is None else str(Path(rates_file)),
                 "config_file": None if config_file is None else str(Path(config_file)),
-                "reference_file": None if reference_file is None else str(Path(reference_file)),
+                "reference_file": (
+                    [contig.reference_file for contig in contigs]
+                    if multiple_inputs
+                    else contigs[0].reference_file
+                ),
+                "bed_files": (
+                    [contig.bed_file for contig in contigs]
+                    if multiple_inputs
+                    else contigs[0].bed_file
+                ),
+                "vcf_offsets": (
+                    [contig.vcf_offset for contig in contigs]
+                    if multiple_inputs
+                    else contigs[0].vcf_offset
+                ),
             },
         },
     )

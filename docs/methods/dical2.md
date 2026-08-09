@@ -40,6 +40,14 @@ diCal2 does not start from a single file. A normal run uses:
 - a `.config` file describing sample assignments
 - sequence data, often from VCF plus a reference
 
+Pass a list of VCF paths to treat chromosomes or contigs as independent HMM
+contributions. `reference_file`, `bed_files`, and `vcf_offsets` accept either
+one value reused for every VCF or one value per VCF. BED intervals follow the
+upstream zero-based, half-open exclusion convention. If `reference_file` is
+omitted, each VCF must provide a `##reference=file://` header. These controls
+are preserved by the typed upstream bridge as comma-separated original CLI
+arguments.
+
 Packaged quickstart files:
 
 - `smckit.io.example_path("dical2/test.param")`
@@ -184,6 +192,12 @@ The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
 Native promotion still requires independent simulation families, remaining
 feature-ledger closure, and the performance gate.
+
+The authoritative option-by-option status is recorded in
+[the diCal2 feature ledger](../parity/dical2-feature-ledger.json). In
+particular, PAC permutation controls, grid-start search, and native parallel
+execution remain upstream-only today; use exact upstream execution for those
+workflows.
 
 ## Learn more
 

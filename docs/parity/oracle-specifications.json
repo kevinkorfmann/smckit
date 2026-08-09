@@ -219,7 +219,36 @@
       ],
       "status": "enforced"
     },
-    "dical2": {"fixtures": ["README exponential", "README isolation-migration", "structured simulation"], "status": "enforced_partial"},
+    "dical2": {
+      "fixtures": [
+        "README exponential",
+        "README isolation-migration",
+        "repeated-contig fixed-point regression",
+        "shifted VCF and BED-mask regression",
+        "structured simulation"
+      ],
+      "workflows": [
+        "external and VCF-header references",
+        "multiple independent VCF contigs",
+        "VCF coordinate offsets and zero-based half-open BED exclusions",
+        "LOL, PCL, and PAC composite likelihoods",
+        "explicit and iterative meta-start searches",
+        "parser-compatible objective and normalized JSON artifacts"
+      ],
+      "intermediates": [
+        "refined demographic intervals",
+        "initial, transition, recombination, and emission probabilities",
+        "per-contig expected counts",
+        "EM Q function and meta-start generations"
+      ],
+      "acceptance": {
+        "readme_fixed_point_log_likelihood_atol": 1e-8,
+        "repeated_identical_contig_log_likelihood": "exactly additive within floating-point pytest approximation",
+        "offset_preprocessing": "exact arrays",
+        "bed_mask_preprocessing": "exact positions and reference states"
+      },
+      "status": "enforced_partial"
+    },
     "phlash": {
       "fixtures": [
         "synthetic PSMCFA real-package smoke",

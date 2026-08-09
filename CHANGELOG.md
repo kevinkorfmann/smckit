@@ -66,6 +66,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   plus normalized output artifacts.
 - Parser-compatible diCal2 text output and versioned provenance JSON for both
   native and preserved-upstream runs.
+- Native diCal2 multi-contig likelihoods with independent HMM resets, VCF
+  coordinate offsets, zero-based half-open BED exclusions, VCF-header
+  references, and lossless typed forwarding of those controls to the original
+  Java CLI.
 - Lossless one/two-population SMC++ I/O, contig-level regularization
   cross-validation, reloadable model initialization, upstream-readable model
   JSON, hashed result artifacts, and publication-ready demography/CV plots.

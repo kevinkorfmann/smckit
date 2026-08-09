@@ -1,7 +1,10 @@
 """Unit tests for diCal2 implementation."""
+
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -19,6 +22,7 @@ from smckit.io._dical2 import (
     read_dical2_rates,
     write_dical2_output,
 )
+from smckit.tl import dical2
 from smckit.tl._dical2 import (
     DICAL2_T_INF,
     EigenCore,
@@ -26,6 +30,7 @@ from smckit.tl._dical2 import (
     SimpleTrunk,
     _build_free_params,
     _build_native_core,
+    _dical2_upstream,
     _JavaRandom,
     _old_interval_boundaries,
     _parse_dical2_stdout,
@@ -113,9 +118,7 @@ class TestIntervalFactories:
         config = read_dical2_config(
             f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.config"
         )
-        demo = read_dical2_demo(
-            f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo"
-        )
+        demo = read_dical2_demo(f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo")
         boundaries = _old_interval_boundaries(demo, config, "4")
         expected = np.array(
             [
@@ -199,9 +202,7 @@ class TestParamReader:
 
 class TestDemoReader:
     def test_piecewise_constant(self):
-        d = read_dical2_demo(
-            f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo"
-        )
+        d = read_dical2_demo(f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.demo")
         assert len(d.epochs) == 4
         assert d.n_present_demes == 1
         assert d.epoch_boundaries[0] == 0.0
@@ -221,9 +222,7 @@ class TestDemoReader:
         assert d.epochs[1].partition == [[0, 1]]
 
     def test_isolation_migration(self):
-        d = read_dical2_demo(
-            f"{VENDOR_EXAMPLES}/islolationMigration/isolation_migration.demo"
-        )
+        d = read_dical2_demo(f"{VENDOR_EXAMPLES}/islolationMigration/isolation_migration.demo")
         assert len(d.epochs) == 2
         # Epoch 0 has nontrivial migration matrix (off-diagonals = ?3 → default 1)
         ep0 = d.epochs[0]
@@ -258,9 +257,7 @@ class TestRatesReader:
 
 class TestConfigReader:
     def test_single_pop(self):
-        c = read_dical2_config(
-            f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.config"
-        )
+        c = read_dical2_config(f"{VENDOR_EXAMPLES}/piecewiseConstant/piecewise_constant.config")
         assert c.n_populations == 1
         assert c.n_alleles == 2
         assert sum(c.sample_sizes) == 4
@@ -351,6 +348,241 @@ class TestReadDical2:
         )
         np.testing.assert_array_equal(config.sample_sizes, np.array([1, 1], dtype=np.int64))
 
+    def test_multiple_vcfs_are_preserved_as_independent_contigs(self):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        data = read_dical2(
+            sequences=[root / "test.vcf", root / "test.vcf"],
+            param_file=root / "test.param",
+            demo_file=root / "exp.demo",
+            rates_file=root / "exp.rates",
+            config_file=root / "exp.config",
+            reference_file=root / "test.fa",
+        )
+
+        assert data.uns["n_contigs"] == 2
+        assert len(data.uns["contigs"]) == 2
+        assert data.sequences.shape == (8, 4)
+        np.testing.assert_array_equal(data.sequences[:, :2], data.sequences[:, 2:])
+        assert data.uns["seg_positions"] is None
+        assert data.uns["source_paths"]["sequences"] == [
+            str(root / "test.vcf"),
+            str(root / "test.vcf"),
+        ]
+
+    def test_vcf_offset_and_bed_mask_match_upstream_coordinate_semantics(self, tmp_path):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        shifted_vcf = tmp_path / "shifted.vcf"
+        shifted_lines = []
+        for line in (root / "test.vcf").read_text().splitlines():
+            if line.startswith("#"):
+                shifted_lines.append(line)
+                continue
+            fields = line.split("\t")
+            fields[1] = str(int(fields[1]) + 100)
+            shifted_lines.append("\t".join(fields))
+        shifted_vcf.write_text("\n".join(shifted_lines) + "\n")
+        bed = tmp_path / "mask.bed"
+        bed.write_text("1\t6\t7\n")
+
+        baseline = read_dical2(
+            sequences=root / "test.vcf",
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+            reference_file=root / "test.fa",
+        )
+        shifted = read_dical2(
+            sequences=shifted_vcf,
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+            reference_file=root / "test.fa",
+            vcf_offsets=100,
+        )
+        masked = read_dical2(
+            sequences=shifted_vcf,
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+            reference_file=root / "test.fa",
+            bed_files=bed,
+            vcf_offsets=100,
+        )
+
+        np.testing.assert_array_equal(shifted.sequences, baseline.sequences)
+        np.testing.assert_array_equal(shifted.uns["seg_positions"], baseline.uns["seg_positions"])
+        assert masked.sequences.shape == (4, 1)
+        np.testing.assert_array_equal(masked.uns["seg_positions"], np.array([7]))
+        assert masked.uns["reference_alleles"][6] == -1
+        assert masked.uns["source_paths"]["bed_files"] == str(bed)
+        assert masked.uns["source_paths"]["vcf_offsets"] == 100
+
+    def test_vcf_reference_can_be_resolved_from_header(self, tmp_path):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        vcf = tmp_path / "header-reference.vcf"
+        vcf.write_text(
+            f"##reference=file://{(root / 'test.fa').resolve()}\n"
+            + (root / "test.vcf").read_text()
+        )
+
+        from_header = read_dical2(
+            sequences=vcf,
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+        )
+        explicit = read_dical2(
+            sequences=root / "test.vcf",
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+            reference_file=root / "test.fa",
+        )
+
+        np.testing.assert_array_equal(from_header.sequences, explicit.sequences)
+        np.testing.assert_array_equal(
+            from_header.uns["reference_alleles"], explicit.uns["reference_alleles"]
+        )
+        assert from_header.uns["source_paths"]["reference_file"] is None
+
+    def test_multiple_contigs_reset_the_native_hmm(self):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        common = {
+            "param_file": root / "test.param",
+            "demo_file": root / "exp.demo",
+            "rates_file": root / "exp.rates",
+            "config_file": root / "exp.config",
+            "reference_file": root / "test.fa",
+        }
+        native_options = {
+            "interval_type": "logUniform",
+            "interval_params": "11,0.01,4",
+            "disableCoordinateWiseMStep": True,
+        }
+        start_point = np.loadtxt(root / "exp.rand", ndmin=2)[0]
+        single = dical2(
+            read_dical2(sequences=root / "test.vcf", **common),
+            implementation="native",
+            n_em_iterations=0,
+            start_point=start_point,
+            native_options=native_options,
+            loci_per_hmm_step=3,
+            composite_mode="lol",
+        ).results["dical2"]
+        repeated = dical2(
+            read_dical2(sequences=[root / "test.vcf", root / "test.vcf"], **common),
+            implementation="native",
+            n_em_iterations=0,
+            start_point=start_point,
+            native_options=native_options,
+            loci_per_hmm_step=3,
+            composite_mode="lol",
+        ).results["dical2"]
+
+        assert single["n_contigs"] == 1
+        assert repeated["n_contigs"] == 2
+        assert repeated["log_likelihood"] == pytest.approx(2 * single["log_likelihood"])
+
+    @pytest.mark.parametrize(
+        ("bed_text", "message"),
+        [
+            ("1\t5\n", "exactly 3 columns"),
+            ("1\t8\t10\n1\t7\t9\n", "sorted and non-overlapping"),
+            ("1\t0\t100\n", "outside reference length"),
+        ],
+    )
+    def test_invalid_bed_masks_fail_clearly(self, tmp_path, bed_text, message):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        bed = tmp_path / "bad.bed"
+        bed.write_text(bed_text)
+        with pytest.raises(ValueError, match=message):
+            read_dical2(
+                sequences=root / "test.vcf",
+                param_file=root / "test.param",
+                demo_file=root / "IM.demo",
+                config_file=root / "IM.config",
+                reference_file=root / "test.fa",
+                bed_files=bed,
+            )
+
+    def test_upstream_bridge_preserves_multicontig_vcf_controls(self, tmp_path, monkeypatch):
+        import smckit.tl._dical2 as dical2_module
+        import smckit.upstream as upstream_api
+
+        root = Path("vendor/diCal2/examples/fromReadme")
+        shifted_vcf = tmp_path / "shifted-pass.vcf"
+        shifted_lines = []
+        for line in (root / "test.vcf").read_text().splitlines():
+            if line.startswith("#"):
+                shifted_lines.append(line)
+                continue
+            fields = line.split("\t")
+            fields[1] = str(int(fields[1]) + 100)
+            fields[6] = "PASS"
+            shifted_lines.append("\t".join(fields))
+        shifted_vcf.write_text("\n".join(shifted_lines) + "\n")
+        bed = tmp_path / "mask.bed"
+        bed.write_text("1\t0\t1\n")
+        data = read_dical2(
+            sequences=[shifted_vcf, shifted_vcf],
+            param_file=root / "test.param",
+            demo_file=root / "IM.demo",
+            config_file=root / "IM.config",
+            reference_file=[root / "test.fa", root / "test.fa"],
+            filter_pass_string="PASS",
+            bed_files=[bed, bed],
+            vcf_offsets=[100, 100],
+        )
+        resolved = _resolve_dical2_options(
+            n_intervals=11,
+            max_t=4.0,
+            alpha=0.1,
+            n_em_iterations=0,
+            composite_mode="pcl",
+            loci_per_hmm_step=4,
+            start_point=None,
+            meta_start_file=None,
+            meta_num_iterations=1,
+            meta_keep_best=1,
+            meta_num_points=None,
+            bounds=None,
+            seed=7,
+            method_options={"interval_type": "logUniform", "interval_params": "11,0.01,4"},
+        )
+        captured = {"calls": []}
+
+        def fake_run(cmd, **kwargs):
+            captured["calls"].append((cmd, kwargs))
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr(dical2_module, "method_upstream_available", lambda method: True)
+        monkeypatch.setattr(dical2_module.subprocess, "run", fake_run)
+        monkeypatch.setattr(
+            upstream_api,
+            "status",
+            lambda method: {"runtime": {"path": "/mock/java"}},
+        )
+        result = _dical2_upstream(
+            data,
+            resolved=resolved,
+            cli_args=[],
+            implementation_requested="upstream",
+        ).results["dical2"]
+
+        cmd, run_kwargs = next(
+            (cmd, kwargs) for cmd, kwargs in captured["calls"] if "--vcfFile" in cmd
+        )
+        vcf_arg = cmd[cmd.index("--vcfFile") + 1]
+        ref_arg = cmd[cmd.index("--vcfReferenceFile") + 1]
+        bed_arg = cmd[cmd.index("--bedFile") + 1]
+        assert vcf_arg == ",".join([str(shifted_vcf.resolve())] * 2)
+        assert ref_arg == ",".join([str((root / "test.fa").resolve())] * 2)
+        assert bed_arg == ",".join([str(bed.resolve())] * 2)
+        assert cmd[cmd.index("--vcfFilterPassString") + 1] == "PASS"
+        assert cmd[cmd.index("--vcfOffset") + 1] == "100,100"
+        assert run_kwargs["cwd"] == Path("vendor/diCal2").resolve()
+        assert result["upstream"]["effective_args"]["vcfOffset"] == [100, 100]
+
 
 class TestDical2Output:
     def test_native_objective_output_round_trips_through_upstream_parser(self, tmp_path):
@@ -383,8 +615,7 @@ class TestDical2Output:
         on_disk = json.loads(result_path.read_text())
         assert on_disk["best_params"] == [0.5, 1.5]
         assert {
-            artifact["kind"]
-            for artifact in data.results["dical2"]["provenance"]["artifacts"]
+            artifact["kind"] for artifact in data.results["dical2"]["provenance"]["artifacts"]
         } == {"objective_output", "normalized_result"}
 
 
@@ -746,9 +977,7 @@ class TestEigenCore:
         assert params.migration_param_ids == [6]
         assert params.free_migration_groups == [[(0, 0, 1), (0, 1, 0)]]
 
-        params.set_ordered_param_values(
-            np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 7.0])
-        )
+        params.set_ordered_param_values(np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 7.0]))
         moved = params.to_demo(demo)
         assert moved.epochs[0].migration_matrix is not None
         np.testing.assert_allclose(
