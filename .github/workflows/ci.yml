@@ -57,7 +57,8 @@ jobs:
             workflow/publication/scripts/freeze_protocol.py \
             workflow/publication/scripts/plot_architecture.py \
             workflow/publication/scripts/plot_figure1.py \
-            workflow/publication/scripts/run_benchmark.py
+            workflow/publication/scripts/run_benchmark.py \
+            workflow/publication/scripts/validate_psmcplus_matrix.py
           uv run ruff check \
             src/smckit/_capabilities.py \
             src/smckit/_provenance.py \
@@ -71,7 +72,8 @@ jobs:
             workflow/publication/scripts/freeze_protocol.py \
             workflow/publication/scripts/plot_architecture.py \
             workflow/publication/scripts/plot_figure1.py \
-            workflow/publication/scripts/run_benchmark.py
+            workflow/publication/scripts/run_benchmark.py \
+            workflow/publication/scripts/validate_psmcplus_matrix.py
       - name: Validate workflow contracts
         run: |
           bash -n \

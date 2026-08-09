@@ -284,12 +284,13 @@ def _downsample_recombination_factors(
 
 def _expectation(
     sequences: Sequence[PSMCPlusSequence],
-    boundaries: np.ndarray,
+    transition_boundaries: np.ndarray,
     lambda_values: np.ndarray,
     theta: float,
     rho_per_bin: float,
     initial_distribution: np.ndarray,
     *,
+    emission_boundaries: np.ndarray | None = None,
     midpoint_transitions: bool,
     midpoint_emissions: bool,
     nonexponential_recombination: bool,
@@ -299,11 +300,14 @@ def _expectation(
     number_states = lambda_values.size
     evidence = np.zeros((number_states, number_states), dtype=np.float64)
     log_likelihood = 0.0
-    midpoints = psmcplus_emission_midpoints(boundaries, midpoint_emissions)
+    midpoints = psmcplus_emission_midpoints(
+        transition_boundaries if emission_boundaries is None else emission_boundaries,
+        midpoint_emissions,
+    )
 
     def one_sequence(sequence: PSMCPlusSequence) -> tuple[np.ndarray, float]:
         _, _, transitions = _model_matrices(
-            boundaries,
+            transition_boundaries,
             lambda_values,
             rho_per_bin,
             sequence.recombination_factors,
@@ -374,22 +378,26 @@ def _log_transition_objective(evidence: np.ndarray, transition: np.ndarray) -> f
 
 def _final_likelihood(
     sequences: Sequence[PSMCPlusSequence],
-    boundaries: np.ndarray,
+    transition_boundaries: np.ndarray,
     lambda_values: np.ndarray,
     theta: float,
     rho_per_bin: float,
     initial_distribution: np.ndarray,
     *,
+    emission_boundaries: np.ndarray | None = None,
     midpoint_transitions: bool,
     midpoint_emissions: bool,
     nonexponential_recombination: bool,
     cores: int,
 ) -> float:
-    midpoints = psmcplus_emission_midpoints(boundaries, midpoint_emissions)
+    midpoints = psmcplus_emission_midpoints(
+        transition_boundaries if emission_boundaries is None else emission_boundaries,
+        midpoint_emissions,
+    )
 
     def one_sequence(sequence: PSMCPlusSequence) -> float:
         _, _, transitions = _model_matrices(
-            boundaries,
+            transition_boundaries,
             lambda_values,
             rho_per_bin,
             sequence.recombination_factors,
@@ -490,9 +498,18 @@ def fit_psmcplus_native(
         spread_2,
         -1.0 if final_time_factor is None else final_time_factor,
     )
+    # The pinned upstream code applies ``final_T_factor`` to its emission and
+    # reported time grid, but every Transition_Matrix construction omits the
+    # option and therefore retains the default transition grid. Keep those two
+    # grids distinct so native execution reproduces that observable contract.
+    transition_boundaries = (
+        boundaries
+        if final_time_factor is None
+        else psmcplus_time_boundaries(number_states, spread_1, spread_2, -1.0)
+    )
     lambda_values = layout.expand(layout.free_initial)
     _, _, initial_transition_stack = _model_matrices(
-        boundaries,
+        transition_boundaries,
         lambda_values,
         rho_per_bin,
         np.ones(1, dtype=np.float64),
@@ -519,11 +536,12 @@ def fit_psmcplus_native(
             break
         evidence, log_likelihood, evidence_by_sequence = _expectation(
             sequences,
-            boundaries,
+            transition_boundaries,
             lambda_values,
             theta,
             rho_per_bin,
             initial_distribution,
+            emission_boundaries=boundaries,
             midpoint_transitions=midpoint_transitions,
             midpoint_emissions=midpoint_emissions,
             nonexponential_recombination=nonexponential_recombination,
@@ -562,7 +580,7 @@ def fit_psmcplus_native(
                     strict=True,
                 ):
                     _, _, candidate_stack = _model_matrices(
-                        boundaries,
+                        transition_boundaries,
                         candidate_lambda,
                         candidate_rho,
                         sequence.recombination_factors,
@@ -576,7 +594,7 @@ def fit_psmcplus_native(
                         )
                 return objective_value
             _, _, candidate_stack = _model_matrices(
-                boundaries,
+                transition_boundaries,
                 candidate_lambda,
                 candidate_rho,
                 np.ones(1, dtype=np.float64),
@@ -615,11 +633,12 @@ def fit_psmcplus_native(
 
     final_log_likelihood = _final_likelihood(
         sequences,
-        boundaries,
+        transition_boundaries,
         lambda_values,
         theta,
         rho_per_bin,
         initial_distribution,
+        emission_boundaries=boundaries,
         midpoint_transitions=midpoint_transitions,
         midpoint_emissions=midpoint_emissions,
         nonexponential_recombination=nonexponential_recombination,
@@ -690,9 +709,14 @@ def decode_psmcplus_native(
         spread_2,
         -1.0 if final_time_factor is None else final_time_factor,
     )
+    transition_boundaries = (
+        boundaries
+        if final_time_factor is None
+        else psmcplus_time_boundaries(number_states, spread_1, spread_2, -1.0)
+    )
     lambda_values = layout.expand(layout.free_initial)
     _, _, transitions = _model_matrices(
-        boundaries,
+        transition_boundaries,
         lambda_values,
         rho_per_bin,
         sequence.recombination_factors,
@@ -700,7 +724,7 @@ def decode_psmcplus_native(
         nonexponential_recombination=nonexponential_recombination,
     )
     _, _, baseline = _model_matrices(
-        boundaries,
+        transition_boundaries,
         lambda_values,
         rho_per_bin,
         np.ones(1, dtype=np.float64),
