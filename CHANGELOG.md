@@ -50,10 +50,15 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Lossless one/two-population SMC++ I/O, contig-level regularization
   cross-validation, reloadable model initialization, upstream-readable model
   JSON, hashed result artifacts, and publication-ready demography/CV plots.
+- Immutable SMC++ clean-split promotion evidence with matched persistent native
+  and preserved-upstream timing, memory, environment, hardware, and checksums.
 
 ### Changed
 
 - `implementation="auto"` now chooses native only for promoted capabilities.
+- SMC++ two-population clean-split workflows are promoted for `auto` after the
+  correctness matrix and frozen speed/memory gates passed; explicit upstream
+  execution remains available.
 - Match diCal2's Higham-Hall tolerance and Ethan-trunk infinity behavior,
   closing the tracked exponential-growth and isolation-migration fixed-point
   likelihood oracles to within `1e-8`.

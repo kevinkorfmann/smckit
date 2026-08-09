@@ -71,8 +71,25 @@ used by the upstream inference manager for `(2, 0)` and `(1, 1)` across full,
 downsampled, missing-distinguished, reduced-monomorphic, and
 reduced-heterozygous observations. The focused native suite and the complete
 split-oracle file passed on Linux x86-64 in the controlled Sesame environment.
-This is method-specific closure evidence, not yet the broad regression and
-performance evidence required for promotion.
+This method-specific closure was followed by the full 159-test SMC++ matrix,
+the repository unit tier, build/install checks, and the frozen performance
+gate described below.
+
+### Performance promotion evidence
+
+Protocol `sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd`
+measured five warmed calls per implementation on one Linux x86-64 CPU thread.
+Native took 0.245-0.249 seconds per warmed call and preserved upstream took
+2.356-2.745 seconds. The aggregate speedup was 11.01x with a 95% bootstrap
+confidence interval of 9.47-11.11x. Native peak RSS was 198,643,712 bytes,
+0.512x the upstream peak of 387,686,400 bytes. Both the speed and memory gates
+passed, so the tracked clean-split capability is promoted for `auto`.
+
+The raw records, frozen protocol, environment, hardware description, aggregate,
+and checksums are retained under
+`workflow/publication/evidence/smcpp-split/sha256-c339dbb6/`. This result applies
+to the frozen control workload and hardware; it is not a universal performance
+claim for every chromosome or machine.
 
 ## Two-population clean-split closure
 

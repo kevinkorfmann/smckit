@@ -73,6 +73,13 @@ native peak-memory limit. A promotable performance record is necessary but not
 sufficient: complete parity, regression, installation, and documentation gates
 must also pass before changing `auto` to native.
 
+The retained SMC++ split promotion run is in
+`evidence/smcpp-split/sha256-c339dbb6/`. Its aggregate reports an 11.01x warmed
+speedup (95% bootstrap CI 9.47-11.11x) and a 0.512 native/upstream peak-memory
+ratio. `SHA256SUMS` covers every file emitted by the frozen runner; the adjacent
+source-provenance record links the narrowed clean Sesame execution snapshot to
+the canonical repository commits and source hashes.
+
 ## Betty Slurm execution
 
 Never run the validation or benchmark commands directly on the Betty login

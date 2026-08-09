@@ -97,6 +97,18 @@ def test_auto_falls_back_for_unpromoted_requested_capability() -> None:
     )
 
 
+def test_auto_uses_native_for_promoted_smcpp_split() -> None:
+    assert (
+        choose_implementation(
+            "auto",
+            upstream_available=True,
+            method_name="smcpp",
+            requested_capabilities={"split", "model_serialization"},
+        )
+        == "native"
+    )
+
+
 def test_auto_uses_native_for_promoted_psmc_workflow_capability() -> None:
     assert (
         choose_implementation(

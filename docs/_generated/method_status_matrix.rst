@@ -41,8 +41,8 @@
      - ✓
      - ✓
      - ✓
-     - `>= 0.999125 tracked one-pop log-Ne corr`
-     - The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Native two-population clean-split inference now matches upstream joint-CSFS intermediates and the scale/split coordinate updates across all five serialized spline classes; broader fixture and performance validation remains before promotion.
+     - `>= 0.999125 one-pop log-Ne corr; split dloglik 1.30e-05 and identical fitted split`
+     - The native one-pop path clears the tracked inference matrix and includes upstream-matched VCF preparation, masks/compression, cross-validation, reloadable model artifacts, and plotting. Two-population clean-split inference is promoted across all distinguished-lineage allocations, missing/downsampled/reduced observations, and five spline classes. Frozen one-thread evidence measured an 11.01x warmed speedup (95% bootstrap CI 9.47-11.11x) and 0.512x peak memory versus preserved upstream.
    * - diCal2
      - ✓
      - ✓

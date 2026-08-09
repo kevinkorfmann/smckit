@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "canonical_source_commit": "ebd54b58b960e40417e1498cf470cff835991bb5",
+  "algorithm_commit": "f9c5db2f564159cd5c09a0cce5fba0ef08fc0157",
+  "benchmark_surface_commit": "ee8dfcf89f3e02b69339da6528dbc5530f5ecbb8",
+  "surface_scope": [
+    "src/",
+    "workflow/",
+    "tests/unit/test_smcpp_promotion_worker.py",
+    "pyproject.toml",
+    "README.md",
+    "LICENSE",
+    "vendor/smcpp directory-presence marker"
+  ],
+  "source_sha256": {
+    "src/smckit/tl/_smcpp.py": "4044f37f1714ac62a5a7e45a0a0ca2edcb81c1ba2e070b3253557b1213de6b36",
+    "workflow/publication/scripts/benchmark_smcpp_split.py": "27b82dba704409bc1861028b6b82b8f77752ffa932c865438cff1c71a69331bf"
+  },
+  "upstream_smcpp_commit": "6779faec78f1db2d84b3cd8176cd99731c71d584",
+  "upstream_numpy_version": "1.26.4",
+  "execution_host": "sesame",
+  "execution_threads": 1,
+  "note": "The benchmark surface was reconstructed from tracked public files because macOS had offloaded Git objects in the canonical Desktop checkout. The source hashes above match the canonical commits. The synthetic snapshot contained no private manuscript, continuation checkpoint, or ai-use.md."
+}

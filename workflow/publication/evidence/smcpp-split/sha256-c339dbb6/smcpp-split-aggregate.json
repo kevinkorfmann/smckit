@@ -1,0 +1,79 @@
+{
+  "accuracy_records": [],
+  "aggregate_sha256": "6e2eb3641e72b10d9661bce1697346bb07f635206aa2ef5382ca2ce5153e189b",
+  "benchmark_records": [
+    {
+      "dataset": "split-control-v1",
+      "implementation": "native",
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "method": "smcpp",
+      "platform": {
+        "logical_cpu_count": 80,
+        "machine": "x86_64",
+        "processor": "x86_64",
+        "python": "3.12.3",
+        "release": "6.8.0-111-generic",
+        "system": "Linux"
+      },
+      "record_sha256": "08e04c82a7488f33c5d3833ea6c649b67e0b409af565c6d75c8c4b0e45fc5089",
+      "threads": 1
+    },
+    {
+      "dataset": "split-control-v1",
+      "implementation": "upstream",
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "method": "smcpp",
+      "platform": {
+        "logical_cpu_count": 80,
+        "machine": "x86_64",
+        "processor": "x86_64",
+        "python": "3.12.3",
+        "release": "6.8.0-111-generic",
+        "system": "Linux"
+      },
+      "record_sha256": "1b7af1e1faaa53aa57e2a70b409e360d6467c4800ee047196e20e258d378d2ea",
+      "threads": 1
+    }
+  ],
+  "input_record_sha256": [
+    "08e04c82a7488f33c5d3833ea6c649b67e0b409af565c6d75c8c4b0e45fc5089",
+    "1b7af1e1faaa53aa57e2a70b409e360d6467c4800ee047196e20e258d378d2ea"
+  ],
+  "performance_comparisons": [
+    {
+      "cold_runtime_ratio_upstream_over_native": 9.453302748482892,
+      "confidence": 0.95,
+      "dataset": "split-control-v1",
+      "faster_with_confidence": true,
+      "measurement_component": "inference_api_excluding_input_preparation",
+      "memory_ratio": 0.5123824617010037,
+      "memory_within_25_percent": true,
+      "method": "smcpp",
+      "native_cold_seconds": 0.24959952756762505,
+      "native_startup_seconds": 1.6672632098197937,
+      "native_warm_peak_memory_bytes": 198643712,
+      "platform": {
+        "machine": "x86_64",
+        "processor": "x86_64",
+        "system": "Linux"
+      },
+      "promotable": true,
+      "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+      "schema_version": 1,
+      "speedup": 11.009918985826788,
+      "speedup_confidence_interval": [
+        9.46693315914813,
+        11.114415264907905
+      ],
+      "startup_runtime_ratio_upstream_over_native": 0.660314674549063,
+      "threads": 1,
+      "upstream_cold_seconds": 2.3595398999750614,
+      "upstream_startup_seconds": 1.1009183637797832,
+      "upstream_warm_peak_memory_bytes": 387686400,
+      "warm_repetitions": 5
+    }
+  ],
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "required_warm_repetitions": 5,
+  "schema_version": 1
+}

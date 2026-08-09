@@ -133,6 +133,7 @@
         "one-population native and upstream inference",
         "VCF-to-SMC preparation with masks and compressed input",
         "lossless one- and two-population SMC I/O",
+        "two-population clean-split inference across all five spline classes",
         "contig-level regularization cross-validation",
         "model serialization and reloadable initialization",
         "publication plotting and vector export"
@@ -140,11 +141,12 @@
       "final_metrics": [
         "log-Ne trajectory correlation and scale ratio",
         "fixed-model HMM sufficient statistics",
+        "split likelihood, fitted split, warmed runtime, and peak memory",
         "exact VCF conversion observation stream",
         "held-out log likelihood",
         "model and result artifact hashes"
       ],
-      "status": "enforced_partial"
+      "status": "enforced"
     },
     "dical2": {"fixtures": ["README exponential", "README isolation-migration", "structured simulation"], "status": "enforced_partial"},
     "phlash": {

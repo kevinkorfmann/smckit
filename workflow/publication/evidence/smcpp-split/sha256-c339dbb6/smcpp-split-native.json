@@ -1,0 +1,162 @@
+{
+  "command": [
+    "python3",
+    "-u",
+    "workflow/publication/scripts/benchmark_smcpp_split.py",
+    "--implementation",
+    "native"
+  ],
+  "dataset": "split-control-v1",
+  "fresh_process_repetitions": 0,
+  "implementation": "native",
+  "measurement_component": "inference_api_excluding_input_preparation",
+  "measurement_scope": "in_process_call",
+  "method": "smcpp",
+  "platform": {
+    "logical_cpu_count": 80,
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "python": "3.12.3",
+    "release": "6.8.0-111-generic",
+    "system": "Linux"
+  },
+  "promotion_eligible": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "record_sha256": "08e04c82a7488f33c5d3833ea6c649b67e0b409af565c6d75c8c4b0e45fc5089",
+  "repetitions": [
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 196767744,
+      "preparation_response_sha256": "1b852d811f759a7616609264970c93e700711c395a916749ea56a46009062b83",
+      "preparation_runtime_seconds": 0.04160953499376774,
+      "repetition": 0,
+      "return_code": 0,
+      "runtime_seconds": 0.24959952756762505,
+      "stdout_bytes": 273,
+      "stdout_sha256": "095e5d7d1e5a18a6b2bcac2a1ecc4c343e72ba5929bc04d51bd84a8026040f18",
+      "temperature": "cold",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 198643712,
+      "preparation_response_sha256": "eb7d188e66900a7130ab3dbe0f9d31cae2a062a45231c1ee0e95366354064c36",
+      "preparation_runtime_seconds": 0.04105142503976822,
+      "repetition": 1,
+      "return_code": 0,
+      "runtime_seconds": 0.24934523925185204,
+      "stdout_bytes": 273,
+      "stdout_sha256": "dfc6736855d3c2c5c5db0d3e2d5c036612d3e8843eab6bc0c14c3c8d180a94b5",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 198643712,
+      "preparation_response_sha256": "bcb9be176484eee1da1fd2f4763be62736aaf3ceadfdcffb16784f9d88c75242",
+      "preparation_runtime_seconds": 0.04124830290675163,
+      "repetition": 2,
+      "return_code": 0,
+      "runtime_seconds": 0.24691426753997803,
+      "stdout_bytes": 273,
+      "stdout_sha256": "cc23a64f107e0e6f88297b1f3e9f21e2e79fe7456762b21b59f067effabfce65",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 198643712,
+      "preparation_response_sha256": "f7e578ab478b460b502698ed5f2846c4e3c0255559bed4a1be646386258c1ebd",
+      "preparation_runtime_seconds": 0.04099798575043678,
+      "repetition": 3,
+      "return_code": 0,
+      "runtime_seconds": 0.2453514914959669,
+      "stdout_bytes": 273,
+      "stdout_sha256": "8ea5e9d861fade8ffdecbd31c4a3b7b68bd5557e75733c6bdf03354fd79be5fc",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 198643712,
+      "preparation_response_sha256": "4960585c8a78aae116474a295f17e63f1046e93ade308cc4811383e161a540c6",
+      "preparation_runtime_seconds": 0.04108018986880779,
+      "repetition": 4,
+      "return_code": 0,
+      "runtime_seconds": 0.2488442976027727,
+      "stdout_bytes": 273,
+      "stdout_sha256": "9549ff938fdf5667c56cdc3ec91632195353dae953aaec39c6e08596ccaab40b",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 198643712,
+      "preparation_peak_memory_bytes": 198643712,
+      "preparation_response_sha256": "d60dea8adf7cb91dde19d049e10b3792f8d17e61f0f5f0bc2e49223785b061ae",
+      "preparation_runtime_seconds": 0.0413510724902153,
+      "repetition": 5,
+      "return_code": 0,
+      "runtime_seconds": 0.2465481236577034,
+      "stdout_bytes": 273,
+      "stdout_sha256": "6db1fb21517651658cbd52b6c2f2972e5208ab4c594ab99f1a2e9e3b4c87c931",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "native",
+        "joint_emission_sum": 1.0000000001,
+        "log_likelihood": -360.79664177777596,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    }
+  ],
+  "schema_version": 2,
+  "startup": {
+    "peak_memory_bytes": 196767744,
+    "response_bytes": 90,
+    "response_sha256": "db8b37758cca75f1f6c3a4a3064ecbf832b2cdef5e0fc0f080ee6c1d928eb84f",
+    "runtime_seconds": 1.6672632098197937
+  },
+  "threads": 1,
+  "warm_repetitions": 5,
+  "warmup_semantics": "first_call_then_same_process",
+  "worker_stream": {
+    "stderr_bytes": 373,
+    "stderr_sha256": "ff3d08e7d1f018656e89e0e9df339ffede8cd0b85cd5a326dc7d5ebbf5dcec8f"
+  }
+}

@@ -58,8 +58,9 @@ This page preserves the deeper implementation notes needed for parity work.
 ## Handoff notes
 
 - Treat `vendor/smcpp` as the oracle source tree for future parity work.
-- The remaining SMC++ work is broader split fixture and performance coverage,
-  not the tracked one-pop HMM or clean-split mathematics.
+- The tracked split correctness and performance promotion gates are complete.
+  Future work should add new biological input families without weakening the
+  frozen one-pop or clean-split contracts.
 - Tracked one-pop parity now holds on both enforced fixtures, but that still
   does not automatically prove parity for future untracked SMC++ input shapes.
 - The larger tracked `.smc` fixture remains in the docs gallery as the more
@@ -75,8 +76,8 @@ This page preserves the deeper implementation notes needed for parity work.
   controlled side environment and maps results back into `SmcData`.
 - `implementation="native"` stays entirely in-repo and records the same
   provenance metadata.
-- `implementation="auto"` resolves to native for promoted one-pop workflows
-  and to upstream for split while the native split path is unpromoted.
+- `implementation="auto"` resolves to native for promoted one-pop and
+  two-population clean-split workflows. Explicit `upstream` remains available.
 
 ## Where to read code
 

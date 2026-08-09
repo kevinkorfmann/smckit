@@ -21,9 +21,9 @@ when PSMC is too sample-limited at recent times.
 
 | Selector | Status | Notes |
 |---|---|---|
-| `implementation="native"` | Available | Covers the upstream-style one-pop path and exact two-population clean-split fitting. The split path is available but remains unpromoted while its broader oracle/performance matrix is completed. |
+| `implementation="native"` | Promoted | Covers the upstream-style one-pop path and exact two-population clean-split fitting. |
 | `implementation="upstream"` | Available | Runs the vendored upstream source through the controlled side environment, including two-population split inference. |
-| `implementation="auto"` | Available | Uses native for promoted one-population workflows and routes two-population split requests to upstream. |
+| `implementation="auto"` | Native by default | Uses native for promoted one-population and two-population clean-split workflows. |
 
 Install contract:
 
@@ -104,7 +104,7 @@ smoke-test-scale fixture, not a realistic data volume.
 | `regularization` | Smoothness penalty on the inferred history. | Increase to discourage noisy curves; decrease to allow more flexibility. | This is one of the first tuning knobs to learn. |
 | `seed` | Random seed for reproducibility. | Set for repeatable runs. | Good practice for examples and comparisons. |
 | `initial_model` | Reloadable SMC++ model path, mapping, or `SmcData`. | Resume from or compare a frozen history. | Omit for data-driven initialization. |
-| `split_models` | Two fitted marginal histories for a joint two-population input. | Fit a clean split after fitting each population. | Required only for split analysis; choose `native` explicitly until the split path is promoted. |
+| `split_models` | Two fitted marginal histories for a joint two-population input. | Fit a clean split after fitting each population. | Required only for split analysis; `auto` now selects native. |
 | `output_prefix` | Prefix for normalized result and model JSON. | Use for reproducible analyses. | Artifacts are SHA-256 recorded in provenance. |
 
 ## VCF preparation, masks, and multi-population files
@@ -124,14 +124,14 @@ scale coordinate followed by split time used by the preserved workflow. The
 tracked oracle covers the five serialized upstream spline classes: Piecewise,
 CubicSpline, PChipSpline, AkimaSpline, and BSpline.
 
-Use `implementation="native"` to exercise that unpromoted path explicitly, or
-`implementation="auto"` to retain the preserved upstream fallback:
+Use `implementation="auto"` for the promoted native path, or select
+`implementation="upstream"` when an exact preserved run is required:
 
 ```python
 joint = smckit.io.read_smcpp_input("joint-populations.smc.gz")
 joint = smckit.tl.smcpp(
     joint,
-    implementation="native",
+    implementation="auto",
     split_models=("population-a.model.json", "population-b.model.json"),
     output_prefix="results/joint",
 )
@@ -195,8 +195,9 @@ simple EM loop; it uses a heavier optimization stack than PSMC.
 
 ## Practical notes
 
-- `implementation="auto"` is the safest choice when the upstream side
-  environment is configured.
+- `implementation="auto"` selects native for standard one-population and
+  two-population clean-split workflows. Explicit `upstream` remains the oracle
+  and preservation path.
 - The default native path now uses upstream-style one-pop preprocessing,
   hidden-state construction, upstream observation scaling for binned data, and
   an EM/coordinate-update optimizer with the upstream-style global scale step.
@@ -209,7 +210,9 @@ simple EM loop; it uses a heavier optimization stack than PSMC.
 - The native clean-split path matches the preserved optimizer's split time and
   shared scale on its tracked end-to-end fixture. Its exact deterministic
   joint-CSFS agrees with the preserved raw tensor within the upstream
-  Monte-Carlo estimator's sampling error.
+  Monte-Carlo estimator's sampling error. Frozen one-thread Linux evidence
+  measured an 11.01x warmed speedup (95% bootstrap CI 9.47-11.11x) with
+  0.512x upstream peak memory.
 - Upstream remains the fidelity baseline for broader validation and for
   untracked fixtures; the tracked matrix should not be read as a blanket claim
   of parity for every possible future SMC++ input family.

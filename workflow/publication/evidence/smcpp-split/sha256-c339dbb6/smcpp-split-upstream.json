@@ -1,0 +1,156 @@
+{
+  "command": [
+    "python3",
+    "-u",
+    "workflow/publication/scripts/benchmark_smcpp_split.py",
+    "--implementation",
+    "upstream"
+  ],
+  "dataset": "split-control-v1",
+  "fresh_process_repetitions": 0,
+  "implementation": "upstream",
+  "measurement_component": "inference_api_excluding_input_preparation",
+  "measurement_scope": "in_process_call",
+  "method": "smcpp",
+  "platform": {
+    "logical_cpu_count": 80,
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "python": "3.12.3",
+    "release": "6.8.0-111-generic",
+    "system": "Linux"
+  },
+  "promotion_eligible": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "record_sha256": "1b7af1e1faaa53aa57e2a70b409e360d6467c4800ee047196e20e258d378d2ea",
+  "repetitions": [
+    {
+      "peak_memory_bytes": 384995328,
+      "preparation_peak_memory_bytes": 195330048,
+      "preparation_response_sha256": "1b852d811f759a7616609264970c93e700711c395a916749ea56a46009062b83",
+      "preparation_runtime_seconds": 0.04088786244392395,
+      "repetition": 0,
+      "return_code": 0,
+      "runtime_seconds": 2.3595398999750614,
+      "stdout_bytes": 241,
+      "stdout_sha256": "628144e0db19c3873d590be096347385507718a096f145c302b09d18f18b5319",
+      "temperature": "cold",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 384864256,
+      "preparation_peak_memory_bytes": 195395584,
+      "preparation_response_sha256": "eb7d188e66900a7130ab3dbe0f9d31cae2a062a45231c1ee0e95366354064c36",
+      "preparation_runtime_seconds": 0.041751159355044365,
+      "repetition": 1,
+      "return_code": 0,
+      "runtime_seconds": 2.745270883664489,
+      "stdout_bytes": 241,
+      "stdout_sha256": "dae6a9bdaee4dae6e93ba81b973fe10296beaf4c88d7644b7f9c956f5a6cde0d",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 387686400,
+      "preparation_peak_memory_bytes": 195395584,
+      "preparation_response_sha256": "bcb9be176484eee1da1fd2f4763be62736aaf3ceadfdcffb16784f9d88c75242",
+      "preparation_runtime_seconds": 0.04131224751472473,
+      "repetition": 2,
+      "return_code": 0,
+      "runtime_seconds": 2.744307704269886,
+      "stdout_bytes": 241,
+      "stdout_sha256": "e79df794bd8b4c64f9367c7effaae9afa5fa6cfd9cc4268de2b5c9d8d5d26e43",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 385265664,
+      "preparation_peak_memory_bytes": 195395584,
+      "preparation_response_sha256": "f7e578ab478b460b502698ed5f2846c4e3c0255559bed4a1be646386258c1ebd",
+      "preparation_runtime_seconds": 0.0421553123742342,
+      "repetition": 3,
+      "return_code": 0,
+      "runtime_seconds": 2.366562768816948,
+      "stdout_bytes": 241,
+      "stdout_sha256": "dd63058e50349adc8fb8816816ac44c215401d68098db255a5a47a64fa8cbd4b",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 384618496,
+      "preparation_peak_memory_bytes": 195395584,
+      "preparation_response_sha256": "4960585c8a78aae116474a295f17e63f1046e93ade308cc4811383e161a540c6",
+      "preparation_runtime_seconds": 0.04116395302116871,
+      "repetition": 4,
+      "return_code": 0,
+      "runtime_seconds": 2.3557923324406147,
+      "stdout_bytes": 241,
+      "stdout_sha256": "9c7aab2d96a81b089cfd3e617c9dfdca54efed34e08cc2c093937fd4d64d9b72",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    },
+    {
+      "peak_memory_bytes": 384868352,
+      "preparation_peak_memory_bytes": 195395584,
+      "preparation_response_sha256": "d60dea8adf7cb91dde19d049e10b3792f8d17e61f0f5f0bc2e49223785b061ae",
+      "preparation_runtime_seconds": 0.041502002626657486,
+      "repetition": 5,
+      "return_code": 0,
+      "runtime_seconds": 2.738550368696451,
+      "stdout_bytes": 241,
+      "stdout_sha256": "33bd9e60e1d438c5b19de41ba05bc333e59bba4a8be3b122ef01b28afea646c9",
+      "temperature": "warm",
+      "worker_result": {
+        "analysis": "split",
+        "implementation": "upstream",
+        "log_likelihood": -360.79662872965014,
+        "model_sha256": "84104e232874b621988c706d04746eb9323558d0d98644e89953b28af8f6464d",
+        "split": 5.526022037850897e-06
+      }
+    }
+  ],
+  "schema_version": 2,
+  "startup": {
+    "peak_memory_bytes": 195330048,
+    "response_bytes": 92,
+    "response_sha256": "a1a107223ad461632434a61533f26c27e495740088b886706b454b3c5d815be4",
+    "runtime_seconds": 1.1009183637797832
+  },
+  "threads": 1,
+  "warm_repetitions": 5,
+  "warmup_semantics": "first_call_then_same_process",
+  "worker_stream": {
+    "stderr_bytes": 373,
+    "stderr_sha256": "ff3d08e7d1f018656e89e0e9df339ffede8cd0b85cd5a326dc7d5ebbf5dcec8f"
+  }
+}

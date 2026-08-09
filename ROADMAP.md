@@ -24,7 +24,7 @@ for evidence.
 
 ## 0.8 — high-risk parity closure
 
-- [ ] SMC++ supports preparation, masks, compression, multi-population and split workflows.
+- [x] SMC++ supports preparation, masks, compression, multi-population and split workflows.
 - [ ] diCal2 implements exact configuration and likelihood semantics.
 - [ ] PSMC+ has an immutable upstream preservation layer, complete feature
   ledger, normalized schema, and fixed oracle fixtures.
