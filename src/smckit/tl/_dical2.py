@@ -47,6 +47,7 @@ from smckit._core import SmcData
 from smckit._provenance import sha256_file
 from smckit.io._dical2 import (
     DiCal2Config,
+    DiCal2Contig,
     DiCal2Demo,
     DiCal2Epoch,
     write_dical2_output,
@@ -272,9 +273,7 @@ def _resolve_dical2_options(
             else int(_lookup_option(method_options, "seed", default=seed))
         ),
         start_point=resolved_start_point,
-        meta_start_file=(
-            None if resolved_meta_start is None else str(resolved_meta_start)
-        ),
+        meta_start_file=(None if resolved_meta_start is None else str(resolved_meta_start)),
         meta_num_iterations=int(
             _lookup_option(
                 method_options,
@@ -447,9 +446,7 @@ def _resolved_options_metadata(resolved: DiCal2ResolvedOptions) -> dict[str, obj
         "composite_mode": resolved.composite_mode,
         "loci_per_hmm_step": resolved.loci_per_hmm_step,
         "seed": resolved.seed,
-        "start_point": (
-            None if resolved.start_point is None else resolved.start_point.tolist()
-        ),
+        "start_point": (None if resolved.start_point is None else resolved.start_point.tolist()),
         "meta_start_file": resolved.meta_start_file,
         "meta_num_iterations": resolved.meta_num_iterations,
         "meta_keep_best": resolved.meta_keep_best,
@@ -516,17 +513,18 @@ def _balanced_partition(n_intervals: int) -> list[tuple[float, float]]:
 
 
 def _exponential_partition(n_intervals: int, exp_rate: float) -> list[tuple[float, float]]:
-    return [
-        (start / exp_rate, end / exp_rate)
-        for start, end in _balanced_partition(n_intervals)
-    ]
+    return [(start / exp_rate, end / exp_rate) for start, end in _balanced_partition(n_intervals)]
 
 
-def _old_interval_boundaries(demo: DiCal2Demo, config: DiCal2Config, interval_params: str) -> np.ndarray:
+def _old_interval_boundaries(
+    demo: DiCal2Demo, config: DiCal2Config, interval_params: str
+) -> np.ndarray:
     num_additional_intervals = int(interval_params)
     first_epoch = next((epoch for epoch in demo.epochs if epoch.pop_sizes is not None), None)
     if first_epoch is None or first_epoch.pop_sizes is None:
-        raise ValueError("old interval factory requires a demographic epoch with population sizes.")
+        raise ValueError(
+            "old interval factory requires a demographic epoch with population sizes."
+        )
     pop_size_by_present: dict[int, float] = {}
     for ancient_idx, group in enumerate(first_epoch.partition):
         for present_idx in group:
@@ -601,7 +599,11 @@ def _resolve_interval_boundaries(
         return _loguniform_interval_boundaries(resolved.interval_params)
     if resolved.interval_type == "customfixed":
         points = np.array(
-            [float(chunk.strip()) for chunk in resolved.interval_params.split(",") if chunk.strip()],
+            [
+                float(chunk.strip())
+                for chunk in resolved.interval_params.split(",")
+                if chunk.strip()
+            ],
             dtype=np.float64,
         )
         return np.concatenate(([0.0], points, [DICAL2_T_INF]))
@@ -719,7 +721,9 @@ def _refined_interval_epoch(refined: "RefinedDemography", interval: int) -> DiCa
             partition=[list(group) for group in base_epoch.partition],
             pop_sizes=None,
             pop_size_param_ids=(
-                None if base_epoch.pop_size_param_ids is None else list(base_epoch.pop_size_param_ids)
+                None
+                if base_epoch.pop_size_param_ids is None
+                else list(base_epoch.pop_size_param_ids)
             ),
             migration_matrix=None,
             migration_param_ids=(
@@ -743,7 +747,11 @@ def _refined_interval_epoch(refined: "RefinedDemography", interval: int) -> DiCa
     if base_epoch.pop_sizes is not None:
         pop_sizes = np.asarray(base_epoch.pop_sizes, dtype=np.float64).copy()
         growth_rates = _epoch_growth_rates(base_epoch)
-        if np.any(np.abs(growth_rates) > EPS) and np.isfinite(base_epoch.end) and interval_end < base_epoch.end - EPS:
+        if (
+            np.any(np.abs(growth_rates) > EPS)
+            and np.isfinite(base_epoch.end)
+            and interval_end < base_epoch.end - EPS
+        ):
             pop_sizes *= np.exp(growth_rates * (base_epoch.end - interval_end))
     return DiCal2Epoch(
         start=interval_start,
@@ -821,8 +829,12 @@ def _halve_demo_migration_rates(demo: DiCal2Demo) -> DiCal2Demo:
                 start=float(epoch.start),
                 end=float(epoch.end),
                 partition=[list(group) for group in epoch.partition],
-                pop_sizes=None if epoch.pop_sizes is None else np.asarray(epoch.pop_sizes, dtype=np.float64).copy(),
-                pop_size_param_ids=None if epoch.pop_size_param_ids is None else list(epoch.pop_size_param_ids),
+                pop_sizes=None
+                if epoch.pop_sizes is None
+                else np.asarray(epoch.pop_sizes, dtype=np.float64).copy(),
+                pop_size_param_ids=None
+                if epoch.pop_size_param_ids is None
+                else list(epoch.pop_size_param_ids),
                 migration_matrix=new_mig,
                 migration_param_ids=(
                     None
@@ -850,7 +862,9 @@ def _halve_demo_migration_rates(demo: DiCal2Demo) -> DiCal2Demo:
         epoch_boundaries=np.asarray(demo.epoch_boundaries, dtype=np.float64).copy(),
         epochs=new_epochs,
         n_present_demes=int(demo.n_present_demes),
-        boundary_param_ids=None if demo.boundary_param_ids is None else list(demo.boundary_param_ids),
+        boundary_param_ids=None
+        if demo.boundary_param_ids is None
+        else list(demo.boundary_param_ids),
     )
 
 
@@ -1048,7 +1062,9 @@ class SimpleTrunk:
 
             if self.refined.is_pulse(interval):
                 assert epoch.pulse_migration is not None
-                last_ending_sizes = starting_sizes @ np.asarray(epoch.pulse_migration, dtype=np.float64)
+                last_ending_sizes = starting_sizes @ np.asarray(
+                    epoch.pulse_migration, dtype=np.float64
+                )
                 self._absorb_rates_by_interval.append(np.zeros(n_anc, dtype=np.float64))
                 self._fraction_by_interval.append(
                     np.zeros((self.config.n_populations, n_anc), dtype=np.float64)
@@ -1127,10 +1143,7 @@ class SimpleTrunk:
         """Fraction of trunk in ancient deme that comes from present deme."""
         if self._fraction_by_interval is not None:
             fractions = self._fraction_by_interval[refined_interval]
-            if (
-                0 <= present_deme < fractions.shape[0]
-                and 0 <= ancient_deme < fractions.shape[1]
-            ):
+            if 0 <= present_deme < fractions.shape[0] and 0 <= ancient_deme < fractions.shape[1]:
                 return float(fractions[present_deme, ancient_deme])
             return 0.0
         return 0.0
@@ -1238,8 +1251,8 @@ def _extended_rate_matrix_at_time(
     if epoch.migration_matrix is not None:
         rate_matrix[:n_anc, :n_anc] = np.asarray(epoch.migration_matrix, dtype=np.float64)
     for ancient_deme in range(n_anc):
-        rate_matrix[ancient_deme, ancient_deme] -= (
-            float(absorption_rates[ancient_deme]) + float(extra_loss)
+        rate_matrix[ancient_deme, ancient_deme] -= float(absorption_rates[ancient_deme]) + float(
+            extra_loss
         )
         rate_matrix[ancient_deme, n_anc + ancient_deme] = float(absorption_rates[ancient_deme])
     return rate_matrix
@@ -1447,9 +1460,7 @@ def _ode_reco_rate_matrix_at_time(
     for first_deme in range(n_demes):
         src_idx = state_space.idx_together(first_deme)
         rate_matrix[src_idx, src_idx] = (
-            migration[first_deme, first_deme]
-            - recombination_rate
-            - absorption_rates[first_deme]
+            migration[first_deme, first_deme] - recombination_rate - absorption_rates[first_deme]
         )
         rate_matrix[src_idx, state_space.idx_together(n_demes + first_deme)] = absorption_rates[
             first_deme
@@ -1481,23 +1492,27 @@ def _ode_reco_rate_matrix_at_time(
             rate_matrix[src_idx, src_idx] = diag_value
             for target_deme in range(n_demes):
                 if target_deme == first_deme:
-                    rate_matrix[src_idx, state_space.idx_apart(n_demes + target_deme, second_deme)] = (
-                        absorption_rates[first_deme]
-                    )
+                    rate_matrix[
+                        src_idx, state_space.idx_apart(n_demes + target_deme, second_deme)
+                    ] = absorption_rates[first_deme]
                 else:
-                    rate_matrix[src_idx, state_space.idx_apart(target_deme, second_deme)] = migration[
-                        first_deme,
-                        target_deme,
-                    ]
+                    rate_matrix[src_idx, state_space.idx_apart(target_deme, second_deme)] = (
+                        migration[
+                            first_deme,
+                            target_deme,
+                        ]
+                    )
                 if target_deme == second_deme:
-                    rate_matrix[src_idx, state_space.idx_apart(first_deme, n_demes + target_deme)] = (
-                        absorption_rates[second_deme]
-                    )
+                    rate_matrix[
+                        src_idx, state_space.idx_apart(first_deme, n_demes + target_deme)
+                    ] = absorption_rates[second_deme]
                 else:
-                    rate_matrix[src_idx, state_space.idx_apart(first_deme, target_deme)] = migration[
-                        second_deme,
-                        target_deme,
-                    ]
+                    rate_matrix[src_idx, state_space.idx_apart(first_deme, target_deme)] = (
+                        migration[
+                            second_deme,
+                            target_deme,
+                        ]
+                    )
 
     for fixed_deme in range(n_demes):
         for free_deme in range(n_demes):
@@ -1505,24 +1520,28 @@ def _ode_reco_rate_matrix_at_time(
             rate_matrix[src_first_fixed, src_first_fixed] = (
                 migration[free_deme, free_deme] - absorption_rates[free_deme]
             )
-            rate_matrix[src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, n_demes + free_deme)] = (
-                absorption_rates[free_deme]
-            )
+            rate_matrix[
+                src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, n_demes + free_deme)
+            ] = absorption_rates[free_deme]
             src_second_fixed = state_space.idx_apart(free_deme, n_demes + fixed_deme)
             rate_matrix[src_second_fixed, src_second_fixed] = (
                 migration[free_deme, free_deme] - absorption_rates[free_deme]
             )
-            rate_matrix[src_second_fixed, state_space.idx_apart(n_demes + free_deme, n_demes + fixed_deme)] = (
-                absorption_rates[free_deme]
-            )
+            rate_matrix[
+                src_second_fixed, state_space.idx_apart(n_demes + free_deme, n_demes + fixed_deme)
+            ] = absorption_rates[free_deme]
             for dst_deme in range(n_demes):
                 if dst_deme == free_deme:
                     continue
-                rate_matrix[src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, dst_deme)] = migration[
+                rate_matrix[
+                    src_first_fixed, state_space.idx_apart(n_demes + fixed_deme, dst_deme)
+                ] = migration[
                     free_deme,
                     dst_deme,
                 ]
-                rate_matrix[src_second_fixed, state_space.idx_apart(dst_deme, n_demes + fixed_deme)] = migration[
+                rate_matrix[
+                    src_second_fixed, state_space.idx_apart(dst_deme, n_demes + fixed_deme)
+                ] = migration[
                     free_deme,
                     dst_deme,
                 ]
@@ -1934,9 +1953,7 @@ class EigenCore:
         # Map (interval, ancient) → state index
         self.state_index_map: dict[tuple[int, int], int] = {}
         for s in range(self.n_states):
-            self.state_index_map[
-                (int(self.state_interval[s]), int(self.state_ancient[s]))
-            ] = s
+            self.state_index_map[(int(self.state_interval[s]), int(self.state_ancient[s]))] = s
         n_present = len(self.trunk.sample_sizes)
         demo_state_interval = []
         demo_state_present = []
@@ -1965,7 +1982,9 @@ class EigenCore:
                 if frac <= 0.0:
                     continue
                 demo_state = self.demo_state_index_map[(hidden, present)]
-                demo_log[demo_state] = np.logaddexp(demo_log[demo_state], base_value + np.log(frac))
+                demo_log[demo_state] = np.logaddexp(
+                    demo_log[demo_state], base_value + np.log(frac)
+                )
         return demo_log
 
     def _aggregate_demo_state_reco(self, ancient_log_reco_joint: np.ndarray) -> np.ndarray:
@@ -2058,9 +2077,7 @@ class EigenCore:
                 e1 = self.refined.epoch_map[j - 1]
                 e2 = self.refined.epoch_map[j]
                 if e1 == e2:
-                    merge_map[: min(k_jm1, k_j), : min(k_jm1, k_j)] = np.eye(
-                        min(k_jm1, k_j)
-                    )
+                    merge_map[: min(k_jm1, k_j), : min(k_jm1, k_j)] = np.eye(min(k_jm1, k_j))
                 else:
                     part1 = self.partition_per_interval[j - 1]
                     part2 = self.partition_per_interval[j]
@@ -2254,7 +2271,9 @@ class EigenCore:
         for next_start_ancient_deme in range(next_n_anc):
             tmp = 0.0
             for member_ancient_deme in range(n_anc):
-                if set(self.partition_per_interval[first_absorb_interval][member_ancient_deme]).issubset(
+                if set(
+                    self.partition_per_interval[first_absorb_interval][member_ancient_deme]
+                ).issubset(
                     set(self.partition_per_interval[next_interval][next_start_ancient_deme])
                 ):
                     tmp += self._r_term(
@@ -2313,9 +2332,9 @@ class EigenCore:
                 prev_epoch_rows.append(curr)
                 for prev_absorb_deme in range(curr.shape[0]):
                     for next_absorb_deme in range(curr.shape[1]):
-                        if self._is_non_absorbing(prev_absorb_epoch, prev_absorb_deme) or self._is_non_absorbing(
-                            next_absorb_epoch, next_absorb_deme
-                        ):
+                        if self._is_non_absorbing(
+                            prev_absorb_epoch, prev_absorb_deme
+                        ) or self._is_non_absorbing(next_absorb_epoch, next_absorb_deme):
                             continue
                         min_absorb_epoch = min(prev_absorb_epoch, next_absorb_epoch)
                         pre_z = 0.0
@@ -2328,16 +2347,28 @@ class EigenCore:
                                     prev_members = [
                                         member
                                         for member in range(curr_n_anc)
-                                        if set(self.partition_per_interval[reco_interval][member]).issubset(
-                                            set(self.partition_per_interval[reco_interval + 1][prev_next_start_deme])
+                                        if set(
+                                            self.partition_per_interval[reco_interval][member]
+                                        ).issubset(
+                                            set(
+                                                self.partition_per_interval[reco_interval + 1][
+                                                    prev_next_start_deme
+                                                ]
+                                            )
                                         )
                                     ]
                                     for next_next_start_deme in range(next_n_anc):
                                         next_members = [
                                             member
                                             for member in range(curr_n_anc)
-                                            if set(self.partition_per_interval[reco_interval][member]).issubset(
-                                                set(self.partition_per_interval[reco_interval + 1][next_next_start_deme])
+                                            if set(
+                                                self.partition_per_interval[reco_interval][member]
+                                            ).issubset(
+                                                set(
+                                                    self.partition_per_interval[reco_interval + 1][
+                                                        next_next_start_deme
+                                                    ]
+                                                )
                                             )
                                         ]
                                         for prev_member_deme in prev_members:
@@ -2355,11 +2386,15 @@ class EigenCore:
                                                     h_per_interval,
                                                     r_cache,
                                                 )
-                                                tmp *= self.Q[reco_interval + 1][prev_absorb_epoch][
+                                                tmp *= self.Q[reco_interval + 1][
+                                                    prev_absorb_epoch
+                                                ][
                                                     prev_next_start_deme,
                                                     prev_absorb_deme,
                                                 ]
-                                                tmp *= self.Q[reco_interval + 1][next_absorb_epoch][
+                                                tmp *= self.Q[reco_interval + 1][
+                                                    next_absorb_epoch
+                                                ][
                                                     next_next_start_deme,
                                                     next_absorb_deme,
                                                 ]
@@ -2893,7 +2928,9 @@ class ODECore(EigenCore):
             start_distribution[:] = self.P[0][interval][self.start_anc]
             densities = np.zeros_like(grid)
             for grid_idx, time_point in enumerate(grid):
-                transition = np.asarray(solution(float(time_point))).reshape((2 * n_anc, 2 * n_anc))
+                transition = np.asarray(solution(float(time_point))).reshape(
+                    (2 * n_anc, 2 * n_anc)
+                )
                 non_absorbing = np.clip(
                     np.real(transition[:n_anc, :n_anc]),
                     0.0,
@@ -3197,11 +3234,14 @@ def _pair_count_emission_log(
     present = np.argwhere(pair_counts > 0)
     for add_allele, trunk_allele in present:
         count = int(pair_counts[add_allele, trunk_allele])
-        log_em += count * core.log_emission[
-            np.arange(core.n_states),
-            int(trunk_allele),
-            int(add_allele),
-        ]
+        log_em += (
+            count
+            * core.log_emission[
+                np.arange(core.n_states),
+                int(trunk_allele),
+                int(add_allele),
+            ]
+        )
     return log_em
 
 
@@ -3273,7 +3313,9 @@ def _scaled_transition_logs_expanded(
             src_base = expanded.expanded_to_base[src]
             for dst in range(len(expanded.expanded_to_base)):
                 dst_base = expanded.expanded_to_base[dst]
-                log_re[src, dst] = log_re_base[src_base, dst_base] + expanded.hap_fraction_logs[dst]
+                log_re[src, dst] = (
+                    log_re_base[src_base, dst_base] + expanded.hap_fraction_logs[dst]
+                )
         cached = (log_no, log_re)
         expanded.transition_cache[step_size] = cached
         return cached
@@ -3284,9 +3326,7 @@ def _scaled_transition_logs_expanded(
     for src in range(len(expanded.expanded_to_base)):
         dst_base = expanded.expanded_to_base
         log_re[src] = (
-            np.log(reco_prob[src])
-            + expanded.log_reco[src]
-            - logsumexp(expanded.log_reco[src])
+            np.log(reco_prob[src]) + expanded.log_reco[src] - logsumexp(expanded.log_reco[src])
         )
     return log_no, log_re
 
@@ -3395,19 +3435,13 @@ def expected_counts(
         log_no_reco_step, log_reco_step = _scaled_transition_logs(core, int(step_sizes[ll_i]))
         # No recombination: stays in same state
         # xi_noreco[s] = exp(logF[l, s] + log_no_reco[s] + em_next[s] + logB[l+1, s] - ll)
-        xi_no = np.exp(
-            logF[ll_i] + log_no_reco_step + em_next + logB[ll_i + 1] - ll
-        )
+        xi_no = np.exp(logF[ll_i] + log_no_reco_step + em_next + logB[ll_i + 1] - ll)
         no_reco_expect += xi_no
 
         # Recombination: src → dst
         # xi_reco[src, dst] = exp(logF[l, src] + log_reco[src, dst] + em_next[dst] + logB[l+1, dst] - ll)
         xi_re = np.exp(
-            logF[ll_i][:, None]
-            + log_reco_step
-            + em_next[None, :]
-            + logB[ll_i + 1][None, :]
-            - ll
+            logF[ll_i][:, None] + log_reco_step + em_next[None, :] + logB[ll_i + 1][None, :] - ll
         )
         reco_expect += xi_re
 
@@ -3643,11 +3677,7 @@ def _expanded_expected_counts(
         for h in range(H):
             no_reco_expect[expanded.expanded_to_base[h]] += xi_no[h]
         xi_re = np.exp(
-            logF[ll_i][:, None]
-            + log_reco_step
-            + nxt_em[None, :]
-            + logB[ll_i + 1][None, :]
-            - ll
+            logF[ll_i][:, None] + log_reco_step + nxt_em[None, :] + logB[ll_i + 1][None, :] - ll
         )
         for src in range(H):
             src_base = expanded.expanded_to_base[src]
@@ -3859,16 +3889,8 @@ class DemoParameters:
         new_epochs = []
         for e_idx, ep in enumerate(demo_template.epochs):
             new_pop = ep.pop_sizes.copy() if ep.pop_sizes is not None else None
-            new_mig = (
-                ep.migration_matrix.copy()
-                if ep.migration_matrix is not None
-                else None
-            )
-            new_pulse = (
-                ep.pulse_migration.copy()
-                if ep.pulse_migration is not None
-                else None
-            )
+            new_mig = ep.migration_matrix.copy() if ep.migration_matrix is not None else None
+            new_pulse = ep.pulse_migration.copy() if ep.pulse_migration is not None else None
             new_epochs.append(
                 DiCal2Epoch(
                     start=float(epoch_boundaries[e_idx]),
@@ -3885,9 +3907,7 @@ class DemoParameters:
                         else [list(row) for row in ep.migration_param_ids]
                     ),
                     pulse_migration=new_pulse,
-                    growth_rates=(
-                        ep.growth_rates.copy() if ep.growth_rates is not None else None
-                    ),
+                    growth_rates=(ep.growth_rates.copy() if ep.growth_rates is not None else None),
                     growth_rate_param_ids=(
                         None
                         if ep.growth_rate_param_ids is None
@@ -4070,7 +4090,9 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
                     if src_idx == dst_idx or param_id is None:
                         continue
                     saw_explicit_ids = True
-                    migration_groups_by_id.setdefault(param_id, []).append((e_idx, src_idx, dst_idx))
+                    migration_groups_by_id.setdefault(param_id, []).append(
+                        (e_idx, src_idx, dst_idx)
+                    )
                     migration_values_by_id.setdefault(
                         param_id,
                         float(ep.migration_matrix[src_idx, dst_idx]),
@@ -4112,17 +4134,15 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
             dtype=np.float64,
         ),
         free_pop_size_groups=[pop_groups_by_id[param_id] for param_id in pop_ids],
-        pop_size_values=np.array([pop_values_by_id[param_id] for param_id in pop_ids], dtype=np.float64),
-        free_migration_groups=[
-            migration_groups_by_id[param_id] for param_id in migration_ids
-        ],
+        pop_size_values=np.array(
+            [pop_values_by_id[param_id] for param_id in pop_ids], dtype=np.float64
+        ),
+        free_migration_groups=[migration_groups_by_id[param_id] for param_id in migration_ids],
         migration_values=np.array(
             [migration_values_by_id[param_id] for param_id in migration_ids],
             dtype=np.float64,
         ),
-        free_growth_rate_groups=[
-            growth_groups_by_id[param_id] for param_id in growth_ids
-        ],
+        free_growth_rate_groups=[growth_groups_by_id[param_id] for param_id in growth_ids],
         growth_rate_values=np.array(
             [growth_values_by_id[param_id] for param_id in growth_ids],
             dtype=np.float64,
@@ -4167,11 +4187,7 @@ def _q_function(
     new_demo = _demo_from_params_or_none(params, demo_template)
     if new_demo is None:
         return float(np.inf)
-    objective_demo = (
-        _halve_demo_migration_rates(new_demo)
-        if half_migration_rate
-        else new_demo
-    )
+    objective_demo = _halve_demo_migration_rates(new_demo) if half_migration_rate else new_demo
     refined = refine_demography(objective_demo, interval_boundaries)
 
     total_q = 0.0
@@ -4268,8 +4284,7 @@ def _evaluate_total_log_likelihood(
         )
         core = core_obj.core_matrices()
         grouped_trunks = {
-            h: _group_observations(sequences[h], loci_per_hmm_step)[0]
-            for h in trunk_idxs
+            h: _group_observations(sequences[h], loci_per_hmm_step)[0] for h in trunk_idxs
         }
         expanded = _build_expanded_core(core_obj, core, trunk, trunk_idxs, grouped_trunks)
         pair_counts = None
@@ -4344,8 +4359,7 @@ def _transformed_bounds_for_optimizer(
         return None
     transformed_bounds = []
     bound_map = {
-        param_id: (lo, hi)
-        for param_id, (lo, hi) in zip(params.ordered_param_ids, parsed_bounds)
+        param_id: (lo, hi) for param_id, (lo, hi) in zip(params.ordered_param_ids, parsed_bounds)
     }
     for param_id in params.boundary_param_ids:
         lo, hi = bound_map[param_id]
@@ -4411,8 +4425,7 @@ def _max_relative_error(
     epsilon: float = EPS,
 ) -> float:
     return max(
-        _relative_error(float(v1), float(v2), epsilon)
-        for v1, v2 in zip(vector_one, vector_two)
+        _relative_error(float(v1), float(v2), epsilon) for v1, v2 in zip(vector_one, vector_two)
     )
 
 
@@ -4452,11 +4465,7 @@ class _JavaRandom:
     _MASK = (1 << 48) - 1
 
     def __init__(self, seed: int | None):
-        self._seed = (
-            None
-            if seed is None
-            else (int(seed) ^ self._MULTIPLIER) & self._MASK
-        )
+        self._seed = None if seed is None else (int(seed) ^ self._MULTIPLIER) & self._MASK
         self._fallback = np.random.default_rng() if seed is None else None
         self._have_next_gaussian = False
         self._next_gaussian = 0.0
@@ -4602,7 +4611,11 @@ def _update_point(
         if trace is not None:
             trace["mode"] = "scipy"
             trace["initial_point"] = np.asarray(curr_point, dtype=np.float64).copy()
-            trace["initial_simplex"] = None if initial_simplex is None else np.asarray(initial_simplex, dtype=np.float64).copy()
+            trace["initial_simplex"] = (
+                None
+                if initial_simplex is None
+                else np.asarray(initial_simplex, dtype=np.float64).copy()
+            )
             trace["result_point"] = np.asarray(result.x, dtype=np.float64).copy()
             trace["result_value"] = float(result.fun)
         return np.asarray(result.x, dtype=np.float64)
@@ -4717,6 +4730,7 @@ def _update_point_coordinatewise(
         permutation = list(coordinate_order)
     coordinate_traces: list[dict[str, object]] = []
     for idx in permutation:
+
         def clamped_objective(arg: np.ndarray) -> float:
             point = local_curr_point.copy()
             point[idx] = float(arg[0])
@@ -4862,7 +4876,7 @@ def _run_dical2_em(
     *,
     demo: DiCal2Demo,
     params: DemoParameters,
-    sequences: np.ndarray,
+    contigs: list[DiCal2Contig],
     config: DiCal2Config,
     interval_boundaries: np.ndarray,
     mutation_matrix: np.ndarray,
@@ -4871,9 +4885,6 @@ def _run_dical2_em(
     composite_mode: str,
     n_alleles: int,
     loci_per_hmm_step: int,
-    seg_positions: np.ndarray | None,
-    reference_length: int | None,
-    reference_alleles: np.ndarray | None,
     trunk_style: str,
     cake_style: str,
     half_migration_rate: bool,
@@ -4889,7 +4900,9 @@ def _run_dical2_em(
     rng: _JavaRandom,
     record_mstep_trace: bool = False,
 ) -> tuple[DemoParameters, list[dict], float, str]:
-    n_hap = sequences.shape[0]
+    if not contigs:
+        raise ValueError("diCal2 requires at least one contig.")
+    n_hap = contigs[0].sequences.shape[0]
     csd_pairs = _enumerate_csd_pairs(n_hap, composite_mode)
     rounds: list[dict] = []
     prev_ll = -np.inf
@@ -4899,9 +4912,7 @@ def _run_dical2_em(
     for em_iter in range(number_iterations_em + 1):
         current_demo = params.to_demo(demo)
         objective_demo = (
-            _halve_demo_migration_rates(current_demo)
-            if half_migration_rate
-            else current_demo
+            _halve_demo_migration_rates(current_demo) if half_migration_rate else current_demo
         )
         refined = refine_demography(objective_demo, interval_boundaries)
 
@@ -4909,80 +4920,83 @@ def _run_dical2_em(
         csd_setups: list[tuple[int, list[int], int]] = []
         total_ll = 0.0
 
-        for additional_idx, trunk_idxs in csd_pairs:
-            if not trunk_idxs:
-                continue
-            present_deme = config.haplotype_populations[additional_idx]
-            trunk = SimpleTrunk(
-                config=config,
-                additional_hap_idx=additional_idx,
-                trunk_hap_indices=trunk_idxs,
-                refined=refined,
-                trunk_style=trunk_style,
-                cake_style=cake_style,
-            )
-            core_obj, selected_core_type = _build_native_core(
-                refined=refined,
-                trunk=trunk,
-                observed_present_deme=present_deme,
-                mutation_matrix=mutation_matrix,
-                theta=theta,
-                rho=rho,
-            )
-            core = core_obj.core_matrices()
-            grouped_trunks = {
-                h: _group_observations(sequences[h], loci_per_hmm_step)[0]
-                for h in trunk_idxs
-            }
-            expanded = _build_expanded_core(
-                core_obj,
-                core,
-                trunk,
-                trunk_idxs,
-                grouped_trunks,
-            )
-            pair_counts = None
-            if (
-                loci_per_hmm_step > 1
-                and seg_positions is not None
-                and reference_length is not None
-                and reference_alleles is not None
-            ):
-                pair_counts = np.array(
-                    [
-                        _physical_block_pair_counts(
-                            sequences[additional_idx],
-                            sequences[int(h)],
-                            seg_positions=seg_positions,
-                            reference_length=int(reference_length),
-                            reference_alleles=reference_alleles,
-                            loci_per_hmm_step=loci_per_hmm_step,
-                            n_alleles=n_alleles,
-                        )
-                        for h in expanded.trunk_hap_indices
-                    ],
-                    dtype=np.int64,
+        for contig in contigs:
+            sequences = np.asarray(contig.sequences, dtype=np.int8)
+            if sequences.shape[0] != n_hap:
+                raise ValueError("All diCal2 contigs must contain the same haplotypes.")
+            for additional_idx, trunk_idxs in csd_pairs:
+                if not trunk_idxs:
+                    continue
+                present_deme = config.haplotype_populations[additional_idx]
+                trunk = SimpleTrunk(
+                    config=config,
+                    additional_hap_idx=additional_idx,
+                    trunk_hap_indices=trunk_idxs,
+                    refined=refined,
+                    trunk_style=trunk_style,
+                    cake_style=cake_style,
                 )
-                step_sizes = np.full(pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64)
-                obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
-            else:
-                obs_add, step_sizes = _group_observations(
-                    sequences[additional_idx],
-                    loci_per_hmm_step,
+                core_obj, selected_core_type = _build_native_core(
+                    refined=refined,
+                    trunk=trunk,
+                    observed_present_deme=present_deme,
+                    mutation_matrix=mutation_matrix,
+                    theta=theta,
+                    rho=rho,
                 )
+                core = core_obj.core_matrices()
+                grouped_trunks = {
+                    h: _group_observations(sequences[h], loci_per_hmm_step)[0] for h in trunk_idxs
+                }
+                expanded = _build_expanded_core(
+                    core_obj,
+                    core,
+                    trunk,
+                    trunk_idxs,
+                    grouped_trunks,
+                )
+                pair_counts = None
+                if (
+                    loci_per_hmm_step > 1
+                    and contig.seg_positions is not None
+                    and contig.reference_length is not None
+                    and contig.reference_alleles is not None
+                ):
+                    pair_counts = np.array(
+                        [
+                            _physical_block_pair_counts(
+                                sequences[additional_idx],
+                                sequences[int(h)],
+                                seg_positions=contig.seg_positions,
+                                reference_length=int(contig.reference_length),
+                                reference_alleles=contig.reference_alleles,
+                                loci_per_hmm_step=loci_per_hmm_step,
+                                n_alleles=n_alleles,
+                            )
+                            for h in expanded.trunk_hap_indices
+                        ],
+                        dtype=np.int64,
+                    )
+                    step_sizes = np.full(pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64)
+                    obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
+                else:
+                    obs_add, step_sizes = _group_observations(
+                        sequences[additional_idx],
+                        loci_per_hmm_step,
+                    )
 
-            counts = _expanded_expected_counts(
-                core,
-                expanded,
-                obs_add,
-                n_alleles,
-                step_sizes=step_sizes,
-                pair_counts=pair_counts,
-            )
-            counts.n_states = core.n_states  # type: ignore[attr-defined]
-            counts_list.append(counts)
-            csd_setups.append((additional_idx, list(trunk_idxs), present_deme))
-            total_ll += counts.log_likelihood
+                counts = _expanded_expected_counts(
+                    core,
+                    expanded,
+                    obs_add,
+                    n_alleles,
+                    step_sizes=step_sizes,
+                    pair_counts=pair_counts,
+                )
+                counts.n_states = core.n_states  # type: ignore[attr-defined]
+                counts_list.append(counts)
+                csd_setups.append((additional_idx, list(trunk_idxs), present_deme))
+                total_ll += counts.log_likelihood
 
         rounds.append(
             {
@@ -5089,8 +5103,10 @@ def _scaled_dical2_result_fields(
     pop_sizes_flat = np.array([sizes[0] for sizes in pop_sizes_arr], dtype=np.float64)
     growth_rates_flat = np.array([rates[0] for rates in growth_rates_arr], dtype=np.float64)
 
-    n_ref_value = float(theta / (4.0 * mu)) if n_ref is None and mu > 0 else float(
-        1e4 if n_ref is None else n_ref
+    n_ref_value = (
+        float(theta / (4.0 * mu))
+        if n_ref is None and mu > 0
+        else float(1e4 if n_ref is None else n_ref)
     )
     ne = pop_sizes_flat * n_ref_value
     structured_ne = [sizes * n_ref_value for sizes in pop_sizes_arr]
@@ -5262,7 +5278,12 @@ def dical2(
     )
     warn_if_native_not_trusted("dical2", implementation_used)
     source_paths = data.uns.get("source_paths", {})
-    upstream_required_inputs = ["param_file", "demo_file", "config_file", "reference_file", "sequences"]
+    upstream_required_inputs = [
+        "param_file",
+        "demo_file",
+        "config_file",
+        "sequences",
+    ]
     if implementation == "auto" and implementation_used == "upstream":
         if any(not source_paths.get(key) for key in upstream_required_inputs):
             implementation_used = "native"
@@ -5404,6 +5425,29 @@ def dical2(
     sequences = np.asarray(data.sequences, dtype=np.int8)
     n_hap, seq_len = sequences.shape
 
+    stored_contigs = data.uns.get("contigs")
+    if stored_contigs is None:
+        contigs = [
+            DiCal2Contig(
+                sequences=sequences,
+                seg_positions=(
+                    None
+                    if data.uns.get("seg_positions") is None
+                    else np.asarray(data.uns["seg_positions"], dtype=np.int64)
+                ),
+                reference_length=data.uns.get("reference_length"),
+                reference_alleles=(
+                    None
+                    if data.uns.get("reference_alleles") is None
+                    else np.asarray(data.uns["reference_alleles"], dtype=np.int8)
+                ),
+            )
+        ]
+    else:
+        contigs = list(stored_contigs)
+        if not all(isinstance(contig, DiCal2Contig) for contig in contigs):
+            raise ValueError("data.uns['contigs'] contains an invalid diCal2 contig.")
+
     n_alleles = int(data.uns.get("n_alleles", 2))
     mutation_matrix = data.uns.get("mutation_matrix")
     if mutation_matrix is None:
@@ -5437,13 +5481,6 @@ def dical2(
         params.ordered_upper_bounds = np.array([hi for _, hi in parsed_bounds], dtype=np.float64)
     theta = float(data.params.get("theta", 0.0005))
     rho = float(data.params.get("rho", 0.0005))
-    seg_positions = data.uns.get("seg_positions")
-    reference_length = data.uns.get("reference_length")
-    reference_alleles = data.uns.get("reference_alleles")
-    if seg_positions is not None:
-        seg_positions = np.asarray(seg_positions, dtype=np.int64)
-    if reference_alleles is not None:
-        reference_alleles = np.asarray(reference_alleles, dtype=np.int8)
     rng = _JavaRandom(resolved_native.seed)
 
     best_params: DemoParameters | None = None
@@ -5491,7 +5528,7 @@ def dical2(
                 local_params, rounds, ll, core_type = _run_dical2_em(
                     demo=demo,
                     params=local_params,
-                    sequences=sequences,
+                    contigs=contigs,
                     config=config,
                     interval_boundaries=interval_boundaries,
                     mutation_matrix=mutation_matrix,
@@ -5500,9 +5537,6 @@ def dical2(
                     composite_mode=resolved_native.composite_mode,
                     n_alleles=n_alleles,
                     loci_per_hmm_step=resolved_native.loci_per_hmm_step,
-                    seg_positions=seg_positions,
-                    reference_length=reference_length,
-                    reference_alleles=reference_alleles,
                     trunk_style=resolved_native.trunk_style,
                     cake_style=resolved_native.cake_style,
                     half_migration_rate=_trunk_style_halves_migration_rates(
@@ -5549,13 +5583,17 @@ def dical2(
                         }
                     )
             if not generation_results:
-                raise ValueError("No valid diCal2 meta-start points remained after applying bounds.")
+                raise ValueError(
+                    "No valid diCal2 meta-start points remained after applying bounds."
+                )
             generation_best_record = max(
                 generation_run_records,
                 key=lambda record: float(record["log_likelihood"]),
             )
             if generation_trace is not None:
-                generation_trace["best_log_likelihood"] = float(generation_best_record["log_likelihood"])
+                generation_trace["best_log_likelihood"] = float(
+                    generation_best_record["log_likelihood"]
+                )
                 generation_trace["best_params"] = np.asarray(
                     generation_best_record["params"],
                     dtype=np.float64,
@@ -5587,14 +5625,18 @@ def dical2(
                 meta_trace.append(generation_trace)
     else:
         if resolved_native.start_point is not None:
-            params.set_ordered_param_values(np.asarray(resolved_native.start_point, dtype=np.float64))
+            params.set_ordered_param_values(
+                np.asarray(resolved_native.start_point, dtype=np.float64)
+            )
             if _demo_from_params_or_none(params, demo) is None:
-                raise ValueError("diCal2 start_point is outside bounds or yields an invalid demography.")
+                raise ValueError(
+                    "diCal2 start_point is outside bounds or yields an invalid demography."
+                )
         local_rng = rng.spawn_offspring()
         params, best_rounds, best_ll, best_core_type = _run_dical2_em(
             demo=demo,
             params=params,
-            sequences=sequences,
+            contigs=contigs,
             config=config,
             interval_boundaries=interval_boundaries,
             mutation_matrix=mutation_matrix,
@@ -5603,14 +5645,9 @@ def dical2(
             composite_mode=resolved_native.composite_mode,
             n_alleles=n_alleles,
             loci_per_hmm_step=resolved_native.loci_per_hmm_step,
-            seg_positions=seg_positions,
-            reference_length=reference_length,
-            reference_alleles=reference_alleles,
             trunk_style=resolved_native.trunk_style,
             cake_style=resolved_native.cake_style,
-            half_migration_rate=_trunk_style_halves_migration_rates(
-                resolved_native.trunk_style
-            ),
+            half_migration_rate=_trunk_style_halves_migration_rates(resolved_native.trunk_style),
             number_iterations_em=resolved_native.number_iterations_em,
             number_iterations_mstep=resolved_native.number_iterations_mstep,
             relative_error_e=resolved_native.relative_error_e,
@@ -5630,34 +5667,36 @@ def dical2(
     rounds = best_rounds
     prev_ll = best_ll
 
-    data.results["dical2"] = annotate_result({
-        **_scaled_dical2_result_fields(
-            demo_template=demo,
-            params=params,
-            interval_boundaries=interval_boundaries,
-            theta=theta,
-            mu=mu,
-            generation_time=generation_time,
-            n_ref=n_ref,
-        ),
-        "log_likelihood": float(prev_ll),
-        "n_iterations": len(rounds),
-        "rounds": rounds,
-        "composite_mode": resolved_native.composite_mode,
-        "loci_per_hmm_step": resolved_native.loci_per_hmm_step,
-        "core_type": best_core_type,
-        "resolved_options": _resolved_options_metadata(resolved_native),
-        "initialization": initialization_metadata,
-        "meta_trace": meta_trace,
-        "best_params": params.ordered_param_values().copy(),
-    }, method_name="dical2", implementation_requested=implementation, implementation_used=implementation_used)
+    data.results["dical2"] = annotate_result(
+        {
+            **_scaled_dical2_result_fields(
+                demo_template=demo,
+                params=params,
+                interval_boundaries=interval_boundaries,
+                theta=theta,
+                mu=mu,
+                generation_time=generation_time,
+                n_ref=n_ref,
+            ),
+            "log_likelihood": float(prev_ll),
+            "n_iterations": len(rounds),
+            "rounds": rounds,
+            "composite_mode": resolved_native.composite_mode,
+            "loci_per_hmm_step": resolved_native.loci_per_hmm_step,
+            "n_contigs": len(contigs),
+            "core_type": best_core_type,
+            "resolved_options": _resolved_options_metadata(resolved_native),
+            "initialization": initialization_metadata,
+            "meta_trace": meta_trace,
+            "best_params": params.ordered_param_values().copy(),
+        },
+        method_name="dical2",
+        implementation_requested=implementation,
+        implementation_used=implementation_used,
+    )
     data.params.setdefault("mu", mu)
     data.params.setdefault("generation_time", generation_time)
-    return (
-        _persist_dical2_outputs(data, output_prefix)
-        if output_prefix is not None
-        else data
-    )
+    return _persist_dical2_outputs(data, output_prefix) if output_prefix is not None else data
 
 
 def _parse_dical2_stdout(stdout: str) -> tuple[list[dict], dict | None]:
@@ -5737,7 +5776,7 @@ def _dical2_upstream(
     import smckit.upstream as upstream_api
 
     source_paths = data.uns.get("source_paths", {})
-    required = ["param_file", "demo_file", "config_file", "reference_file", "sequences"]
+    required = ["param_file", "demo_file", "config_file", "sequences"]
     missing = [key for key in required if not source_paths.get(key)]
     if missing:
         raise ValueError(
@@ -5752,11 +5791,23 @@ def _dical2_upstream(
         message = _dical2_java_help()
         warnings.warn(message, RuntimeWarning, stacklevel=2)
         raise RuntimeError(message)
+
+    def _resolve_path_values(value) -> list[str]:
+        values = value if isinstance(value, list) else [value]
+        if any(item is None for item in values):
+            raise ValueError("Partially specified per-contig paths cannot be run upstream.")
+        return [str(Path(item).resolve()) for item in values]
+
     resolved_paths = {
-        key: str(Path(value).resolve())
+        key: _resolve_path_values(value)
         for key, value in source_paths.items()
-        if value is not None
+        if value is not None and key != "vcf_offsets"
     }
+    sequence_paths = resolved_paths["sequences"]
+    reference_paths = resolved_paths.get("reference_file")
+    bed_paths = resolved_paths.get("bed_files")
+    raw_offsets = source_paths.get("vcf_offsets", 0)
+    offsets = raw_offsets if isinstance(raw_offsets, list) else [raw_offsets]
     java_path = upstream_api.status("dical2")["runtime"]["path"]
     if java_path is None:
         raise RuntimeError(_dical2_java_help())
@@ -5765,17 +5816,15 @@ def _dical2_upstream(
         "-jar",
         str(jar),
         "--paramFile",
-        resolved_paths["param_file"],
+        resolved_paths["param_file"][0],
         "--demoFile",
-        resolved_paths["demo_file"],
+        resolved_paths["demo_file"][0],
         "--vcfFile",
-        resolved_paths["sequences"],
+        ",".join(sequence_paths),
         "--vcfFilterPassString",
-        ".",
-        "--vcfReferenceFile",
-        resolved_paths["reference_file"],
+        str(data.uns.get("filter_pass_string", ".")),
         "--configFile",
-        resolved_paths["config_file"],
+        resolved_paths["config_file"][0],
         "--lociPerHmmStep",
         str(int(resolved.loci_per_hmm_step)),
         "--compositeLikelihood",
@@ -5785,8 +5834,14 @@ def _dical2_upstream(
         "--seed",
         str(0 if resolved.seed is None else int(resolved.seed)),
     ]
+    if reference_paths is not None:
+        cmd.extend(["--vcfReferenceFile", ",".join(reference_paths)])
+    if bed_paths is not None:
+        cmd.extend(["--bedFile", ",".join(bed_paths)])
+    if any(int(offset or 0) != 0 for offset in offsets):
+        cmd.extend(["--vcfOffset", ",".join(str(int(offset or 0)) for offset in offsets)])
     if resolved_paths.get("rates_file"):
-        cmd.extend(["--ratesFile", resolved_paths["rates_file"]])
+        cmd.extend(["--ratesFile", resolved_paths["rates_file"][0]])
     if resolved.number_iterations_mstep is not None:
         cmd.extend(["--numberIterationsMstep", str(int(resolved.number_iterations_mstep))])
     elif resolved.relative_error_m is not None:
@@ -5830,9 +5885,7 @@ def _dical2_upstream(
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=jar.parent)
     if proc.returncode != 0:
         raise RuntimeError(
-            "Upstream diCal2 backend failed.\n"
-            f"stdout:\n{proc.stdout}\n"
-            f"stderr:\n{proc.stderr}"
+            f"Upstream diCal2 backend failed.\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
         )
     em_path, best = _parse_dical2_stdout(proc.stdout)
     normalized_payload: dict[str, object] = {}
@@ -5875,6 +5928,11 @@ def _dical2_upstream(
                     "cakeStyle": resolved.cake_style,
                     "addTrunkIntervals": int(resolved.add_trunk_intervals),
                     "ancientDemeStates": bool(resolved.ancient_deme_states),
+                    "vcfFile": sequence_paths,
+                    "vcfReferenceFile": reference_paths,
+                    "vcfFilterPassString": str(data.uns.get("filter_pass_string", ".")),
+                    "bedFile": bed_paths,
+                    "vcfOffset": [int(offset or 0) for offset in offsets],
                     "cli_args": cli_args,
                 },
                 extra={
