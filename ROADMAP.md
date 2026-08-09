@@ -26,20 +26,31 @@ for evidence.
 
 - [ ] SMC++ supports preparation, masks, compression, multi-population and split workflows.
 - [ ] diCal2 implements exact configuration and likelihood semantics.
+- [ ] PSMC+ has an immutable upstream preservation layer, complete feature
+  ledger, normalized schema, and fixed oracle fixtures.
 - [ ] Both method oracle specifications and ledgers are complete.
 
 ## 0.9 — publication release candidate
 
 - [ ] PHLASH external integration and normalized posterior schema are stable.
+- [ ] Native PSMC+ covers fitting, local-rate maps, decoding, binning,
+  grouped intervals, initialization, convergence, and recombination controls,
+  passes parity, and clears its performance promotion gate.
 - [ ] All standard native workflows are promoted.
-- [ ] Snakemake publication protocol, datasets, hardware, and claims are frozen.
+- [ ] The Snakemake bioRxiv protocol, datasets, hardware, and claims are frozen.
 
 ## 1.0 — publication release
 
 - [ ] Clean wheels and conda packages pass Linux x86-64 and macOS x86-64/ARM64.
 - [ ] CPU equivalence and optional NVIDIA/JAX validation are green.
-- [ ] Simulation, human, and *Arabidopsis* analyses reproduce from frozen inputs.
+- [ ] Simulation, human, *Arabidopsis*, and an accession-frozen goat analysis
+  reproduce from frozen inputs.
+- [ ] The goat case uses VarGoats only after satisfying its publication/data
+  sharing terms; otherwise a fully public goat cohort is substituted and the
+  choice is documented before analysis.
 - [ ] Documentation, SBOM, containers, tutorial data, Zenodo DOI, and API freeze exist.
+- [ ] The private local bioRxiv manuscript, supplement, and code-generated
+  figures reproduce from immutable benchmark and empirical result files.
 - [ ] Two independent clean-install reports and the final claim-to-evidence audit pass.
 - [ ] No unresolved correctness, licensing, or reproducibility blocker remains.
 

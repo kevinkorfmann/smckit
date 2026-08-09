@@ -18,7 +18,7 @@ platforms:
   - nvidia-gpu
 empirical:
   human: "1000 Genomes accession and deterministic sample manifest required"
-  nonhuman: "Arabidopsis 1001 Genomes accession and sample manifest required"
+  nonhuman: "Arabidopsis 1001 Genomes plus a public goat cohort require accession and sample manifests; VarGoats additionally requires publication/data-use clearance"
 metrics:
   - log_integrated_trajectory_error
   - parameter_error

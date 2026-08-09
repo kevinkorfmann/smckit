@@ -175,8 +175,74 @@ def test_native_split_returns_normalized_clean_split_result() -> None:
     assert result["implementation"] == "native"
     assert 0.0 <= result["split"] <= 1.5
     assert result["split_generations"] == pytest.approx(result["split"] * 20_000.0)
-    assert result["joint_emission_sum"] == pytest.approx(1.0)
+    # The preserved SMC++ emission floor is applied after normalization and is
+    # intentionally not renormalized, so structural zeros can add tiny mass.
+    assert 1.0 <= result["joint_emission_sum"] <= 1.0 + 1e-8
     assert result["model"]["class"] == "SMCTwoPopulationModel"
+
+
+def test_native_split_preserves_public_population_order_when_canonicalized() -> None:
+    def marginal(population: str, eta: list[float]) -> dict:
+        return {
+            "model": {
+                "class": "SMCModel",
+                "knots": [0.01, 0.5, 1.5],
+                "N0": 10_000.0,
+                "spline_class": "Piecewise",
+                "y": np.log(eta).tolist(),
+                "pid": population,
+            },
+            "theta": 2.5e-4,
+            "rho": 2.0e-4,
+        }
+
+    original_data = _two_population_data()
+    original_models = (
+        marginal("pop-a", [1.0, 1.5, 0.8]),
+        marginal("pop-b", [1.2, 0.9, 0.8]),
+    )
+    original = smcpp(
+        copy.deepcopy(original_data),
+        implementation="native",
+        split_models=original_models,
+        max_iterations=50,
+    ).results["smcpp"]
+
+    reversed_data = copy.deepcopy(original_data)
+    reversed_data.uns["populations"] = ["pop-b", "pop-a"]
+    reversed_data.uns["pids"] = ["pop-b", "pop-a"]
+    reversed_data.uns["n_distinguished_by_population"] = [0, 2]
+    reversed_data.uns["n_undist_by_population"] = [4, 4]
+    reversed_data.uns["joint_observations"] = [
+        (span, (population_values[1], population_values[0]))
+        for span, population_values in reversed_data.uns["joint_observations"]
+    ]
+    header = reversed_data.uns["smcpp_header"]
+    header["pids"] = list(reversed(header["pids"]))
+    header["dist"] = list(reversed(header["dist"]))
+    header["undist"] = list(reversed(header["undist"]))
+
+    reversed_result = smcpp(
+        reversed_data,
+        implementation="native",
+        split_models=(original_models[1], original_models[0]),
+        max_iterations=50,
+    ).results["smcpp"]
+
+    assert reversed_result["populations"] == ["pop-b", "pop-a"]
+    assert reversed_result["distinguished_by_population"] == (0, 2)
+    assert reversed_result["split"] == pytest.approx(original["split"], abs=1e-12)
+    assert reversed_result["log_likelihood"] == pytest.approx(
+        original["log_likelihood"],
+        abs=1e-10,
+    )
+    original_ne = {entry["population"]: entry["ne"] for entry in original["population_models"]}
+    reversed_ne = {
+        entry["population"]: entry["ne"] for entry in reversed_result["population_models"]
+    }
+    assert list(reversed_ne) == ["pop-b", "pop-a"]
+    for population in original_ne:
+        np.testing.assert_allclose(reversed_ne[population], original_ne[population], rtol=0.0)
 
 
 def test_upstream_split_routes_two_population_data(monkeypatch) -> None:

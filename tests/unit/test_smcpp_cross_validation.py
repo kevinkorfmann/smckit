@@ -26,7 +26,7 @@ def _cross_validation_data() -> SmcData:
         uns={
             "records": records,
             "n_undist": 3,
-            "n_distinguished": 1,
+            "n_distinguished": 2,
             "n_populations": 1,
         }
     )
@@ -52,10 +52,7 @@ def test_cross_validation_scores_folds_and_refits_best_candidate() -> None:
         np.isfinite(candidate["heldout_log_likelihood"])
         for candidate in cross_validation["candidates"]
     )
-    assert all(
-        len(candidate["folds"]) == 2
-        for candidate in cross_validation["candidates"]
-    )
+    assert all(len(candidate["folds"]) == 2 for candidate in cross_validation["candidates"])
 
 
 @pytest.mark.parametrize(

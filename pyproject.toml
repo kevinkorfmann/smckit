@@ -84,10 +84,12 @@ publication = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/smckit"]
 
-[tool.hatch.build]
+[tool.hatch.build.targets.sdist]
 include = [
-    "src/smckit/data/examples/**",
-    "src/smckit/data/method_status.json",
+    "/src/smckit",
+    "/LICENSE",
+    "/README.md",
+    "/pyproject.toml",
 ]
 
 [tool.ruff]

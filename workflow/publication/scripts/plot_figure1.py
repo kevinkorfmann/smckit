@@ -1,4 +1,4 @@
-"""Generate the primary four-panel Application Note figure from frozen JSON."""
+"""Generate the primary four-panel evidence figure from frozen JSON."""
 
 from __future__ import annotations
 
@@ -9,8 +9,12 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
+
+# Publication rendering must never depend on a desktop display or an
+# environment-selected interactive backend. This must precede pyplot import.
+matplotlib.use("Agg", force=True)
+import matplotlib.pyplot as plt  # noqa: E402
 
 BLUE = "#0072B2"
 ORANGE = "#E69F00"

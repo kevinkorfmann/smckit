@@ -5737,13 +5737,6 @@ def _dical2_upstream(
     import smckit.upstream as upstream_api
 
     source_paths = data.uns.get("source_paths", {})
-    jar = Path(__file__).resolve().parents[3] / "vendor/diCal2/diCal2.jar"
-    if not jar.exists():
-        require_upstream_available("dical2")
-    if not method_upstream_available("dical2"):
-        message = _dical2_java_help()
-        warnings.warn(message, RuntimeWarning, stacklevel=2)
-        raise RuntimeError(message)
     required = ["param_file", "demo_file", "config_file", "reference_file", "sequences"]
     missing = [key for key in required if not source_paths.get(key)]
     if missing:
@@ -5751,6 +5744,14 @@ def _dical2_upstream(
             "Upstream diCal2 requires path-backed inputs from read_dical2(...): "
             + ", ".join(missing)
         )
+
+    jar = Path(__file__).resolve().parents[3] / "vendor/diCal2/diCal2.jar"
+    if not jar.exists():
+        require_upstream_available("dical2")
+    if not method_upstream_available("dical2"):
+        message = _dical2_java_help()
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        raise RuntimeError(message)
     resolved_paths = {
         key: str(Path(value).resolve())
         for key, value in source_paths.items()

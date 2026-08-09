@@ -21,8 +21,8 @@ def _canonical_hash(payload: dict[str, Any], hash_field: str) -> str:
 
 def _read_hashed_record(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
-        raise ValueError(f"{path} is not a schema-version 1 record.")
+    if not isinstance(payload, dict) or payload.get("schema_version") not in {1, 2}:
+        raise ValueError(f"{path} is not a supported schema-version 1 or 2 record.")
     observed = payload.get("record_sha256")
     expected = _canonical_hash(payload, "record_sha256")
     if observed != expected:
@@ -46,12 +46,33 @@ def _benchmark_key(payload: dict[str, Any]) -> tuple[Any, ...]:
         payload.get("protocol_id"),
         str(payload.get("method", "")),
         str(payload.get("dataset", "")),
+        str(payload.get("measurement_component", "")),
         int(payload.get("threads", 0)),
         *_platform_key(payload),
     )
 
 
 def _validate_benchmark(payload: dict[str, Any], required_warm_repetitions: int) -> None:
+    if payload.get("schema_version") != 2:
+        raise ValueError("Publication benchmarks require schema version 2.")
+    if payload.get("measurement_scope") != "in_process_call":
+        raise ValueError("Promotion benchmarks require warmed calls in one initialized process.")
+    if payload.get("warmup_semantics") != "first_call_then_same_process":
+        raise ValueError("Benchmark warmup semantics are not promotion-safe.")
+    if payload.get("promotion_eligible") is not True:
+        raise ValueError("Benchmark record is not marked promotion eligible.")
+    if (
+        not isinstance(payload.get("measurement_component"), str)
+        or not payload["measurement_component"].strip()
+    ):
+        raise ValueError("Benchmark measurement_component must be non-empty.")
+    startup = payload.get("startup")
+    if not isinstance(startup, dict):
+        raise ValueError("Promotion benchmark must record process startup separately.")
+    for key in ("runtime_seconds", "peak_memory_bytes"):
+        value = startup.get(key)
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+            raise ValueError(f"Benchmark startup {key} must be positive.")
     if payload.get("implementation") not in {"native", "upstream", "external"}:
         raise ValueError("Benchmark implementation is invalid.")
     if int(payload.get("threads", 0)) < 1:
@@ -76,6 +97,8 @@ def _validate_benchmark(payload: dict[str, Any], required_warm_repetitions: int)
 
 
 def _validate_accuracy(payload: dict[str, Any]) -> None:
+    if payload.get("schema_version") != 1:
+        raise ValueError("Accuracy evaluations require schema version 1.")
     if payload.get("evaluation_kind") not in {"parity", "simulation", "empirical"}:
         raise ValueError("Accuracy evaluation_kind must be parity, simulation, or empirical.")
     if payload.get("implementation") not in {"native", "upstream", "external"}:
@@ -112,6 +135,9 @@ def aggregate_publication_results(
         raise ValueError("At least two warmed repetitions are required.")
     if not benchmark_paths and not accuracy_paths:
         raise ValueError("At least one benchmark or accuracy record is required.")
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite immutable aggregate record: {output}")
 
     benchmarks = []
     seen_benchmarks: set[tuple[Any, ...]] = set()
@@ -129,6 +155,7 @@ def aggregate_publication_results(
             {
                 "method": payload["method"],
                 "dataset": payload["dataset"],
+                "measurement_component": payload["measurement_component"],
                 "implementation": payload["implementation"],
                 "threads": payload["threads"],
                 "platform": payload["platform"],
@@ -182,19 +209,29 @@ def aggregate_publication_results(
             for item in upstream["repetitions"]
             if item["temperature"] == "cold"
         )
+        native_startup = float(native["startup"]["runtime_seconds"])
+        upstream_startup = float(upstream["startup"]["runtime_seconds"])
         comparisons.append(
             {
                 "protocol_id": key[0],
                 "method": key[1],
                 "dataset": key[2],
-                "threads": key[3],
+                "measurement_component": key[3],
+                "threads": key[4],
                 "platform": {
-                    "system": key[4],
-                    "machine": key[5],
-                    "processor": key[6],
+                    "system": key[5],
+                    "machine": key[6],
+                    "processor": key[7],
                 },
                 "warm_repetitions": len(native_warm),
+                "native_startup_seconds": native_startup,
+                "upstream_startup_seconds": upstream_startup,
+                "startup_runtime_ratio_upstream_over_native": (upstream_startup / native_startup),
+                "native_cold_seconds": native_cold,
+                "upstream_cold_seconds": upstream_cold,
                 "cold_runtime_ratio_upstream_over_native": upstream_cold / native_cold,
+                "native_warm_peak_memory_bytes": native_memory,
+                "upstream_warm_peak_memory_bytes": upstream_memory,
                 **assessment,
             }
         )

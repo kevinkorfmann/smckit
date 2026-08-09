@@ -44,12 +44,15 @@ logger = logging.getLogger(__name__)
 
 SMCPP_T_INF = 1000.0
 SMCPP_INTERNAL_PIECES = 100
+SMCPP_TRANSITION_SMOOTHING = 1e-5
+SMCPP_EMISSION_FLOOR = 1e-10
 SMCPP_MSTEP_XATOL = 1e-4
 
 
 # ---------------------------------------------------------------------------
 # Time discretization
 # ---------------------------------------------------------------------------
+
 
 def compute_time_intervals(
     n_intervals: int,
@@ -94,7 +97,9 @@ def _balanced_hidden_states_constant(total_breaks: int, eta0: float = 2.0) -> np
     return np.asarray(hs, dtype=np.float64)
 
 
-def _balanced_hidden_states_piecewise(t: np.ndarray, eta: np.ndarray, total_breaks: int) -> np.ndarray:
+def _balanced_hidden_states_piecewise(
+    t: np.ndarray, eta: np.ndarray, total_breaks: int
+) -> np.ndarray:
     """Port of upstream ``balance_hidden_states`` for a piecewise-constant model."""
     if total_breaks < 2:
         return np.array([0.0, np.inf], dtype=np.float64)
@@ -211,6 +216,7 @@ def _empirical_hidden_states_from_records(
 # Lineage counting death process
 # ---------------------------------------------------------------------------
 
+
 def _lineage_rate_matrix(n: int) -> np.ndarray:
     """Build rate matrix for the pure death process of n lineages.
 
@@ -261,6 +267,7 @@ def _expected_lineages(p_bound: np.ndarray, n_undist: int) -> np.ndarray:
 # SFS weights (Polanski-Kimmel formula)
 # ---------------------------------------------------------------------------
 
+
 def _sfs_weights(n: int) -> np.ndarray:
     """Compute SFS weights w[j-1, b-1] = P(b derived | j lineages, sample n).
 
@@ -283,6 +290,7 @@ def _sfs_weights(n: int) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # PSMC-style state-dependent transition matrix for SMC++
 # ---------------------------------------------------------------------------
+
 
 def _compute_psmc_style_transition(
     n_undist: int,
@@ -351,8 +359,7 @@ def _compute_psmc_style_transition(
     beta = np.empty(n_states, dtype=np.float64)
     beta[0] = 0.0
     for k in range(n_states - 1):
-        beta[k + 1] = (beta[k]
-                        + lam_eff[k] * (1.0 / alpha_safe[k + 1] - 1.0 / alpha_safe[k]))
+        beta[k + 1] = beta[k] + lam_eff[k] * (1.0 / alpha_safe[k + 1] - 1.0 / alpha_safe[k])
 
     # q_aux
     q_aux = np.empty(n_states, dtype=np.float64)
@@ -412,9 +419,11 @@ def _compute_psmc_style_transition(
             for ll in range(k):
                 a_mat[k, ll] = rk * q_aux[ll]
             # Diagonal
-            a_mat[k, k] = ((ak1[k] ** 2 * (beta[k] - lam_eff[k] / alpha_safe[k])
-                             + 2.0 * lam_eff[k] * ak1[k]
-                             - 2.0 * alpha[k + 1] * tau[k]) / cpik_safe[k])
+            a_mat[k, k] = (
+                ak1[k] ** 2 * (beta[k] - lam_eff[k] / alpha_safe[k])
+                + 2.0 * lam_eff[k] * ak1[k]
+                - 2.0 * alpha[k + 1] * tau[k]
+            ) / cpik_safe[k]
             # Upper triangle: l > k
             if k < n_states - 1:
                 rk2 = q_aux[k] / cpik_safe[k]
@@ -439,6 +448,7 @@ def _compute_psmc_style_transition(
 # ---------------------------------------------------------------------------
 # Conditioned SFS (CSFS) — emission matrix
 # ---------------------------------------------------------------------------
+
 
 def compute_csfs(
     n_undist: int,
@@ -504,14 +514,10 @@ def compute_csfs(
         xi_trunk = 0.0
         xi_undist = np.zeros(n_undist, dtype=np.float64)
         xi_after = np.zeros(n_obs, dtype=np.float64)
-        quad_t, quad_w = _state_time_quadrature(
-            t[k], t[k + 1], lam_eff[k], avg_t[k]
-        )
+        quad_t, quad_w = _state_time_quadrature(t[k], t[k + 1], lam_eff[k], avg_t[k])
 
         for T_k, weight_k in zip(quad_t, quad_w):
-            R_at_T = _interpolate_occupation(
-                R, t, T_k, Q_undist, eta, p_bound, n_states
-            )
+            R_at_T = _interpolate_occupation(R, t, T_k, Q_undist, eta, p_bound, n_states)
 
             xi_trunk_k = 0.0
             xi_undist_k = np.zeros(n_undist, dtype=np.float64)
@@ -1021,53 +1027,117 @@ def _joint_sfs_to_jcsfs(
 
 
 def _jcsfs_emission_tensor(raw: np.ndarray, theta: float) -> np.ndarray:
-    """Convert joint branch lengths into the one-mutation emission model."""
+    """Convert joint branch lengths into the preserved one-mutation model."""
     if theta <= 0 or not np.isfinite(theta):
         raise ValueError("SMC++ theta must be positive and finite.")
     total_length = float(raw.sum())
-    emission = np.zeros_like(raw, dtype=np.float64)
     monomorphic = (0,) * raw.ndim
     if total_length <= 0:
+        emission = np.full_like(raw, SMCPP_EMISSION_FLOOR, dtype=np.float64)
         emission[monomorphic] = 1.0
         return emission
     scale = -np.expm1(-theta * total_length) / total_length
-    emission[:] = np.maximum(raw * scale, 0.0)
-    emission[monomorphic] = np.exp(-theta * total_length)
-    total = float(emission.sum())
-    if total <= 0 or not np.isfinite(total):
-        raise FloatingPointError("Invalid SMC++ joint emission normalization.")
-    emission /= total
+    emission = np.asarray(raw * scale, dtype=np.float64)
+    emission[monomorphic] = 1.0 - float(emission.sum())
+    # Upstream deliberately floors structural zeros after setting the
+    # monomorphic mass and does not renormalize afterward.
+    emission[emission < SMCPP_EMISSION_FLOOR] = SMCPP_EMISSION_FLOOR
+    if not np.all(np.isfinite(emission)) or np.any(emission > 1.0):
+        raise FloatingPointError("Invalid SMC++ joint emission probabilities.")
     return emission
 
 
-def _joint_observation_probability_unpolarized(
-    emission: np.ndarray,
+def _joint_observation_weights(
     observed: tuple[tuple[int, int, int], tuple[int, int, int]],
     distinguished: tuple[int, int],
     full_undistinguished: tuple[int, int],
-) -> float:
-    """Marginalize one joint observation over missing and downsampled alleles."""
-    probability = 0.0
-    for index in np.ndindex(emission.shape):
-        weight = 1.0
-        for population in range(2):
-            a_obs, b_obs, n_obs = observed[population]
-            a_full = index[2 * population]
-            b_full = index[2 * population + 1]
-            a_total = distinguished[population]
-            n_full = full_undistinguished[population]
-            if a_obs < 0:
+    *,
+    polarization_error: float,
+) -> dict[tuple[int, int, int, int], float]:
+    """Return the normalized full-sample states represented by an observation.
+
+    SMC++ observations can omit distinguished alleles and contain only a
+    downsample of the undistinguished alleles.  The likelihood therefore uses
+    the conditional hypergeometric distribution over compatible full-sample
+    counts.  Polarization is applied to those full states, the globally fixed
+    derived state is represented as the ancestral monomorphic state, and a
+    final globally fixed-derived state is excluded before normalization.  This
+    ordering is important for missing and downsampled observations.
+    """
+    if not 0.0 <= polarization_error <= 1.0:
+        raise ValueError("SMC++ polarization_error must lie in [0, 1].")
+
+    observed_values = tuple(tuple(map(int, population)) for population in observed)
+    distinguished_candidates: list[range | tuple[int]] = []
+    undistinguished_candidates: list[range] = []
+    for population, (a_obs, b_obs, n_obs) in enumerate(observed_values):
+        a_total = int(distinguished[population])
+        n_full = int(full_undistinguished[population])
+        if a_obs < -1 or a_obs > a_total:
+            return {}
+        if not 0 <= n_obs <= n_full or not 0 <= b_obs <= n_obs:
+            return {}
+        distinguished_candidates.append(range(a_total + 1) if a_obs == -1 else (a_obs,))
+        # If b derived alleles were observed in a sample of size n_obs, the
+        # full sample can contain b through n_full + b - n_obs derived alleles.
+        undistinguished_candidates.append(range(b_obs, n_full + b_obs - n_obs + 1))
+
+    weights: dict[tuple[int, int, int, int], float] = {}
+    for a1 in distinguished_candidates[0]:
+        for b1 in undistinguished_candidates[0]:
+            p1 = _hypergeom_pmf(
+                observed_values[0][1],
+                b1,
+                full_undistinguished[0] - b1,
+                observed_values[0][2],
+            )
+            if p1 <= 0.0:
                 continue
-            if not 0 <= a_obs <= a_total or not 0 <= n_obs <= n_full:
-                return 0.0
-            if a_full != a_obs:
-                weight = 0.0
-                break
-            weight *= _hypergeom_pmf(b_obs, b_full, n_full - b_full, n_obs)
-            if weight <= 0:
-                break
-        probability += float(emission[index]) * weight
-    return float(max(probability, 0.0))
+            for a2 in distinguished_candidates[1]:
+                for b2 in undistinguished_candidates[1]:
+                    p2 = _hypergeom_pmf(
+                        observed_values[1][1],
+                        b2,
+                        full_undistinguished[1] - b2,
+                        observed_values[1][2],
+                    )
+                    base_weight = p1 * p2
+                    if base_weight <= 0.0:
+                        continue
+
+                    state = (int(a1), int(b1), int(a2), int(b2))
+                    if all(
+                        state[2 * population] == distinguished[population]
+                        and state[2 * population + 1] == full_undistinguished[population]
+                        for population in range(2)
+                    ):
+                        state = (0, 0, 0, 0)
+
+                    direct_weight = (1.0 - polarization_error) * base_weight
+                    if direct_weight > 0.0:
+                        weights[state] = weights.get(state, 0.0) + direct_weight
+
+                    folded = (
+                        distinguished[0] - state[0],
+                        full_undistinguished[0] - state[1],
+                        distinguished[1] - state[2],
+                        full_undistinguished[1] - state[3],
+                    )
+                    folded_weight = polarization_error * base_weight
+                    if folded_weight > 0.0:
+                        weights[folded] = weights.get(folded, 0.0) + folded_weight
+
+    fully_derived = (
+        distinguished[0],
+        full_undistinguished[0],
+        distinguished[1],
+        full_undistinguished[1],
+    )
+    weights.pop(fully_derived, None)
+    total = float(sum(weight for weight in weights.values() if weight > 0.0))
+    if total <= 0.0 or not np.isfinite(total):
+        return {}
+    return {state: float(weight / total) for state, weight in weights.items() if weight > 0.0}
 
 
 def _joint_observation_probability(
@@ -1077,59 +1147,35 @@ def _joint_observation_probability(
     full_undistinguished: tuple[int, int],
     *,
     polarization_error: float,
+    reduced_emission: np.ndarray | None = None,
 ) -> float:
     """Probability of a folded/missing two-population SMC++ observation."""
-    if not 0.0 <= polarization_error <= 1.0:
-        raise ValueError("SMC++ polarization_error must lie in [0, 1].")
-    if all(population[0] < 0 for population in observed):
-        return 1.0
-
-    recoded = [tuple(map(int, population)) for population in observed]
-    fully_derived = all(
-        a_obs >= 0 and a_obs == distinguished[population] and b_obs == n_obs
-        for population, (a_obs, b_obs, n_obs) in enumerate(recoded)
-    )
-    if fully_derived:
-        recoded = [
-            (0, 0, n_obs) if a_obs >= 0 else (a_obs, b_obs, n_obs)
-            for a_obs, b_obs, n_obs in recoded
-        ]
-
-    direct_observation = (recoded[0], recoded[1])
-    direct = _joint_observation_probability_unpolarized(
-        emission,
-        direct_observation,
-        distinguished,
-        full_undistinguished,
-    )
-    monomorphic = all(
-        a_obs >= 0 and a_obs == 0 and b_obs == 0 for a_obs, b_obs, _ in direct_observation
-    )
-    if monomorphic or polarization_error == 0.0:
-        return max(direct, 1e-300)
-
-    folded: list[tuple[int, int, int]] = []
-    for population, (a_obs, b_obs, n_obs) in enumerate(direct_observation):
-        if a_obs < 0:
-            folded.append((a_obs, b_obs, n_obs))
-        else:
-            folded.append(
-                (
-                    distinguished[population] - a_obs,
-                    n_obs - b_obs,
-                    n_obs,
+    reduced = all(population[2] == 0 for population in observed)
+    if reduced:
+        missing_distinguished = all(
+            distinguished[index] == 0 or population[0] == -1
+            for index, population in enumerate(observed)
+        )
+        if missing_distinguished:
+            return 1.0
+        if all(population[0] >= 0 for population in observed):
+            if reduced_emission is None:
+                raise ValueError(
+                    "Reduced SMC++ split observations require the distinguished-pair "
+                    "emission probabilities."
                 )
-            )
-    reverse = _joint_observation_probability_unpolarized(
-        emission,
-        (folded[0], folded[1]),
+            parity = sum(population[0] for population in observed) % 2
+            return max(float(reduced_emission[parity]), 1e-300)
+    weights = _joint_observation_weights(
+        observed,
         distinguished,
         full_undistinguished,
+        polarization_error=polarization_error,
     )
-    return max(
-        (1.0 - polarization_error) * direct + polarization_error * reverse,
-        1e-300,
-    )
+    if not weights:
+        return 1e-300
+    probability = sum(float(emission[state]) * weight for state, weight in weights.items())
+    return max(float(probability), 1e-300)
 
 
 def _joint_split_log_likelihood(
@@ -1139,8 +1185,10 @@ def _joint_split_log_likelihood(
     full_undistinguished: tuple[int, int],
     *,
     polarization_error: float,
+    reduced_emission: np.ndarray | None = None,
 ) -> float:
     log_likelihood = 0.0
+    one_state_transition = 1.0 - SMCPP_TRANSITION_SMOOTHING / 2.0
     for span, populations in observations:
         if len(populations) != 2 or int(span) <= 0:
             raise ValueError(
@@ -1152,9 +1200,51 @@ def _joint_split_log_likelihood(
             distinguished,
             full_undistinguished,
             polarization_error=polarization_error,
+            reduced_emission=reduced_emission,
         )
-        log_likelihood += int(span) * np.log(probability)
+        log_likelihood += int(span) * (np.log(probability) + np.log(one_state_transition))
     return float(log_likelihood)
+
+
+def _split_distinguished_pair_emission(
+    model1: dict[str, Any],
+    split: float,
+    distinguished: tuple[int, int],
+    theta: float,
+) -> np.ndarray:
+    """Return preserved reduced-data emissions for the distinguished pair."""
+    changes, eta = _piecewise_model_history(model1)
+    terminal = max(
+        float(np.asarray(model1["knots"], dtype=np.float64)[-1]),
+        float(np.nextafter(split, np.inf)),
+    )
+    if distinguished == (2, 0):
+        time = np.r_[0.0, changes, terminal]
+        pair_eta = eta
+    elif distinguished == (1, 1) and split <= 0.0:
+        time = np.r_[0.0, changes, terminal]
+        pair_eta = eta
+    elif distinguished == (1, 1):
+        future_changes = changes[changes > split]
+        time = np.r_[0.0, split, future_changes, terminal]
+        pair_eta = np.r_[
+            np.inf,
+            _history_value(changes, eta, split),
+            [_history_value(changes, eta, value) for value in future_changes],
+        ]
+    else:  # pragma: no cover - canonicalization enforces these cases
+        raise ValueError("Unsupported SMC++ distinguished-lineage allocation.")
+    rate = _build_onepop_piecewise_rate(
+        np.asarray(time, dtype=np.float64),
+        np.asarray(pair_eta, dtype=np.float64),
+        hidden_states=np.asarray([0.0, np.inf]),
+    )
+    average_time = float(_average_coal_times_onepop(rate)[0])
+    log_monomorphic = -2.0 * theta * average_time
+    return np.asarray(
+        [np.exp(log_monomorphic), -np.expm1(log_monomorphic)],
+        dtype=np.float64,
+    )
 
 
 def _coalescent_antiderivative(t: np.ndarray, eta: np.ndarray) -> np.ndarray:
@@ -1240,7 +1330,9 @@ def _expand_onepop_model_pieces(
     return expanded_t, expanded_eta
 
 
-def _single_integral_smcpp(rate: int, t0: float, t1: float, inv_eta: float, rrng0: float, log_coef: float) -> float:
+def _single_integral_smcpp(
+    rate: int, t0: float, t1: float, inv_eta: float, rrng0: float, log_coef: float
+) -> float:
     if rate == 0:
         return float(np.exp(log_coef) * (t1 - t0))
     ret = np.exp(-rate * rrng0 + log_coef)
@@ -1250,7 +1342,9 @@ def _single_integral_smcpp(rate: int, t0: float, t1: float, inv_eta: float, rrng
     return float(max(ret, 0.0))
 
 
-def _double_integral_below_helper_smcpp(rate: int, t0: float, t1: float, inv_eta: float, rrng0: float, log_denom: float) -> float:
+def _double_integral_below_helper_smcpp(
+    rate: int, t0: float, t1: float, inv_eta: float, rrng0: float, log_denom: float
+) -> float:
     if inv_eta <= 0:
         return 0.0
     l1r = 1 + rate
@@ -1260,7 +1354,9 @@ def _double_integral_below_helper_smcpp(rate: int, t0: float, t1: float, inv_eta
     if rate == 0:
         if np.isinf(t1):
             return float(np.exp(-rrng0 - log_denom) / inv_eta)
-        return float(np.exp(-rrng0 - log_denom) * (1.0 - np.exp(-adadiff) * (1.0 + adadiff)) / inv_eta)
+        return float(
+            np.exp(-rrng0 - log_denom) * (1.0 - np.exp(-adadiff) * (1.0 + adadiff)) / inv_eta
+        )
     if np.isinf(t1):
         return float(np.exp(-l1r * rrng0 - log_denom) * (1.0 - l1rinv) / (rate * inv_eta))
     return float(
@@ -1301,9 +1397,13 @@ def _double_integral_above_helper_smcpp(
     if np.isinf(t1):
         return float(np.exp(-l1 * rrng0 + log_coef) / (l1 * rate * inv_eta))
     if rate < l1:
-        inner = np.expm1(-l1 * adadiff) / l1 + np.exp(-rate * adadiff) * (-np.expm1(-(l1 - rate) * adadiff) / (l1 - rate))
+        inner = np.expm1(-l1 * adadiff) / l1 + np.exp(-rate * adadiff) * (
+            -np.expm1(-(l1 - rate) * adadiff) / (l1 - rate)
+        )
     else:
-        inner = np.expm1(-l1 * adadiff) / l1 + np.exp(-l1 * adadiff) * (np.expm1(-(rate - l1) * adadiff) / (l1 - rate))
+        inner = np.expm1(-l1 * adadiff) / l1 + np.exp(-l1 * adadiff) * (
+            np.expm1(-(rate - l1) * adadiff) / (l1 - rate)
+        )
     return float(-np.exp(-l1 * rrng0 + log_coef) * inner / (rate * inv_eta))
 
 
@@ -1338,9 +1438,13 @@ def _tjj_double_integral_below_grid(
                 fac = -np.expm1(-(rm1 - rm))
             for j in range(2, n + 3):
                 coal_rate = j * (j - 1) // 2 - 1
-                val = _double_integral_below_helper_smcpp(coal_rate, ts[m], ts[m + 1], ada[m], rrng[m], log_denom)
+                val = _double_integral_below_helper_smcpp(
+                    coal_rate, ts[m], ts[m + 1], ada[m], rrng[m], log_denom
+                )
                 for k in range(m):
-                    val += fac * _single_integral_smcpp(coal_rate, ts[k], ts[k + 1], ada[k], rrng[k], log_coef - log_denom)
+                    val += fac * _single_integral_smcpp(
+                        coal_rate, ts[k], ts[k + 1], ada[k], rrng[k], log_coef - log_denom
+                    )
                 tgt[h, j - 2] += max(val, 0.0)
     return tgt
 
@@ -1373,7 +1477,9 @@ def _tjj_double_integral_above_grid(
             for m in range(h0, h1):
                 for j in range(2, n + 2):
                     coal_rate = j * (j - 1) // 2
-                    val = _double_integral_above_helper_smcpp(coal_rate, lam, ts[m], ts[m + 1], ada[m], rrng[m], -log_denom)
+                    val = _double_integral_above_helper_smcpp(
+                        coal_rate, lam, ts[m], ts[m + 1], ada[m], rrng[m], -log_denom
+                    )
                     rp = lam + 1 - coal_rate
                     rm = rrng[m]
                     rm1 = rrng[m + 1]
@@ -1395,7 +1501,12 @@ def _tjj_double_integral_above_grid(
                             log_coef += -rp * rm1
                             fac = np.expm1(-rp * (rm - rm1)) / rp
                     for k in range(m + 1, K):
-                        val += _single_integral_smcpp(coal_rate, ts[k], ts[k + 1], ada[k], rrng[k], log_coef) * fac
+                        val += (
+                            _single_integral_smcpp(
+                                coal_rate, ts[k], ts[k + 1], ada[k], rrng[k], log_coef
+                            )
+                            * fac
+                        )
                     c[h, rate_row, j - 2] += max(val, 0.0)
     return c
 
@@ -1873,8 +1984,7 @@ def _compute_after_T_csfs(
     if remaining > 0 and eta[k_start] > 0:
         P_part = expm(Q * remaining / eta[k_start])
         p_next = p_cur @ P_part
-        _accumulate_after_T(xi_after, p_cur, p_next, remaining,
-                            w_full, n_undist, n_total)
+        _accumulate_after_T(xi_after, p_cur, p_next, remaining, w_full, n_undist, n_total)
         p_cur = p_next
 
     # Full remaining intervals
@@ -1885,8 +1995,7 @@ def _compute_after_T_csfs(
             p_next = p_cur @ P_kk
         else:
             p_next = p_cur.copy()
-        _accumulate_after_T(xi_after, p_cur, p_next, tau,
-                            w_full, n_undist, n_total)
+        _accumulate_after_T(xi_after, p_cur, p_next, tau, w_full, n_undist, n_total)
         p_cur = p_next
 
 
@@ -1935,15 +2044,16 @@ def _accumulate_after_T(
 # HMM parameters container
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SmcppHmmParams:
     """Container for SMC++ HMM parameters."""
 
-    a: np.ndarray        # (K, K) transition matrix per base
-    e: np.ndarray        # (n_obs, K) emission matrix
-    a0: np.ndarray       # (K,) initial distribution
-    n_obs: int           # number of observation symbols
-    n_undist: int        # undistinguished sample size
+    a: np.ndarray  # (K, K) transition matrix per base
+    e: np.ndarray  # (n_obs, K) emission matrix
+    a0: np.ndarray  # (K,) initial distribution
+    n_obs: int  # number of observation symbols
+    n_undist: int  # undistinguished sample size
     n_distinguished: int = 1
     avg_t: np.ndarray | None = None
     theta: float = 0.0
@@ -1975,7 +2085,9 @@ def compute_hmm_params(
         if hidden_states is None:
             hidden_states = np.r_[t, np.inf]
         t_internal, eta_internal = _expand_onepop_model_pieces(t, eta)
-        a_mat, sigma = _compute_onepop_transition_and_pi(t_internal, eta_internal, hidden_states, rho_base)
+        a_mat, sigma = _compute_onepop_transition_and_pi(
+            t_internal, eta_internal, hidden_states, rho_base
+        )
         rate = _build_onepop_piecewise_rate(t_internal, eta_internal, hidden_states=hidden_states)
         avg_t = _average_coal_times_onepop(rate)
         e = compute_csfs(
@@ -2004,16 +2116,30 @@ def compute_hmm_params(
 
     K = len(eta)
     a_mat, sigma, avg_t, E_A_mid = _compute_psmc_style_transition(
-        n_undist, K, t, eta, rho_base,
+        n_undist,
+        K,
+        t,
+        eta,
+        rho_base,
     )
     e = compute_csfs(
-        n_undist, K, t, eta, theta, avg_t, E_A_mid,
+        n_undist,
+        K,
+        t,
+        eta,
+        theta,
+        avg_t,
+        E_A_mid,
         n_distinguished=n_distinguished,
         hidden_states=hidden_states,
     )
     return SmcppHmmParams(
-        a=a_mat, e=e, a0=sigma.copy(),
-        n_obs=e.shape[0], n_undist=n_undist, n_distinguished=n_distinguished,
+        a=a_mat,
+        e=e,
+        a0=sigma.copy(),
+        n_obs=e.shape[0],
+        n_undist=n_undist,
+        n_distinguished=n_distinguished,
         avg_t=avg_t,
         theta=theta,
         polarization_error=polarization_error,
@@ -2024,6 +2150,7 @@ def compute_hmm_params(
 # ---------------------------------------------------------------------------
 # Observation encoding
 # ---------------------------------------------------------------------------
+
 
 def observation_space_size(n_undist: int, n_distinguished: int = 1) -> int:
     """Return the number of observation symbols including the missing symbol."""
@@ -2117,7 +2244,9 @@ def _emission_vector_onepop(
         if a_full == 0 and b_full == 0:
             weights[(0, 0)] = weights.get((0, 0), 0.0) + prob
             continue
-        weights[(a_full, b_full)] = weights.get((a_full, b_full), 0.0) + (1.0 - polarization_error) * prob
+        weights[(a_full, b_full)] = (
+            weights.get((a_full, b_full), 0.0) + (1.0 - polarization_error) * prob
+        )
         a_fold, b_fold, _ = _fold_onepop_key(a_full, b_full, full_n)
         weights[(a_fold, b_fold)] = weights.get((a_fold, b_fold), 0.0) + polarization_error * prob
 
@@ -2366,9 +2495,17 @@ def _compute_onepop_transition_and_pi(
         prefix.append(prefix[-1] @ q)
 
     avg = _average_coal_times_onepop(rate)
-    avc_ip = [min(max(int(np.searchsorted(ts, x, side="right") - 1), 0), len(ada) - 1) for x in avg]
+    avc_ip = [
+        min(max(int(np.searchsorted(ts, x, side="right") - 1), 0), len(ada) - 1) for x in avg
+    ]
     phi = np.zeros((m, m), dtype=np.float64)
-    expm_diff = np.array([prefix[hs_indices[k]][0, 2] - prefix[hs_indices[k - 1]][0, 2] for k in range(1, m - 1 + 1)], dtype=np.float64)
+    expm_diff = np.array(
+        [
+            prefix[hs_indices[k]][0, 2] - prefix[hs_indices[k - 1]][0, 2]
+            for k in range(1, m - 1 + 1)
+        ],
+        dtype=np.float64,
+    )
 
     for j in range(1, m + 1):
         if j - 1 > 0:
@@ -2400,7 +2537,7 @@ def _compute_onepop_transition_and_pi(
         phi[j - 1, j - 1] = 1.0 - phi[j - 1].sum()
 
     phi = np.maximum(phi, 1e-20)
-    beta = 1e-5
+    beta = SMCPP_TRANSITION_SMOOTHING
     phi = phi * (1.0 - beta) + beta / (m + 1)
     return phi, pi
 
@@ -2408,6 +2545,7 @@ def _compute_onepop_transition_and_pi(
 # ---------------------------------------------------------------------------
 # Span-based forward/backward (full matrix, O(K^2) per step)
 # ---------------------------------------------------------------------------
+
 
 def _forward_spans(
     hp: SmcppHmmParams,
@@ -2458,14 +2596,24 @@ def _forward_spans(
                 M_obs = a * em_direct[np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs.T)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
-                power_cache[obs_key] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
+                power_cache[obs_key] = (
+                    np.real(eigvals),
+                    np.real(V),
+                    np.real(np.linalg.inv(V)),
+                    scale,
+                )
             eigvals, V, V_inv, scale = power_cache[obs_key]
         else:
             if obs_idx_direct not in power_cache:
                 M_obs = a * em_direct[np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs.T)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
-                power_cache[obs_idx_direct] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
+                power_cache[obs_idx_direct] = (
+                    np.real(eigvals),
+                    np.real(V),
+                    np.real(np.linalg.inv(V)),
+                    scale,
+                )
             eigvals, V, V_inv, scale = power_cache[obs_idx_direct]
         eigpow = (eigvals / scale) ** span
         f_new = np.real_if_close(V @ (eigpow * (V_inv @ f))).astype(np.float64)
@@ -2512,7 +2660,12 @@ def _backward_spans(
                 M_obs = a * em[np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
-                power_cache[obs_key_next] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
+                power_cache[obs_key_next] = (
+                    np.real(eigvals),
+                    np.real(V),
+                    np.real(np.linalg.inv(V)),
+                    scale,
+                )
             eigvals, V, V_inv, scale = power_cache[obs_key_next]
         else:
             obs_idx_next = encode_obs(a_next, b_next_obs, n_undist, hp.n_distinguished)
@@ -2520,7 +2673,12 @@ def _backward_spans(
                 M_obs = a * e[obs_idx_next][np.newaxis, :]
                 eigvals, V = np.linalg.eig(M_obs)
                 scale = max(float(np.max(np.abs(eigvals))), 1e-300)
-                power_cache[obs_idx_next] = (np.real(eigvals), np.real(V), np.real(np.linalg.inv(V)), scale)
+                power_cache[obs_idx_next] = (
+                    np.real(eigvals),
+                    np.real(V),
+                    np.real(np.linalg.inv(V)),
+                    scale,
+                )
             eigvals, V, V_inv, scale = power_cache[obs_idx_next]
         eigpow = (eigvals / scale) ** span_next
         b = np.real_if_close(V @ (eigpow * (V_inv @ b))).astype(np.float64)
@@ -2562,7 +2720,7 @@ def _span_geometric_sum(eigvals: np.ndarray, span: int) -> np.ndarray:
             if abs(d1 - d2) < 1e-14:
                 val = span * (d1 ** (span - 1))
             else:
-                val = (d1 ** span - d2 ** span) / (d1 - d2)
+                val = (d1**span - d2**span) / (d1 - d2)
             q[i, j] = val
             q[j, i] = val
     return q
@@ -2704,9 +2862,9 @@ def _expectation_stats_spans(
             xis_vals = np.maximum(xis_vals, 1e-300)
             xis = np.exp(np.log(xis_vals) - log_c_list[ell] + log_p + log_c)
 
-            beta_vals = np.real_if_close(
-                pinv.T @ ((d_scaled ** span) * (p.T @ beta))
-            ).astype(np.float64)
+            beta_vals = np.real_if_close(pinv.T @ ((d_scaled**span) * (p.T @ beta))).astype(
+                np.float64
+            )
             beta_vals = np.maximum(np.abs(beta_vals), 1e-300)
             log_beta = np.log(beta_vals) + log_p + log_c + np.log(scale)
             beta_m = float(np.max(log_beta))
@@ -2778,6 +2936,7 @@ def _collect_expectation_stats(
 # ---------------------------------------------------------------------------
 # Objective function
 # ---------------------------------------------------------------------------
+
 
 def _objective(
     log_eta: np.ndarray,
@@ -3047,10 +3206,14 @@ def _optimize_log_eta_em(
             observation_scale=observation_scale,
         )
         stats = _collect_expectation_stats(hp, records)
-        improvement = None if prev_log_likelihood is None else (
-            (prev_log_likelihood - float(stats.log_likelihood)) / prev_log_likelihood
-            if prev_log_likelihood != 0.0
-            else None
+        improvement = (
+            None
+            if prev_log_likelihood is None
+            else (
+                (prev_log_likelihood - float(stats.log_likelihood)) / prev_log_likelihood
+                if prev_log_likelihood != 0.0
+                else None
+            )
         )
         q_before = -_m_step_objective(
             log_eta,
@@ -3066,7 +3229,11 @@ def _optimize_log_eta_em(
             observation_scale=observation_scale,
         )
 
-        coord_groups = [[k] for k in range(len(log_eta) - 1, -1, -1)] if single_coordinate else [list(range(len(log_eta)))]
+        coord_groups = (
+            [[k] for k in range(len(log_eta) - 1, -1, -1)]
+            if single_coordinate
+            else [list(range(len(log_eta)))]
+        )
         m_steps = []
         prev_log_eta = log_eta.copy()
         scale_step = None
@@ -3114,20 +3281,22 @@ def _optimize_log_eta_em(
             polarization_error=polarization_error,
             observation_scale=observation_scale,
         )
-        history.append({
-            "iteration": iteration,
-            "log_eta_before": prev_log_eta.tolist(),
-            "eta_before": np.exp(prev_log_eta).tolist(),
-            "log_likelihood": float(stats.log_likelihood),
-            "log_likelihood_improvement": None if improvement is None else float(improvement),
-            "q_before": float(q_before),
-            "q_after": float(q_after),
-            "max_abs_delta": float(np.max(np.abs(log_eta - prev_log_eta))),
-            "log_eta_after": log_eta.tolist(),
-            "eta_after": np.exp(log_eta).tolist(),
-            "scale_step": scale_step,
-            "m_steps": m_steps,
-        })
+        history.append(
+            {
+                "iteration": iteration,
+                "log_eta_before": prev_log_eta.tolist(),
+                "eta_before": np.exp(prev_log_eta).tolist(),
+                "log_likelihood": float(stats.log_likelihood),
+                "log_likelihood_improvement": None if improvement is None else float(improvement),
+                "q_before": float(q_before),
+                "q_after": float(q_after),
+                "max_abs_delta": float(np.max(np.abs(log_eta - prev_log_eta))),
+                "log_eta_after": log_eta.tolist(),
+                "eta_after": np.exp(log_eta).tolist(),
+                "scale_step": scale_step,
+                "m_steps": m_steps,
+            }
+        )
         if improvement is not None:
             if improvement < 0:
                 message = "log likelihood decreased"
@@ -3175,9 +3344,7 @@ def _watterson_theta(records: list[dict], default_n_undist: int | None = None) -
             if a_obs >= 1 or b_obs > 0:
                 segregating += span
             if sample_size > 0:
-                denom += span * (
-                    np.log(sample_size) + 0.5 / sample_size + 0.57721
-                )
+                denom += span * (np.log(sample_size) + 0.5 / sample_size + 0.57721)
     if denom <= 0:
         return 1e-8
     return max(segregating / denom, 1e-8)
@@ -3186,6 +3353,7 @@ def _watterson_theta(records: list[dict], default_n_undist: int | None = None) -
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SmcppResult:
@@ -3541,9 +3709,7 @@ def _run_upstream_smcpp(
         )
         if proc.returncode != 0:
             raise RuntimeError(
-                "Upstream SMC++ backend failed.\n"
-                f"stdout:\n{proc.stdout}\n"
-                f"stderr:\n{proc.stderr}"
+                f"Upstream SMC++ backend failed.\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
             )
 
         return json.loads((tmpdir_path / "smcpp_result.json").read_text(encoding="utf-8"))
@@ -3585,6 +3751,9 @@ def _run_upstream_smcpp_split(
     regularization: float,
     max_iterations: int,
     seed: int | None,
+    fixed_split: float | None = None,
+    fixed_log_scale: float | None = None,
+    coordinate_order: tuple[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run the preserved upstream SMC++ two-population split workflow."""
     python_exe = _resolve_upstream_smcpp_python()
@@ -3630,8 +3799,19 @@ def _run_upstream_smcpp_split(
 
         mu = theta[0] / (2.0 * n0[0])
         recombination_rate = rho[0] / (2.0 * n0[0])
+        fixed_mode = fixed_split is not None or fixed_log_scale is not None
+        if fixed_mode and (fixed_split is None or fixed_log_scale is None):
+            raise ValueError("fixed_split and fixed_log_scale must be provided together.")
+        if fixed_mode and coordinate_order is not None:
+            raise ValueError("Fixed-stat and ordered-fit oracle modes are mutually exclusive.")
         payload = {
-            "mode": "split",
+            "mode": (
+                "split_fixed_stats"
+                if fixed_mode
+                else "split_ordered_fit"
+                if coordinate_order is not None
+                else "split"
+            ),
             "input_paths": [str(input_path)],
             "pop1": str(model_paths[0]),
             "pop2": str(model_paths[1]),
@@ -3645,6 +3825,11 @@ def _run_upstream_smcpp_split(
             "seed": None if seed is None else int(seed),
             "trace": False,
         }
+        if fixed_mode:
+            payload["fixed_split"] = float(fixed_split)
+            payload["fixed_log_scale"] = float(fixed_log_scale)
+        if coordinate_order is not None:
+            payload["coordinate_order"] = list(coordinate_order)
         payload_path = tmpdir_path / "runner_payload.json"
         payload_path.write_text(json.dumps(payload), encoding="utf-8")
         env = os.environ.copy()
@@ -3662,9 +3847,7 @@ def _run_upstream_smcpp_split(
                 f"stdout:\n{proc.stdout}\n"
                 f"stderr:\n{proc.stderr}"
             )
-        result = json.loads(
-            (tmpdir_path / "smcpp_split_result.json").read_text(encoding="utf-8")
-        )
+        result = json.loads((tmpdir_path / "smcpp_split_result.json").read_text(encoding="utf-8"))
         result["stdout"] = proc.stdout
         result["stderr"] = proc.stderr
         return result
@@ -3882,7 +4065,7 @@ def _run_upstream_smcpp_fixed_stats_one_mstep(
                 "Upstream SMC++ fixed-stats one-M-step failed.\n"
                 f"stdout:\n{proc.stdout}\n"
                 f"stderr:\n{proc.stderr}"
-        )
+            )
         return json.loads((tmpdir_path / "smcpp_one_mstep.json").read_text(encoding="utf-8"))
 
 
@@ -4125,6 +4308,26 @@ def _native_fixed_stats_q_compare(
     return out
 
 
+def _require_onepop_distinguished_pair(data: SmcData) -> None:
+    """Validate the upstream one-population distinguished-lineage contract."""
+    declarations: list[Any] = [data.uns.get("n_distinguished", 2)]
+    declarations.extend(
+        record["n_distinguished"]
+        for record in data.uns.get("records", [])
+        if "n_distinguished" in record
+    )
+    try:
+        valid = all(int(value) == 2 for value in declarations)
+    except (TypeError, ValueError):
+        valid = False
+    if not valid:
+        raise ValueError(
+            "One-population SMC++ inference requires exactly two distinguished "
+            "lineages. The former one-distinguished native surrogate was not an "
+            "upstream SMC++ capability and is not available through the production API."
+        )
+
+
 def _smcpp_native(
     data: SmcData,
     n_intervals: int = 32,
@@ -4171,6 +4374,9 @@ def _smcpp_native(
     SmcData
         Input data with results stored in ``data.results["smcpp"]``.
     """
+    _require_onepop_distinguished_pair(data)
+    n_distinguished = int(data.uns.get("n_distinguished", 2))
+
     if seed is not None:
         rng = np.random.RandomState(seed)
     else:
@@ -4178,7 +4384,6 @@ def _smcpp_native(
 
     records = data.uns["records"]
     n_undist = data.uns["n_undist"]
-    n_distinguished = int(data.uns.get("n_distinguished", 2))
     polarization_error = 0.5 if n_distinguished == 2 else 0.0
     K_requested = n_intervals
     K = K_requested
@@ -4204,7 +4409,9 @@ def _smcpp_native(
         rho_base = rho / 2.0
         init_eta0 = 1.0
 
-    t, native_hidden_states = _native_time_grid(K, max_t, alpha, n_distinguished, init_eta0=init_eta0)
+    t, native_hidden_states = _native_time_grid(
+        K, max_t, alpha, n_distinguished, init_eta0=init_eta0
+    )
     initial_hidden_states = None if native_hidden_states is None else native_hidden_states.copy()
     prefit_t = t.copy()
     if n_distinguished == 2:
@@ -4217,7 +4424,11 @@ def _smcpp_native(
 
     logger.info(
         "SMC++ n_dist=%d n_undist=%d K=%d theta=%.6f rho=%.6f",
-        n_distinguished, n_undist, K, theta, rho,
+        n_distinguished,
+        n_undist,
+        K,
+        theta,
+        rho,
     )
 
     log_eta_init = np.full(K, np.log(init_eta0), dtype=np.float64)
@@ -4321,11 +4532,13 @@ def _smcpp_native(
         result_success = bool(optimizer_meta["success"])
         result_message = str(optimizer_meta["message"])
         result_nit = int(optimizer_meta["n_iterations"])
-        result_nfev = int(sum(
-            step.get("nfev", 0)
-            for history in optimizer_meta["history"]
-            for step in history["m_steps"]
-        ))
+        result_nfev = int(
+            sum(
+                step.get("nfev", 0)
+                for history in optimizer_meta["history"]
+                for step in history["m_steps"]
+            )
+        )
         final_objective = float(
             _objective(
                 log_eta_opt,
@@ -4390,7 +4603,11 @@ def _smcpp_native(
     time_years = time_mid * 2.0 * n0 * generation_time
 
     hp = compute_hmm_params(
-        eta_opt, n_undist, t, theta, rho_base,
+        eta_opt,
+        n_undist,
+        t,
+        theta,
+        rho_base,
         n_distinguished=n_distinguished,
         hidden_states=native_hidden_states,
         polarization_error=polarization_error,
@@ -4430,26 +4647,31 @@ def _smcpp_native(
         },
     )
 
-    data.results["smcpp"] = annotate_result({
-        "time": smcpp_result.time,
-        "time_boundaries": smcpp_result.time_boundaries,
-        "eta": smcpp_result.eta,
-        "ne": smcpp_result.ne,
-        "time_years": smcpp_result.time_years,
-        "theta": smcpp_result.theta,
-        "rho": smcpp_result.rho,
-        "n0": smcpp_result.n0,
-        "log_likelihood": smcpp_result.log_likelihood,
-        "n_undist": smcpp_result.n_undist,
-        "n_distinguished": n_distinguished,
-        "n_intervals": smcpp_result.n_intervals,
-        "regularization": smcpp_result.regularization,
-        "optimization": smcpp_result.optimization_result,
-        "native_hidden_states": native_hidden_states,
-        "preprocessing": preprocessing,
-        "observation_scale": float(observation_scale),
-        "initial_model_used": initial_model is not None,
-    }, method_name="smcpp", implementation_requested=implementation_requested, implementation_used="native")
+    data.results["smcpp"] = annotate_result(
+        {
+            "time": smcpp_result.time,
+            "time_boundaries": smcpp_result.time_boundaries,
+            "eta": smcpp_result.eta,
+            "ne": smcpp_result.ne,
+            "time_years": smcpp_result.time_years,
+            "theta": smcpp_result.theta,
+            "rho": smcpp_result.rho,
+            "n0": smcpp_result.n0,
+            "log_likelihood": smcpp_result.log_likelihood,
+            "n_undist": smcpp_result.n_undist,
+            "n_distinguished": n_distinguished,
+            "n_intervals": smcpp_result.n_intervals,
+            "regularization": smcpp_result.regularization,
+            "optimization": smcpp_result.optimization_result,
+            "native_hidden_states": native_hidden_states,
+            "preprocessing": preprocessing,
+            "observation_scale": float(observation_scale),
+            "initial_model_used": initial_model is not None,
+        },
+        method_name="smcpp",
+        implementation_requested=implementation_requested,
+        implementation_used="native",
+    )
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     data.params["recombination_rate"] = recombination_rate
@@ -4472,6 +4694,7 @@ def _smcpp_upstream(
     implementation_requested: str = "upstream",
 ) -> SmcData:
     """Run the real upstream SMC++ backend and map results into SmcData."""
+    _require_onepop_distinguished_pair(data)
     del max_t, alpha
     effective_args = {
         "n_intervals": int(n_intervals),
@@ -4501,33 +4724,38 @@ def _smcpp_upstream(
     n0 = float(payload["n0"])
     eta = ne / max(2.0 * n0, 1e-30)
 
-    data.results["smcpp"] = annotate_result({
-        "time": time,
-        "time_boundaries": time_boundaries,
-        "eta": eta,
-        "ne": ne,
-        "time_years": np.asarray(payload["time_years"], dtype=np.float64),
-        "theta": float(payload["theta"]),
-        "rho": float(payload["rho"]),
-        "n0": n0,
-        "log_likelihood": float(payload["log_likelihood"]),
-        "n_undist": int(payload["n_undist"]),
-        "n_distinguished": int(payload["n_distinguished"]),
-        "n_intervals": int(payload["n_intervals"]),
-        "regularization": float(payload["regularization"]),
-        "optimization": dict(payload["optimization"]),
-        "backend": "upstream",
-        "upstream": standard_upstream_metadata(
-            "smcpp",
-            effective_args=effective_args,
-            extra={
-                "alpha": float(payload["alpha"]),
-                "model": payload["model"],
-                "stepwise_ne": payload["stepwise_ne"],
-                "hidden_states": payload["hidden_states"],
-            },
-        ),
-    }, method_name="smcpp", implementation_requested=implementation_requested, implementation_used="upstream")
+    data.results["smcpp"] = annotate_result(
+        {
+            "time": time,
+            "time_boundaries": time_boundaries,
+            "eta": eta,
+            "ne": ne,
+            "time_years": np.asarray(payload["time_years"], dtype=np.float64),
+            "theta": float(payload["theta"]),
+            "rho": float(payload["rho"]),
+            "n0": n0,
+            "log_likelihood": float(payload["log_likelihood"]),
+            "n_undist": int(payload["n_undist"]),
+            "n_distinguished": int(payload["n_distinguished"]),
+            "n_intervals": int(payload["n_intervals"]),
+            "regularization": float(payload["regularization"]),
+            "optimization": dict(payload["optimization"]),
+            "backend": "upstream",
+            "upstream": standard_upstream_metadata(
+                "smcpp",
+                effective_args=effective_args,
+                extra={
+                    "alpha": float(payload["alpha"]),
+                    "model": payload["model"],
+                    "stepwise_ne": payload["stepwise_ne"],
+                    "hidden_states": payload["hidden_states"],
+                },
+            ),
+        },
+        method_name="smcpp",
+        implementation_requested=implementation_requested,
+        implementation_used="upstream",
+    )
     data.params["mu"] = mu
     data.params["generation_time"] = generation_time
     data.params["recombination_rate"] = recombination_rate
@@ -4578,16 +4806,20 @@ def _smcpp_native_split(
     observations = list(data.uns.get("joint_observations") or [])
     if not observations:
         raise ValueError("SMC++ split requires joint two-population observations.")
-    populations = list(data.uns.get("populations") or data.uns.get("pids") or [])
-    if len(populations) != 2:
-        populations = ["population_1", "population_2"]
+    public_populations = list(data.uns.get("populations") or data.uns.get("pids") or [])
+    if len(public_populations) != 2:
+        public_populations = ["population_1", "population_2"]
 
     distinguished_values = data.uns.get("n_distinguished_by_population")
     if distinguished_values is None:
         header = data.uns.get("smcpp_header") or {}
         distinguished_values = [len(value) for value in header.get("dist", [])]
-    distinguished = tuple(int(value) for value in distinguished_values or ())
-    if len(distinguished) != 2 or sum(distinguished) != 2:
+    public_distinguished = tuple(int(value) for value in distinguished_values or ())
+    if (
+        len(public_distinguished) != 2
+        or any(value < 0 or value > 2 for value in public_distinguished)
+        or sum(public_distinguished) != 2
+    ):
         raise ValueError(
             "Native SMC++ split requires header metadata identifying the two "
             "distinguished lineages."
@@ -4598,20 +4830,32 @@ def _smcpp_native_split(
         undistinguished_values = [
             max(int(population[index][2]) for _, population in observations) for index in range(2)
         ]
-    full_undistinguished = tuple(int(value) for value in undistinguished_values)
-    if min(full_undistinguished) < 0:
+    public_full_undistinguished = tuple(int(value) for value in undistinguished_values)
+    if min(public_full_undistinguished) < 0:
         raise ValueError("SMC++ undistinguished sample sizes must be non-negative.")
+
+    # The preserved implementation places the population containing both
+    # distinguished lineages first.  Canonicalize only the internal numerical
+    # problem and map every public result back to the input population order.
+    calculation_order = (1, 0) if public_distinguished == (0, 2) else (0, 1)
+    distinguished = tuple(public_distinguished[index] for index in calculation_order)
+    full_undistinguished = tuple(public_full_undistinguished[index] for index in calculation_order)
+    observations = [
+        (span, tuple(population_values[index] for index in calculation_order))
+        for span, population_values in observations
+    ]
     total_sample_sizes = tuple(
         distinguished[index] + full_undistinguished[index] for index in range(2)
     )
 
-    payloads = [
+    public_payloads = [
         _load_smcpp_marginal_payload(
             marginal_models[index],
-            population=populations[index],
+            population=public_populations[index],
         )
         for index in range(2)
     ]
+    payloads = [public_payloads[index] for index in calculation_order]
     theta = [float(payload.get("theta", np.nan)) for payload in payloads]
     rho = [float(payload.get("rho", np.nan)) for payload in payloads]
     n0 = [float(payload["model"].get("N0", np.nan)) for payload in payloads]
@@ -4653,12 +4897,19 @@ def _smcpp_native_split(
         )
         raw = _joint_sfs_to_jcsfs(joint_sfs, distinguished)
         emission = _jcsfs_emission_tensor(raw, theta[0])
+        reduced_emission = _split_distinguished_pair_emission(
+            scaled_models[0],
+            float(split),
+            distinguished,
+            theta[0],
+        )
         log_likelihood = _joint_split_log_likelihood(
             observations,
             emission,
             distinguished,
             full_undistinguished,
             polarization_error=0.5,
+            reduced_emission=reduced_emission,
         )
         cache[key] = (log_likelihood, emission)
         objective_history.append(
@@ -4698,8 +4949,15 @@ def _smcpp_native_split(
     split = float(result.x)
     log_likelihood, emission = evaluate(split, log_scale)
 
+    fitted_payloads_public: list[dict[str, Any] | None] = [None, None]
+    for internal_index, public_index in enumerate(calculation_order):
+        fitted_payloads_public[public_index] = payloads[internal_index]
+    if any(payload is None for payload in fitted_payloads_public):  # pragma: no cover
+        raise RuntimeError("Internal SMC++ population mapping is incomplete.")
+    fitted_payloads = [payload for payload in fitted_payloads_public if payload is not None]
+
     population_models = []
-    for population, payload in zip(populations, payloads):
+    for population, payload in zip(public_populations, fitted_payloads):
         model = payload["model"]
         model_time = np.asarray(model["knots"], dtype=np.float64)
         model_log_eta = _evaluate_smcpp_log_spline(
@@ -4718,15 +4976,15 @@ def _smcpp_native_split(
         )
     joint_model = {
         "class": "SMCTwoPopulationModel",
-        "model1": copy.deepcopy(payloads[0]["model"]),
-        "model2": copy.deepcopy(payloads[1]["model"]),
+        "model1": copy.deepcopy(fitted_payloads[0]["model"]),
+        "model2": copy.deepcopy(fitted_payloads[1]["model"]),
         "split": split,
     }
     data.results["smcpp"] = annotate_result(
         {
             "analysis": "split",
             "backend": "native",
-            "populations": populations,
+            "populations": public_populations,
             "population_models": population_models,
             "split": split,
             "split_generations": split * 2.0 * n0[0],
@@ -4737,8 +4995,8 @@ def _smcpp_native_split(
             "log_likelihood": log_likelihood,
             "regularization": 0.0,
             "regularization_requested": float(regularization),
-            "distinguished_by_population": distinguished,
-            "n_undist_by_population": full_undistinguished,
+            "distinguished_by_population": public_distinguished,
+            "n_undist_by_population": public_full_undistinguished,
             "optimization": {
                 "success": bool(result.success),
                 "message": str(result.message),
@@ -4753,7 +5011,9 @@ def _smcpp_native_split(
                 "history": objective_history,
             },
             "model": joint_model,
-            "hidden_states": {population: [0.0, float("inf")] for population in populations},
+            "hidden_states": {
+                population: [0.0, float("inf")] for population in public_populations
+            },
             "joint_emission_shape": list(emission.shape),
             "joint_emission_sum": float(emission.sum()),
         },
@@ -4868,14 +5128,17 @@ def smcpp(
     ``backend`` is a deprecated compatibility alias. For a two-population
     input, pass the two fitted marginal histories as ``split_models=(pop1,
     pop2)``. Native split inference uses an exact deterministic joint-SFS
-    calculation for Piecewise marginal models; the preserved upstream workflow
-    remains available explicitly.
+    calculation for all five serialized upstream spline classes (Piecewise,
+    CubicSpline, PChipSpline, AkimaSpline, and BSpline); the preserved upstream
+    workflow remains available explicitly.
     """
     implementation = normalize_implementation(
         implementation,
         backend=backend,
     )
     n_populations = int(data.uns.get("n_populations", 1))
+    if n_populations == 1:
+        _require_onepop_distinguished_pair(data)
     requested_capabilities: set[str] = set()
     if upstream_options:
         requested_capabilities.add("upstream_options")
@@ -5041,8 +5304,7 @@ def smcpp_cross_validate(
     conflicts = forbidden.intersection(fit_options)
     if conflicts:
         raise TypeError(
-            "smcpp_cross_validate controls these options directly: "
-            + ", ".join(sorted(conflicts))
+            "smcpp_cross_validate controls these options directly: " + ", ".join(sorted(conflicts))
         )
     if int(data.uns.get("n_populations", 1)) != 1:
         raise NotImplementedError(
@@ -5109,8 +5371,4 @@ def smcpp_cross_validate(
         "selected_regularization": float(best["regularization"]),
         "selection_metric": "summed held-out HMM log likelihood",
     }
-    return (
-        _persist_smcpp_outputs(final, output_prefix)
-        if output_prefix is not None
-        else final
-    )
+    return _persist_smcpp_outputs(final, output_prefix) if output_prefix is not None else final

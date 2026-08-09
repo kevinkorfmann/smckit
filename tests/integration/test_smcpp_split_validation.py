@@ -11,11 +11,14 @@ from smckit._core import SmcData
 from smckit.tl._smcpp import (
     _expected_joint_sfs_clean_split,
     _history_value,
+    _joint_observation_probability,
     _joint_sfs_to_jcsfs,
     _piecewise_model_history,
     _resolve_upstream_smcpp_python,
     _run_upstream_smcpp_joint_csfs_oracle,
     _run_upstream_smcpp_model_stepwise_oracle,
+    _run_upstream_smcpp_split,
+    _split_distinguished_pair_emission,
     smcpp,
 )
 
@@ -99,6 +102,102 @@ def test_native_joint_csfs_matches_upstream_oracle(
 
     np.testing.assert_allclose(native, upstream, rtol=rtol, atol=2e-7)
     np.testing.assert_allclose(native.sum(), upstream.sum(), rtol=rtol, atol=2e-7)
+
+
+@pytest.mark.parametrize(
+    ("distinguished", "observations"),
+    [
+        (
+            (2, 0),
+            [
+                ((0, 0, 3), (0, 0, 2)),
+                ((1, 1, 2), (0, 1, 1)),
+                ((-1, 0, 3), (0, 0, 2)),
+                ((0, 0, 0), (0, 0, 0)),
+                ((1, 0, 0), (0, 0, 0)),
+            ],
+        ),
+        (
+            (1, 1),
+            [
+                ((0, 0, 3), (0, 0, 2)),
+                ((1, 1, 2), (0, 1, 1)),
+                ((-1, 0, 3), (1, 0, 1)),
+                ((0, 0, 0), (0, 0, 0)),
+                ((1, 0, 0), (0, 0, 0)),
+            ],
+        ),
+    ],
+)
+def test_missing_and_downsampled_observation_mapping_matches_upstream(
+    distinguished: tuple[int, int],
+    observations: list[tuple[tuple[int, int, int], tuple[int, int, int]]],
+) -> None:
+    full_undistinguished = (3, 2)
+    header = {
+        "pids": ["pop-a", "pop-b"],
+        "dist": [
+            [["pop-a-distinguished", index] for index in range(distinguished[0])],
+            [["pop-b-distinguished", index] for index in range(distinguished[1])],
+        ],
+        "undist": [
+            [["pop-a", index] for index in range(full_undistinguished[0])],
+            [["pop-b", index] for index in range(full_undistinguished[1])],
+        ],
+    }
+    data = SmcData(
+        uns={
+            "n_populations": 2,
+            "populations": ["pop-a", "pop-b"],
+            "pids": ["pop-a", "pop-b"],
+            "joint_observations": [
+                (150_000 if index == 0 else 1, observation)
+                for index, observation in enumerate(observations)
+            ],
+            "n_undist_by_population": list(full_undistinguished),
+            "n_distinguished_by_population": list(distinguished),
+            "smcpp_header": header,
+            "total_sites": 150_000 + len(observations) - 1,
+        }
+    )
+    model1 = {"model": _model("pop-a", [1.0, 2.0, 0.8]), "theta": 2.5e-4, "rho": 2e-4}
+    model2 = {"model": _model("pop-b", [1.5, 0.7, 1.2]), "theta": 2.5e-4, "rho": 2e-4}
+    upstream = _run_upstream_smcpp_split(
+        data,
+        marginal_models=(model1, model2),
+        generation_time=29.0,
+        regularization=0.0,
+        max_iterations=1,
+        seed=17,
+        fixed_split=0.3,
+        fixed_log_scale=0.0,
+    )
+
+    component = next(iter(upstream["components"].values()))
+    emission = np.asarray(component["emission"], dtype=float)[0].reshape(
+        distinguished[0] + 1,
+        full_undistinguished[0] + 1,
+        distinguished[1] + 1,
+        full_undistinguished[1] + 1,
+    )
+    reduced_emission = _split_distinguished_pair_emission(
+        model1["model"],
+        0.3,
+        distinguished,
+        theta=2.5e-4,
+    )
+    for observation in observations:
+        key = ",".join(str(value) for population in observation for value in population)
+        expected = float(upstream["emission_probabilities"][key][0])
+        actual = _joint_observation_probability(
+            emission,
+            observation,
+            distinguished,
+            full_undistinguished,
+            polarization_error=0.5,
+            reduced_emission=reduced_emission,
+        )
+        assert actual == pytest.approx(expected, rel=2e-12, abs=2e-14)
 
 
 def test_native_split_fit_matches_upstream_coordinate_updates() -> None:

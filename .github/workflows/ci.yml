@@ -46,14 +46,32 @@ jobs:
             src/smckit/cli.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
-            scripts/verify_upstreams.py
+            scripts/verify_upstreams.py \
+            workflow/publication/scripts/aggregate_results.py \
+            workflow/publication/scripts/benchmark_smcpp_split.py \
+            workflow/publication/scripts/freeze_protocol.py \
+            workflow/publication/scripts/plot_architecture.py \
+            workflow/publication/scripts/plot_figure1.py \
+            workflow/publication/scripts/run_benchmark.py
           uv run ruff check \
             src/smckit/_capabilities.py \
             src/smckit/_provenance.py \
             src/smckit/cli.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
-            scripts/verify_upstreams.py
+            scripts/verify_upstreams.py \
+            workflow/publication/scripts/aggregate_results.py \
+            workflow/publication/scripts/benchmark_smcpp_split.py \
+            workflow/publication/scripts/freeze_protocol.py \
+            workflow/publication/scripts/plot_architecture.py \
+            workflow/publication/scripts/plot_figure1.py \
+            workflow/publication/scripts/run_benchmark.py
+      - name: Validate workflow contracts
+        run: |
+          bash -n \
+            workflow/slurm/smcpp-validation.sbatch \
+            workflow/slurm/smcpp-promotion-benchmark.sbatch
+          uv run python -m json.tool docs/parity/feature-ledger.json > /dev/null
       - run: uv run python -m build
       - run: uv run pytest -q tests/integration/test_build_install_smoke.py
       - run: uv run sphinx-build -W -b html docs docs/_build/html

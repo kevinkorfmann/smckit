@@ -54,9 +54,7 @@ def validate_protocol(config: dict[str, Any]) -> None:
 
     scenarios = config.get("scenarios")
     if not isinstance(scenarios, list) or set(scenarios) != REQUIRED_SCENARIOS:
-        raise ValueError(
-            "scenarios must contain each frozen simulation scenario exactly once."
-        )
+        raise ValueError("scenarios must contain each frozen simulation scenario exactly once.")
     if len(scenarios) != len(set(scenarios)):
         raise ValueError("scenarios must not contain duplicates.")
 
@@ -75,6 +73,9 @@ def validate_protocol(config: dict[str, Any]) -> None:
 
 def freeze_protocol(source: Path, target: Path) -> dict[str, Any]:
     """Validate *source* and write a deterministic, content-addressed protocol."""
+    target = Path(target)
+    if target.exists():
+        raise FileExistsError(f"Refusing to overwrite immutable protocol record: {target}")
     raw = source.read_bytes()
     loaded = yaml.safe_load(raw)
     if not isinstance(loaded, dict):

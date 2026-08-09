@@ -2,13 +2,13 @@
 
 Simulates coalescent data under a constant-size population, converts to a
 run-length encoded SMC++-style observation stream, runs inference, and checks:
-1. Theta/N0 estimation accuracy (Watterson's estimator)
+1. Upstream SMC++ scaling conventions
 2. HMM mathematical correctness (normalization, stochasticity)
-3. Ne recovery within expected tolerance for the current CSFS model
+3. Ne recovery within expected tolerance for the production two-lineage model
 """
 
-
 import copy
+
 import numpy as np
 import pytest
 
@@ -40,19 +40,10 @@ MU = 1.25e-8
 R = 1e-8
 GEN_TIME = 25
 N_HAPLOTYPES = 12
-N_UNDIST = N_HAPLOTYPES - 1
+N_DIST = 2
+N_UNDIST = N_HAPLOTYPES - N_DIST
 K = 8
 MAX_T = 10.0
-
-
-def _legacy_one_distinguished(data: SmcData) -> SmcData:
-    data = copy.deepcopy(data)
-    data.uns["n_distinguished"] = 1
-    data.uns["records"] = [
-        {**record, "n_distinguished": 1}
-        for record in data.uns["records"]
-    ]
-    return data
 
 
 @pytest.fixture(scope="module")
@@ -79,8 +70,8 @@ def simulated_data():
         if np.any(geno > 1):
             continue
         pos = int(variant.site.position)
-        a = int(geno[0])
-        b = int(np.sum(geno[1:]))
+        a = int(np.sum(geno[:N_DIST]))
+        b = int(np.sum(geno[N_DIST:]))
         total = a + b
         if total == 0 or total == N_HAPLOTYPES:
             continue
@@ -96,9 +87,28 @@ def simulated_data():
         uns={
             "records": [{"name": "sim_chr1", "observations": observations}],
             "n_undist": N_UNDIST,
+            "n_distinguished": N_DIST,
         },
     )
     return data, observations
+
+
+@pytest.fixture(scope="module")
+def fitted_simulated_data(simulated_data):
+    """Fit the production one-population model once for all slow assertions."""
+    data, _ = simulated_data
+    return smcpp(
+        copy.deepcopy(data),
+        n_intervals=K,
+        max_t=MAX_T,
+        mu=MU,
+        recombination_rate=R,
+        generation_time=GEN_TIME,
+        regularization=10.0,
+        max_iterations=50,
+        seed=42,
+        implementation="native",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -180,69 +190,28 @@ def test_forward_log_likelihood_finite(simulated_data):
 
 
 @pytest.mark.slow
-def test_smcpp_theta_estimation(simulated_data):
-    """Watterson's estimator should recover theta within 20% of truth."""
-    data, _ = simulated_data
-    data = _legacy_one_distinguished(data)
-    data = smcpp(
-        data,
-        n_intervals=K,
-        max_t=MAX_T,
-        mu=MU,
-        recombination_rate=R,
-        generation_time=GEN_TIME,
-        regularization=10.0,
-        max_iterations=50,
-        seed=42,
-        backend="native",
-    )
-    res = data.results["smcpp"]
-    theta_true = 4 * N0 * MU
-    rel_diff = abs(res["theta"] - theta_true) / theta_true
-    assert rel_diff < 0.20, f"Theta relative diff {rel_diff:.3f} > 0.20"
-    assert res["n_distinguished"] == 1
+def test_smcpp_scaling_matches_upstream_convention(fitted_simulated_data):
+    """Production one-pop inference should use upstream's fixed scale."""
+    res = fitted_simulated_data.results["smcpp"]
+    expected_n0 = 0.5e-4 / MU
+    assert res["n0"] == pytest.approx(expected_n0)
+    assert res["theta"] == pytest.approx(2.0 * expected_n0 * MU)
 
 
 @pytest.mark.slow
-def test_smcpp_n0_estimation(simulated_data):
-    """N0 estimate should be within 20% of truth."""
-    data, _ = simulated_data
-    data = _legacy_one_distinguished(data)
-    data = smcpp(
-        data,
-        n_intervals=K,
-        max_t=MAX_T,
-        mu=MU,
-        recombination_rate=R,
-        generation_time=GEN_TIME,
-        regularization=10.0,
-        max_iterations=50,
-        seed=42,
-        backend="native",
-    )
-    res = data.results["smcpp"]
-    rel_diff = abs(res["n0"] - N0) / N0
-    assert rel_diff < 0.20, f"N0 relative diff {rel_diff:.3f} > 0.20"
+def test_smcpp_simulation_uses_upstream_distinguished_pair(fitted_simulated_data):
+    """The validated production workflow must retain two distinguished lineages."""
+    res = fitted_simulated_data.results["smcpp"]
+    assert res["n_distinguished"] == 2
+    assert res["optimization"]["success"] is True
+    assert np.isfinite(res["log_likelihood"])
+    np.testing.assert_allclose(res["ne"], res["eta"] * 2.0 * res["n0"])
 
 
 @pytest.mark.slow
-def test_smcpp_ne_within_order_of_magnitude(simulated_data):
+def test_smcpp_ne_within_order_of_magnitude(fitted_simulated_data):
     """All recovered Ne values should be within 10x of truth."""
-    data, _ = simulated_data
-    data = _legacy_one_distinguished(data)
-    data = smcpp(
-        data,
-        n_intervals=K,
-        max_t=MAX_T,
-        mu=MU,
-        recombination_rate=R,
-        generation_time=GEN_TIME,
-        regularization=10.0,
-        max_iterations=50,
-        seed=42,
-        backend="native",
-    )
-    ne = data.results["smcpp"]["ne"]
+    ne = fitted_simulated_data.results["smcpp"]["ne"]
     within_10x = np.mean((ne > N0 / 10) & (ne < N0 * 10))
     assert within_10x == 1.0, f"Only {within_10x:.0%} of Ne within 10x of truth"
 
@@ -327,7 +296,14 @@ def test_smcpp_two_distinguished_native_vs_upstream_is_tracked():
 
     data = SmcData(
         uns={
-            "records": [{"name": "synthetic2", "observations": observations, "n_undist": 5, "n_distinguished": 2}],
+            "records": [
+                {
+                    "name": "synthetic2",
+                    "observations": observations,
+                    "n_undist": 5,
+                    "n_distinguished": 2,
+                }
+            ],
             "n_undist": 5,
             "n_distinguished": 2,
         },

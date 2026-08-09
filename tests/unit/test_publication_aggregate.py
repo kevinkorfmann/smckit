@@ -57,14 +57,23 @@ def _benchmark(implementation: str, runtime: float) -> dict:
     )
     return _hash(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "protocol_id": "sha256:protocol",
             "method": "psmc",
             "implementation": implementation,
             "dataset": "constant-1",
+            "measurement_component": "inference",
             "command": ["smckit"],
             "threads": 1,
+            "measurement_scope": "in_process_call",
+            "warmup_semantics": "first_call_then_same_process",
+            "promotion_eligible": True,
             "warm_repetitions": 5,
+            "fresh_process_repetitions": 0,
+            "startup": {
+                "runtime_seconds": runtime * 0.5,
+                "peak_memory_bytes": 90,
+            },
             "repetitions": repetitions,
             "platform": {
                 "system": "Linux",
@@ -114,6 +123,11 @@ def test_aggregate_and_render_primary_figure(tmp_path) -> None:
     )
     assert payload["performance_comparisons"][0]["promotable"] is True
     assert payload["performance_comparisons"][0]["warm_repetitions"] == 5
+    assert payload["performance_comparisons"][0]["native_startup_seconds"] == 0.5
+    assert payload["performance_comparisons"][0]["upstream_startup_seconds"] == 1.0
+    assert payload["performance_comparisons"][0][
+        "startup_runtime_ratio_upstream_over_native"
+    ] == pytest.approx(2.0)
     assert payload["aggregate_sha256"]
 
     outputs = PLOT.plot_figure1(aggregate_path, tmp_path / "figure1")
@@ -159,3 +173,18 @@ def test_figure_refuses_missing_evidence(tmp_path) -> None:
     aggregate = _write(tmp_path / "aggregate.json", payload)
     with pytest.raises(ValueError, match="performance"):
         PLOT.plot_figure1(aggregate, tmp_path / "figure1")
+
+
+def test_aggregate_refuses_to_overwrite_immutable_record(tmp_path) -> None:
+    benchmark = _write(tmp_path / "native.json", _benchmark("native", 1.0))
+    output = tmp_path / "aggregate.json"
+    output.write_text("original\n")
+
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        AGGREGATE.aggregate_publication_results(
+            benchmark_paths=[benchmark],
+            accuracy_paths=[],
+            output=output,
+        )
+
+    assert output.read_text() == "original\n"

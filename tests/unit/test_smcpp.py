@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+
 import numpy as np
 import pytest
 
@@ -12,15 +13,17 @@ from smckit.tl._smcpp import (
     _augmented_after_t_states,
     _backward_spans,
     _collect_expectation_stats,
+    _compute_onepop_raw_csfs_tensor,
     _compute_onepop_transition_and_pi,
     _compute_psmc_style_transition,
-    _compute_onepop_raw_csfs_tensor,
     _emission_vector_onepop,
     _expand_onepop_model_pieces,
-    _incorporate_theta_into_csfs,
     _forward_spans,
+    _incorporate_theta_into_csfs,
     _initial_after_t_distribution,
     _interpolate_occupation,
+    _joint_observation_weights,
+    _lift_csfs_to_two_distinguished,
     _lineage_rate_matrix,
     _log_likelihood_spans,
     _m_step_objective,
@@ -29,7 +32,7 @@ from smckit.tl._smcpp import (
     _propagate_lineages,
     _resolve_upstream_smcpp_python,
     _sfs_weights,
-    _lift_csfs_to_two_distinguished,
+    _split_distinguished_pair_emission,
     _watterson_theta,
     compute_csfs,
     compute_hmm_params,
@@ -38,9 +41,100 @@ from smckit.tl._smcpp import (
     observation_space_size,
 )
 
+
+class TestJointObservationWeights:
+    def test_downsampled_states_use_normalized_hypergeometric_weights(self):
+        weights = _joint_observation_weights(
+            ((1, 0, 1), (0, 0, 1)),
+            (2, 0),
+            (2, 1),
+            polarization_error=0.5,
+        )
+
+        assert weights == pytest.approx(
+            {
+                (1, 0, 0, 0): 1.0 / 3.0,
+                (1, 2, 0, 1): 1.0 / 3.0,
+                (1, 1, 0, 0): 1.0 / 6.0,
+                (1, 1, 0, 1): 1.0 / 6.0,
+            }
+        )
+        assert sum(weights.values()) == pytest.approx(1.0)
+
+    def test_missing_distinguished_allele_expands_compatible_states(self):
+        weights = _joint_observation_weights(
+            ((-1, 0, 1), (0, 0, 1)),
+            (2, 0),
+            (1, 1),
+            polarization_error=0.5,
+        )
+
+        assert weights == pytest.approx(
+            {
+                (0, 0, 0, 0): 0.2,
+                (1, 0, 0, 0): 0.2,
+                (1, 1, 0, 1): 0.2,
+                (2, 0, 0, 0): 0.2,
+                (0, 1, 0, 1): 0.2,
+            }
+        )
+
+    def test_fixed_derived_state_maps_to_ancestral_monomorphic_state(self):
+        weights = _joint_observation_weights(
+            ((2, 2, 2), (0, 1, 1)),
+            (2, 0),
+            (2, 1),
+            polarization_error=0.5,
+        )
+
+        assert weights == {(0, 0, 0, 0): 1.0}
+
+    def test_invalid_observation_has_no_compatible_states(self):
+        assert not _joint_observation_weights(
+            ((1, 2, 1), (0, 0, 1)),
+            (2, 0),
+            (2, 1),
+            polarization_error=0.5,
+        )
+
+    @pytest.mark.parametrize(
+        ("distinguished", "split", "expected_mean"),
+        [((2, 0), 0.3, 1.0), ((1, 1), 0.3, 1.3)],
+    )
+    def test_reduced_pair_emission_uses_expected_coalescence_time(
+        self,
+        distinguished,
+        split,
+        expected_mean,
+    ):
+        model = {
+            "class": "SMCModel",
+            "knots": [0.01, 0.5, 1.5],
+            "N0": 10_000.0,
+            "spline_class": "Piecewise",
+            "y": [0.0, 0.0, 0.0],
+            "pid": "pop-a",
+        }
+
+        emission = _split_distinguished_pair_emission(
+            model,
+            split,
+            distinguished,
+            theta=0.25,
+        )
+
+        np.testing.assert_allclose(
+            emission,
+            [np.exp(-0.5 * expected_mean), -np.expm1(-0.5 * expected_mean)],
+            rtol=2e-13,
+            atol=2e-15,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Time intervals
 # ---------------------------------------------------------------------------
+
 
 class TestTimeIntervals:
     def test_basic(self):
@@ -120,6 +214,7 @@ class TestObservationEncoding:
 # ---------------------------------------------------------------------------
 # Lineage counting death process
 # ---------------------------------------------------------------------------
+
 
 class TestLineageRateMatrix:
     def test_shape(self):
@@ -210,6 +305,7 @@ class TestPropagateLineages:
 # SFS weights
 # ---------------------------------------------------------------------------
 
+
 class TestSfsWeights:
     def test_shape(self):
         w = _sfs_weights(5)
@@ -248,6 +344,7 @@ class TestSfsWeights:
 # Observation encoding
 # ---------------------------------------------------------------------------
 
+
 class TestEncodeObs:
     def test_missing(self):
         assert encode_obs(-1, -1, 10) == 22
@@ -271,6 +368,7 @@ class TestEncodeObs:
 # ---------------------------------------------------------------------------
 # CSFS (emission matrix)
 # ---------------------------------------------------------------------------
+
 
 class TestCSFS:
     @pytest.fixture
@@ -354,6 +452,9 @@ class TestCSFS:
         script = """
 import json
 import numpy as np
+if not hasattr(np, "VisibleDeprecationWarning"):
+    from numpy.exceptions import VisibleDeprecationWarning
+    np.VisibleDeprecationWarning = VisibleDeprecationWarning
 from smcpp.model import PiecewiseModel
 from smcpp import _smcpp
 t=np.array([0.0,0.5,1.5,3.0], dtype=float)
@@ -361,7 +462,8 @@ eta=np.array([1.0,2.0,1.5], dtype=float)
 model=PiecewiseModel(eta, np.diff(t), 0.5, None)
 out=[]
 for k in range(len(eta)):
-    out.append(np.asarray(_smcpp.raw_sfs(model, 5, float(t[k]), float(t[k+1])), dtype=float).tolist())
+    raw = _smcpp.raw_sfs(model, 5, float(t[k]), float(t[k+1]))
+    out.append(np.asarray(raw, dtype=float).tolist())
 print(json.dumps(out))
 """
         proc = subprocess.run(
@@ -392,9 +494,7 @@ class TestExactAfterT:
         w = _sfs_weights(n_undist)
         p_at_T = np.array([0.0, 1.0, 0.0])  # exactly j=2 lineages at T
 
-        p_init = _initial_after_t_distribution(
-            p_at_T, n_undist, states, state_index, w
-        )
+        p_init = _initial_after_t_distribution(p_at_T, n_undist, states, state_index, w)
 
         assert np.isclose(p_init[state_index[(2, 2)]], 0.5)
         assert np.isclose(p_init[state_index[(2, 3)]], 0.5)
@@ -418,17 +518,19 @@ class TestExactAfterT:
 
 class TestOnePopPreprocessing:
     def test_preprocessing_preserves_sample_size_for_legacy_triplets(self):
-        records = [{
-            "name": "synthetic",
-            "n_undist": 5,
-            "n_distinguished": 2,
-            "observations": [
-                (1500, 0, 0),
-                (1, 1, 2),
-                (900, 0, 0),
-                (1, 0, 3),
-            ],
-        }]
+        records = [
+            {
+                "name": "synthetic",
+                "n_undist": 5,
+                "n_distinguished": 2,
+                "observations": [
+                    (1500, 0, 0),
+                    (1, 1, 2),
+                    (900, 0, 0),
+                    (1, 0, 3),
+                ],
+            }
+        ]
 
         processed = _preprocess_onepop_records(records, n_undist=5)
 
@@ -471,6 +573,7 @@ class TestOnePopPreprocessing:
 # ---------------------------------------------------------------------------
 # Transition matrix
 # ---------------------------------------------------------------------------
+
 
 class TestTransition:
     def test_shape(self):
@@ -546,7 +649,9 @@ class TestPsmcStyleTransition:
         n_undist = 5
         t = np.array([0.0, 0.15, 0.55, 1.25], dtype=np.float64)
         eta = np.array([1.0, 1.2, 0.9], dtype=np.float64)
-        hidden_states = np.array([0.0, 0.08, 0.18, 0.30, 0.46, 0.68, 1.05, np.inf], dtype=np.float64)
+        hidden_states = np.array(
+            [0.0, 0.08, 0.18, 0.30, 0.46, 0.68, 1.05, np.inf], dtype=np.float64
+        )
 
         hp = compute_hmm_params(
             eta,
@@ -572,7 +677,9 @@ class TestPsmcStyleTransition:
         reason="Upstream SMC++ side environment not available",
     )
     def test_two_distinguished_transition_matches_upstream(self):
-        t = np.array([0.0, 0.08381274920658673, 0.3042668234667235, 0.6811355526388657], dtype=np.float64)
+        t = np.array(
+            [0.0, 0.08381274920658673, 0.3042668234667235, 0.6811355526388657], dtype=np.float64
+        )
         eta = np.array([1766.54216941, 1741.82971868, 1734.69034739], dtype=np.float64) / 8000.0
         hidden_states = np.array(
             [
@@ -599,11 +706,18 @@ class TestPsmcStyleTransition:
         script = """
 import json
 import numpy as np
+if not hasattr(np, "VisibleDeprecationWarning"):
+    from numpy.exceptions import VisibleDeprecationWarning
+    np.VisibleDeprecationWarning = VisibleDeprecationWarning
 from smcpp import _smcpp, model, spline
 obs = [np.array([[1, 0, 0, 5]], dtype=np.int32)]
 t = np.array([0.0, 0.08381274920658673, 0.3042668234667235, 0.6811355526388657], dtype=float)
 eta = np.array([1766.54216941, 1741.82971868, 1734.69034739], dtype=float) / 8000.0
-hs = np.array([0.0, 0.08381274920658673, 0.18294219146177287, 0.3042668234667235, 0.46068147837872525, 0.6811355526388657, 1.0580042818110085, np.inf], dtype=float)
+hs = np.array([
+    0.0, 0.08381274920658673, 0.18294219146177287,
+    0.3042668234667235, 0.46068147837872525,
+    0.6811355526388657, 1.0580042818110085, np.inf,
+], dtype=float)
 im = _smcpp.PyOnePopInferenceManager(5, obs, hs, ('pop1',), 0.0)
 m = model.SMCModel(t[1:], 4000.0, spline.Piecewise, 'pop1')
 m[:] = np.log(eta)
@@ -639,7 +753,9 @@ print(json.dumps({
         reason="Upstream SMC++ side environment not available",
     )
     def test_two_distinguished_expectation_stats_match_upstream(self):
-        t = np.array([0.0, 0.08381274920658673, 0.3042668234667235, 0.6811355526388657], dtype=np.float64)
+        t = np.array(
+            [0.0, 0.08381274920658673, 0.3042668234667235, 0.6811355526388657], dtype=np.float64
+        )
         eta = np.array([1766.54216941, 1741.82971868, 1734.69034739], dtype=np.float64) / 8000.0
         hidden_states = np.array(
             [
@@ -662,7 +778,12 @@ print(json.dumps({
             (4999, 0, 0),
             (1, 2, 4),
         ]
-        record = {"name": "synthetic2", "observations": observations, "n_undist": 5, "n_distinguished": 2}
+        record = {
+            "name": "synthetic2",
+            "observations": observations,
+            "n_undist": 5,
+            "n_distinguished": 2,
+        }
 
         hp = compute_hmm_params(
             eta,
@@ -689,9 +810,19 @@ print(json.dumps({
         script = """
 import json
 import numpy as np
+if not hasattr(np, "VisibleDeprecationWarning"):
+    from numpy.exceptions import VisibleDeprecationWarning
+    np.VisibleDeprecationWarning = VisibleDeprecationWarning
 from smcpp import _smcpp, model, spline
-obs = [np.array([[4999,0,0,5],[1,0,0,5],[4999,0,0,5],[1,1,2,5],[4999,0,0,5],[1,2,4,5]], dtype=np.int32)]
-hs = np.array([0.0,0.08381274920658673,0.18294219146177287,0.3042668234667235,0.46068147837872525,0.6811355526388657,1.0580042818110085,np.inf], dtype=float)
+obs = [np.array([
+    [4999,0,0,5], [1,0,0,5], [4999,0,0,5],
+    [1,1,2,5], [4999,0,0,5], [1,2,4,5],
+], dtype=np.int32)]
+hs = np.array([
+    0.0, 0.08381274920658673, 0.18294219146177287,
+    0.3042668234667235, 0.46068147837872525,
+    0.6811355526388657, 1.0580042818110085, np.inf,
+], dtype=float)
 t = np.array([0.0,0.08381274920658673,0.3042668234667235,0.6811355526388657], dtype=float)
 eta = np.array([1766.54216941,1741.82971868,1734.69034739], dtype=float) / 8000.0
 im = _smcpp.PyOnePopInferenceManager(5, obs, hs, ('pop1',), 0.0)
@@ -704,7 +835,10 @@ im.alpha = 1
 im.E_step(True)
 print(json.dumps({
     "gamma0": np.asarray(im.gammas[0][:,0], dtype=float).tolist(),
-    "gamma_sums": {str(key): np.asarray(val, dtype=float).tolist() for key, val in im.gamma_sums[0].items()},
+    "gamma_sums": {
+        str(key): np.asarray(val, dtype=float).tolist()
+        for key, val in im.gamma_sums[0].items()
+    },
     "xisum": np.asarray(im.xisums[0], dtype=float).tolist(),
     "q": float(-im.Q() + 10.0 * m.regularizer()),
 }))
@@ -718,7 +852,9 @@ print(json.dumps({
         )
         upstream = json.loads(proc.stdout)
 
-        np.testing.assert_allclose(native.gamma0, np.asarray(upstream["gamma0"]), rtol=0.04, atol=1e-6)
+        np.testing.assert_allclose(
+            native.gamma0, np.asarray(upstream["gamma0"]), rtol=0.04, atol=1e-6
+        )
 
         for key, vec in upstream["gamma_sums"].items():
             a_obs, b_obs, _ = eval(key)
@@ -739,6 +875,7 @@ print(json.dumps({
 # ---------------------------------------------------------------------------
 # Forward/backward with spans
 # ---------------------------------------------------------------------------
+
 
 class TestForwardSpans:
     @pytest.fixture
@@ -810,6 +947,7 @@ class TestBackwardSpans:
 # Full HMM params
 # ---------------------------------------------------------------------------
 
+
 class TestComputeHmmParams:
     def test_creates_valid_params(self):
         K = 8
@@ -834,98 +972,75 @@ class TestComputeHmmParams:
 # End-to-end: smcpp()
 # ---------------------------------------------------------------------------
 
+
 class TestSmcppEndToEnd:
-    @pytest.mark.slow
-    def test_synthetic_constant_population(self):
-        """Run SMC++ on synthetic data from a constant-size population."""
+    @pytest.mark.parametrize("implementation", ["native", "upstream", "auto"])
+    def test_rejects_non_upstream_one_distinguished_workflow(self, implementation):
+        """The inaccurate historical surrogate must not enter production inference."""
         from smckit._core import SmcData
         from smckit.tl._smcpp import smcpp
 
         n_undist = 5
-        rng = np.random.default_rng(42)
-
-        # Generate synthetic observations: mostly monomorphic with rare variants
-        observations = []
-        for _ in range(200):
-            span = rng.geometric(0.001)  # ~1000 bp monomorphic runs
-            observations.append((int(span), 0, 0))
-            a = rng.integers(0, 2)
-            if a == 0:
-                b = rng.integers(1, n_undist + 1)
-            else:
-                b = rng.integers(0, n_undist + 1)
-            observations.append((1, int(a), int(b)))
-
         data = SmcData(
             uns={
-                "records": [{"name": "synthetic", "observations": observations, "n_distinguished": 1}],
+                "records": [
+                    {
+                        "name": "synthetic",
+                        "observations": [(100, 0, 0), (1, 1, 0)],
+                        "n_distinguished": 1,
+                    }
+                ],
                 "n_undist": n_undist,
                 "n_distinguished": 1,
             },
         )
 
-        result = smcpp(
-            data,
-            n_intervals=8,
-            max_t=10.0,
-            max_iterations=5,
-            regularization=10.0,
-            seed=42,
-            backend="native",
-        )
+        with pytest.raises(ValueError, match="exactly two distinguished lineages"):
+            smcpp(data, max_iterations=1, implementation=implementation)
 
-        assert "smcpp" in result.results
-        r = result.results["smcpp"]
-        assert r["ne"].ndim == 1
-        assert r["ne"].shape == (r["n_intervals"],)
-        assert all(r["ne"] > 0)
-        assert np.isfinite(r["log_likelihood"])
-        assert r["n_undist"] == n_undist
-        assert r["n_distinguished"] == 1
+    def test_missing_observations_do_not_count_toward_watterson_theta(self):
+        records = [
+            {
+                "name": "synthetic",
+                "observations": [(10, 0, 0), (5, -1, -1), (1, 0, 1)],
+            }
+        ]
+        harmonic = np.log(6) + 0.5 / 6 + 0.57721
+        expected_theta = 1.0 / (10 * harmonic + harmonic)
+        assert np.isclose(_watterson_theta(records, default_n_undist=5), expected_theta)
 
-    @pytest.mark.slow
-    def test_missing_observations_do_not_count_toward_theta(self):
+    def test_rejects_inconsistent_record_distinguished_metadata(self):
         from smckit._core import SmcData
         from smckit.tl._smcpp import smcpp
 
         data = SmcData(
             uns={
-                "records": [{
-                    "name": "synthetic",
-                    "observations": [
-                        (10, 0, 0),
-                        (5, -1, -1),
-                        (1, 0, 1),
-                    ],
-                }],
+                "records": [
+                    {
+                        "name": "inconsistent",
+                        "observations": [(100, 0, 0)],
+                        "n_distinguished": 1,
+                    }
+                ],
                 "n_undist": 5,
-                "n_distinguished": 1,
-            },
+                "n_distinguished": 2,
+            }
         )
-
-        result = smcpp(
-            data,
-            n_intervals=4,
-            max_t=5.0,
-            max_iterations=1,
-            regularization=1.0,
-            seed=42,
-            backend="native",
-        )
-
-        expected_theta = 1.0 / (10 * (np.log(6) + 0.5 / 6 + 0.57721) + (np.log(6) + 0.5 / 6 + 0.57721))
-        assert np.isclose(result.results["smcpp"]["theta"], expected_theta)
+        with pytest.raises(ValueError, match="exactly two distinguished lineages"):
+            smcpp(data, max_iterations=1, implementation="native")
 
     def test_watterson_theta_matches_upstream_rowwise_formula(self):
-        records = [{
-            "n_undist": 5,
-            "observations": [
-                (10, 0, 0),
-                (3, -1, -1),
-                (2, 1, 0),
-                (4, 0, 2),
-            ],
-        }]
+        records = [
+            {
+                "n_undist": 5,
+                "observations": [
+                    (10, 0, 0),
+                    (3, -1, -1),
+                    (2, 1, 0),
+                    (4, 0, 2),
+                ],
+            }
+        ]
 
         theta = _watterson_theta(records)
         h = np.log(6) + 0.5 / 6 + 0.57721

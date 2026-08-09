@@ -17,7 +17,8 @@ This page preserves the deeper implementation notes needed for parity work.
 - Conditioned site frequency spectrum (CSFS) emissions
 - Piecewise demographic parameters over a fixed interval grid
 - Upstream one-pop preprocessing plus EM/coordinate-update optimization
-- A legacy one-distinguished native path that is now compatibility-only
+- Low-level one-distinguished research kernels retained outside the production
+  inference contract
 
 ## Porting hotspots
 
@@ -63,8 +64,10 @@ This page preserves the deeper implementation notes needed for parity work.
   does not automatically prove parity for future untracked SMC++ input shapes.
 - The larger tracked `.smc` fixture remains in the docs gallery as the more
   realistic one-pop parity panel.
-- The expensive legacy one-distinguished truth tests still exist for explicit
-  compatibility checks; they are no longer the default native ceremony.
+- Production inference rejects the historical one-distinguished surrogate. It
+  is not an upstream SMC++ capability and failed constant-size simulation
+  validation. The production simulation gate now exercises the genuine
+  two-distinguished workflow once and shares that fit across its assertions.
 
 ## Upstream bridge notes
 

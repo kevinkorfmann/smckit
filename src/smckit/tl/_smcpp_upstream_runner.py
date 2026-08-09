@@ -6,15 +6,47 @@ SMC++ environment, not by the main smckit interpreter.
 
 from __future__ import annotations
 
+import importlib.metadata
 import inspect
 import json
 import os
 import sys
 import textwrap
+import types
 from argparse import Namespace
 from pathlib import Path
 
 import numpy as np
+
+
+def _patch_numpy_compatibility() -> None:
+    """Restore the warning alias expected by the pinned SMC++ release."""
+    if not hasattr(np, "VisibleDeprecationWarning"):
+        from numpy.exceptions import VisibleDeprecationWarning
+
+        np.VisibleDeprecationWarning = VisibleDeprecationWarning
+
+
+def _patch_packaging_compatibility() -> None:
+    """Provide the tiny ``pkg_resources`` surface used for version lookup."""
+    try:
+        import pkg_resources  # noqa: F401
+    except ModuleNotFoundError:
+        module = types.ModuleType("pkg_resources")
+
+        class DistributionNotFound(Exception):
+            pass
+
+        def get_distribution(name: str):
+            try:
+                version = importlib.metadata.version(name)
+            except importlib.metadata.PackageNotFoundError as exc:
+                raise DistributionNotFound(name) from exc
+            return types.SimpleNamespace(version=version)
+
+        module.DistributionNotFound = DistributionNotFound
+        module.get_distribution = get_distribution
+        sys.modules["pkg_resources"] = module
 
 
 def _patch_parallel_filters() -> None:
@@ -48,6 +80,45 @@ def _patch_bspline_alignment() -> None:
     namespace = dict(vars(bspline))
     exec(compile(source.replace(unsafe, safe), bspline.__file__, "exec"), namespace)
     bspline._align = namespace["_align"]
+
+
+def _patch_analysis_scalar_compatibility() -> None:
+    """Keep one-pop analysis construction working with NumPy 2.
+
+    The pinned analysis stores the one-pop sample count as a one-element NumPy
+    array and historically relied on NumPy's implicit array-to-scalar
+    conversion when passing it to the Cython ``int`` argument.  NumPy 2 rejects
+    that conversion.  Convert the same single value explicitly without
+    changing the upstream inference path or its numerical inputs.
+    """
+    import smcpp.analysis.base as analysis_base
+
+    source = textwrap.dedent(
+        inspect.getsource(analysis_base.BaseAnalysis._init_inference_manager)
+    )
+    unsafe = (
+        "im = _smcpp.PyOnePopInferenceManager("
+        "max_n[pid], data, hs[pid[0]], pid, polarization_error)"
+    )
+    safe = (
+        "im = _smcpp.PyOnePopInferenceManager("
+        "int(np.asarray(max_n[pid]).reshape(-1)[0]), "
+        "data, hs[pid[0]], pid, polarization_error)"
+    )
+    if source.count(unsafe) != 1:
+        raise RuntimeError("Pinned SMC++ one-pop analysis source has changed.")
+    namespace = dict(vars(analysis_base))
+    exec(
+        compile(
+            source.replace(unsafe, safe),
+            analysis_base.__file__,
+            "exec",
+        ),
+        namespace,
+    )
+    analysis_base.BaseAnalysis._init_inference_manager = namespace[
+        "_init_inference_manager"
+    ]
 
 
 def _to_stepwise_ne(model) -> list[float]:
@@ -441,6 +512,84 @@ def _split_result(analysis, payload: dict) -> dict:
     }
 
 
+def _split_fixed_stats(analysis, payload: dict) -> dict:
+    """Evaluate preserved split emissions at a caller-specified fixed model."""
+    from smcpp import _smcpp
+
+    model = analysis.model
+    log_scale = float(payload["fixed_log_scale"])
+    model.model1[:] = np.asarray(model.model1[:], dtype=float) + log_scale
+    model.model2[:] = np.asarray(model.model2[:], dtype=float) + log_scale
+    model.split = float(payload["fixed_split"])
+    analysis.E_step()
+    contig = next(contig for contig in analysis.contigs if contig.npop == 2)
+    raw = np.asarray(
+        _smcpp.joint_csfs(
+            int(contig.n[0]),
+            int(contig.n[1]),
+            int(contig.a[0]),
+            int(contig.a[1]),
+            model,
+            [0.0, np.inf],
+            10,
+        )[0],
+        dtype=float,
+    )
+    return {
+        "split": float(model.split),
+        "shared_log_scale": log_scale,
+        "theta": float(analysis._theta),
+        "model": model.to_dict(),
+        "raw_joint_csfs": raw.tolist(),
+        "log_likelihood": float(analysis.loglik(reg=False)),
+        "q": float(analysis.Q()),
+        "components": {
+            "|".join(map(str, pid)): {
+                "log_likelihood": float(manager.loglik()),
+                "pi": np.asarray(manager.pi, dtype=float).tolist(),
+                "transition": np.asarray(manager.transition, dtype=float).tolist(),
+                "emission": np.asarray(manager.emission, dtype=float).tolist(),
+            }
+            for pid, manager in analysis._ims.items()
+        },
+        "emission_probabilities": {
+            ",".join(map(str, key)): np.asarray(value, dtype=float).tolist()
+            for manager in analysis._ims.values()
+            for key, value in manager.emission_probs.items()
+        },
+    }
+
+
+def _split_ordered_fit(analysis, payload: dict) -> dict:
+    """Run preserved split coordinate plugins in an explicit oracle order."""
+    plugins = {
+        type(plugin).__name__: plugin
+        for plugin in analysis._optimizer._plugins
+        if type(plugin).__name__ in {"ScaleOptimizer", "ParameterOptimizer"}
+    }
+    expected = {"ScaleOptimizer", "ParameterOptimizer"}
+    if set(plugins) != expected:
+        raise RuntimeError("Pinned SMC++ split optimizer plugins have changed.")
+    order = list(payload["coordinate_order"])
+    if sorted(order) != sorted(expected):
+        raise ValueError("coordinate_order must contain scale and parameter plugins once.")
+
+    analysis.E_step()
+    kwargs = {
+        "i": 0,
+        "niter": 1,
+        "analysis": analysis,
+        "model": analysis.model,
+        "optimizer": analysis._optimizer,
+    }
+    for name in order:
+        plugins[name].update("pre M-step", **kwargs)
+    analysis.E_step()
+    result = _split_result(analysis, payload)
+    result["coordinate_order"] = order
+    return result
+
+
 def _joint_csfs_oracle(payload: dict) -> dict:
     """Return the preserved upstream raw joint-CSFS tensor for one interval."""
     from smcpp import _smcpp
@@ -486,8 +635,17 @@ def main(argv: list[str]) -> int:
     payload = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
     os.makedirs(Path(payload["output_json"]).parent, exist_ok=True)
 
+    _patch_numpy_compatibility()
+    _patch_packaging_compatibility()
     _patch_parallel_filters()
-    if payload.get("mode") in {"joint_csfs_oracle", "model_stepwise_oracle", "split"}:
+    _patch_analysis_scalar_compatibility()
+    if payload.get("mode") in {
+        "joint_csfs_oracle",
+        "model_stepwise_oracle",
+        "split",
+        "split_fixed_stats",
+        "split_ordered_fit",
+    }:
         _patch_bspline_alignment()
 
     if payload["seed"] is not None:
@@ -504,7 +662,11 @@ def main(argv: list[str]) -> int:
 
     from smcpp.analysis.analysis import Analysis
 
-    split_mode = payload.get("mode") == "split"
+    split_mode = payload.get("mode") in {
+        "split",
+        "split_fixed_stats",
+        "split_ordered_fit",
+    }
     split_mu = float(payload["mu"])
     if split_mode:
         marginal = json.loads(Path(payload["pop1"]).read_text(encoding="utf-8"))
@@ -546,6 +708,14 @@ def main(argv: list[str]) -> int:
         from smcpp.analysis.split import SplitAnalysis
 
         analysis = SplitAnalysis(payload["input_paths"], args)
+        if payload.get("mode") == "split_fixed_stats":
+            result = _split_fixed_stats(analysis, payload)
+            Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
+            return 0
+        if payload.get("mode") == "split_ordered_fit":
+            result = _split_ordered_fit(analysis, payload)
+            Path(payload["output_json"]).write_text(json.dumps(result), encoding="utf-8")
+            return 0
         analysis.run()
         # Upstream performs its scale and split updates after the sole E-step.
         # Refresh once so the normalized likelihood and emission diagnostics

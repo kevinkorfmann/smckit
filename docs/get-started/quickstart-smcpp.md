@@ -14,11 +14,10 @@ Packaged example:
 
 - installed path: `smckit.io.example_path("smcpp/example.smc.gz")`
 
-When the input file lacks an SMC++ header, smckit now assumes the upstream
-one-pop layout with two distinguished haplotypes. If you need the legacy
-one-distinguished native path for comparison work, set
-`data.uns["n_distinguished"] = 1` explicitly before calling
-{func}`smckit.tl.smcpp`.
+When the input file lacks an SMC++ header, smckit assumes the upstream one-pop
+layout with two distinguished haplotypes. Production inference rejects the
+historical one-distinguished native surrogate because it is not an upstream
+SMC++ capability and did not pass simulation validation.
 
 ## Run SMC++
 

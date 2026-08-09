@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated": "2026-07-29",
-  "statuses": ["native", "native_unpromoted", "external", "upstream_only", "blocked", "obsolete"],
+  "updated": "2026-08-08",
+  "statuses": ["planned", "native", "native_unpromoted", "external", "upstream_only", "blocked", "obsolete"],
   "methods": {
     "psmc": {
       "wave": "A",
@@ -85,6 +85,7 @@
       "wave": "C",
       "features": {
         "one_population_smc_input": "native",
+        "one_distinguished_native_surrogate": "obsolete",
         "vcf_to_smc_preparation": "native",
         "masks_and_compressed_inputs": "native",
         "multi_population_input_preservation": "native",
@@ -120,6 +121,40 @@
         "normalized_artifacts": "external",
         "plotting_and_export": "external",
         "native_rewrite": "obsolete"
+      }
+    },
+    "psmcplus": {
+      "wave": "modern",
+      "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae",
+      "source_archive_sha256": "91bcc572ad59e1c9f14d01552bb915e13a051f1c827a2f6493e89b13d038685b",
+      "paper_status": "bioRxiv_preprint",
+      "features": {
+        "immutable_upstream_source": "planned",
+        "exact_raw_cli": "planned",
+        "multihetsep_single_and_multi_file": "planned",
+        "mutation_rate_maps": "planned",
+        "recombination_rate_maps": "planned",
+        "rate_map_downsampling": "planned",
+        "demographic_fitting": "planned",
+        "posterior_decoding": "planned",
+        "posterior_downsampling": "planned",
+        "marginal_recombination_output": "planned",
+        "binning": "planned",
+        "time_window_and_boundary_controls": "planned",
+        "explicit_and_empirical_theta": "planned",
+        "fixed_and_estimated_recombination": "planned",
+        "lambda_initialization": "planned",
+        "grouped_free_and_fixed_intervals": "planned",
+        "parameter_bounds": "planned",
+        "optimizer_and_tolerance_controls": "planned",
+        "transition_and_emission_approximations": "planned",
+        "iteration_and_convergence_controls": "planned",
+        "parallel_execution": "planned",
+        "iteration_and_final_artifacts": "planned",
+        "normalized_result_schema": "planned",
+        "native_implementation": "planned",
+        "parity_oracles": "planned",
+        "performance_promotion": "planned"
       }
     }
   }

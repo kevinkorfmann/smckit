@@ -17,13 +17,32 @@ smckit:
 
 The tracked clean-split contract additionally covers:
 
-- two populations with one distinguished lineage in each
+- two populations with distinguished allocations `(2, 0)`, `(1, 1)`, and the
+  public reversed-order form `(0, 2)`
 - a deterministic expected joint SFS and resulting joint-CSFS emissions
+- fully observed, downsampled, missing-distinguished, and reduced observations
 - the shared marginal-history scale coordinate followed by split-time fitting
 - Piecewise, CubicSpline, PChipSpline, AkimaSpline, and BSpline histories
 
 These are enforced fixtures, not a blanket claim about every possible future
 SMC++ input family.
+
+### Production distinguished-lineage contract
+
+Upstream one-population SMC++ requires exactly two distinguished lineages. An
+older smckit-only one-distinguished surrogate was never part of the upstream
+capability surface and produced a materially biased constant-size simulation
+trajectory. The production `smcpp()` API now validates top-level and per-record
+metadata and rejects that surrogate for `native`, `upstream`, and `auto` before
+runtime selection. Its low-level kernels remain available for research and
+historical diagnosis but are classified as obsolete in the feature ledger.
+
+The replacement simulation gate uses two distinguished and ten
+undistinguished haplotypes from a 10 Mb, 12-haplotype msprime simulation. It
+checks the upstream scale convention, optimizer success and finite likelihood,
+the result scaling identity, and that every inferred interval lies within tenfold
+of the constant-size truth. The three assertions share one fit and passed in the
+controlled one-thread Sesame environment in 998.14 seconds.
 
 ## Final state
 
@@ -46,6 +65,14 @@ split (`5.526022037850897e-06`) and shared log scale
 preserved estimator to about `1.5e-3` or better; the residual is expected
 because upstream averages Monte-Carlo histories while native evaluates the
 expectation deterministically.
+
+The expanded fixed-stat oracle also compares the emission probability actually
+used by the upstream inference manager for `(2, 0)` and `(1, 1)` across full,
+downsampled, missing-distinguished, reduced-monomorphic, and
+reduced-heterozygous observations. The focused native suite and the complete
+split-oracle file passed on Linux x86-64 in the controlled Sesame environment.
+This is method-specific closure evidence, not yet the broad regression and
+performance evidence required for promotion.
 
 ## Two-population clean-split closure
 
@@ -70,6 +97,60 @@ NumPy comparison. A narrowly scoped upstream-runner compatibility shim retains
 the original alignment algorithm on modern NumPy without changing vendored
 source. Native spline evaluation is independent and has an oracle test for
 every supported spline class.
+
+### Missing, downsampled, and reduced observations
+
+The upstream two-population emission path does not use a simple allele-count
+lookup when observations omit lineages or distinguish fewer alleles than the
+model. Native now independently reproduces its probability semantics in this
+order:
+
+1. expand compatible states for missing distinguished lineages;
+2. condition compatible full-sample states with exact hypergeometric weights;
+3. recode the globally fixed-derived state to the ancestral monomorphic state;
+4. apply the polarization transform;
+5. remove the final fully derived representation; and
+6. normalize the remaining observation weights.
+
+Changing that order produces a measurable per-site likelihood error. Applying
+the full mapping closes the earlier missing/downsampled gap and is checked
+against the upstream manager's final emission probabilities rather than a
+separate Monte-Carlo joint-CSFS draw.
+
+Reduced observations contain only the two distinguished lineages. Their
+emission is computed from expected pairwise coalescence time: same-population
+lineages follow the relevant marginal history, whereas separated lineages
+cannot coalesce before the split and then follow the common ancestral history.
+Fully missing reduced observations have probability one.
+
+### Population-order canonicalization
+
+Upstream data loading canonicalizes `(0, 2)` to `(2, 0)`, although direct
+joint-CSFS construction does not accept `(0, 2)`. Native uses the same internal
+canonical form for the numerical problem while swapping observations, sample
+sizes, and marginal models together. It then maps models, populations, and
+result metadata back to the caller's order. A full native split regression test
+checks that reversed input order preserves the public result meaning.
+
+### Transition, structural-floor, and optimizer details
+
+Split likelihoods include upstream's one-state transition factor and `1e-5`
+transition smoothing. Structural emission zeros use the upstream `1e-10`
+floor after monomorphic mass is assigned; the tensor is not renormalized after
+that floor, so its total can exceed one by a microscopic amount.
+
+Upstream scale and split optimizer plugins are stored in a `weakref.WeakSet`,
+so their coordinate order is not guaranteed. Preserved execution retains that
+behavior. The oracle runner can request an explicit order for diagnosis, but
+the ordinary upstream path must not silently substitute it. Native uses a
+documented deterministic scale-then-split order.
+
+The inference manager uses a `K=10` Monte-Carlo joint-CSFS realization. A
+later direct diagnostic call consumes another realization, so those two raw
+tensors cannot be treated as the same oracle value. Exact native mathematics
+is compared with a high-`K` upstream diagnostic where raw joint-CSFS accuracy
+is the question, and with the manager's own final emission probabilities where
+runtime observation mapping is the question.
 
 ## What was actually wrong
 

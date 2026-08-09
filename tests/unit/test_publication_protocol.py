@@ -27,6 +27,16 @@ def test_protocol_is_valid_and_deterministic(tmp_path) -> None:
     assert first["config"]["replicates"] == 20
 
 
+def test_protocol_refuses_to_overwrite_immutable_record(tmp_path) -> None:
+    output = tmp_path / "protocol.json"
+    output.write_text("original\n")
+
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        MODULE.freeze_protocol(CONFIG, output)
+
+    assert output.read_text() == "original\n"
+
+
 def test_protocol_rejects_missing_scenario(tmp_path) -> None:
     config = yaml.safe_load(CONFIG.read_text())
     config["scenarios"].remove("structure")

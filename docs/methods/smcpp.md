@@ -44,8 +44,10 @@ smckit now ships a tiny packaged quickstart fixture:
 - `smckit.io.example_path("smcpp/example.smc.gz")`
 
 If the file does not contain an SMC++ header, smckit now defaults to the
-upstream one-pop assumption of two distinguished haplotypes rather than the
-older one-distinguished surrogate path.
+upstream one-pop assumption of two distinguished haplotypes. Production
+inference requires exactly two: the historical one-distinguished native
+surrogate was not an upstream capability and is rejected because it did not
+pass simulation validation.
 
 ## Recommended starting call
 

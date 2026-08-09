@@ -45,6 +45,33 @@ algorithmic execution, and plotting are timed separately. Native promotion
 requires a warmed-runtime bootstrap confidence interval excluding parity and
 peak memory at most 25% above upstream.
 
+### Benchmark measurement contract
+
+`workflow/publication/scripts/run_benchmark.py` has two explicit modes:
+
+- The default mode measures complete fresh processes. It is suitable for CLI,
+  installation, startup, and end-to-end latency evidence. Every repetition is
+  labeled `fresh_process`, and the resulting record is not eligible for a
+  native-default promotion assessment.
+- `--persistent-jsonl` starts one initialized worker. Startup is recorded
+  separately; each repetition has a separately recorded, untimed fixture
+  preparation phase; the first inference call is `cold`; and subsequent calls
+  are `warm` calls in that same process. Only this mode is accepted by the
+  publication aggregator for a performance-promotion decision.
+
+Persistent workers use a small JSON-lines protocol on standard input/output:
+`ready`, then paired `prepare`/`prepared` and `run`/`result` messages for every
+repetition, followed by `close`/`closed`. Standard error is captured and
+hashed. Runtime measurements include result normalization and protocol response
+serialization but exclude input parsing and fixture copying. Peak RSS includes
+the worker and its recursive child processes, so preserved upstream bridges are
+not allowed to hide their memory cost.
+
+Every benchmark record names its `measurement_component`. Native and upstream
+records are compared only when protocol ID, method, dataset, component, thread
+count, and platform match. Cold and startup measurements are reported but do
+not enter the warmed promotion confidence interval.
+
 ## Required edge cases
 
 Acceptance covers every documented example and option, malformed and missing

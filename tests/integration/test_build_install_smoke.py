@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.slow
-def test_uv_built_wheel_installs_and_runs_packaged_native_psmc(tmp_path: Path) -> None:
+def test_uv_built_wheel_installs_and_runs_packaged_native_quickstarts(tmp_path: Path) -> None:
     if shutil.which("uv") is None:
         pytest.skip("uv is not installed")
 
@@ -39,6 +40,11 @@ def test_uv_built_wheel_installs_and_runs_packaged_native_psmc(tmp_path: Path) -
         env=env,
     )
     wheel = next(dist_dir.glob("smckit-*.whl"))
+    with zipfile.ZipFile(wheel) as archive:
+        packaged = set(archive.namelist())
+    assert "smckit/__init__.py" in packaged
+    assert "smckit/tl/_smcpp.py" in packaged
+    assert "smckit/data/examples/smcpp/example.smc.gz" in packaged
 
     venv_dir = tmp_path / "venv"
     subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True, cwd=ROOT)
@@ -67,5 +73,17 @@ with warnings.catch_warnings(record=True) as caught:
     data = smckit.tl.psmc(data, implementation="native", n_iterations=2, seed=1)
     assert data.results["psmc"]["implementation"] == "native"
     assert not any(isinstance(item.message, NativeTrustWarning) for item in caught)
+
+smcpp_example = smckit.io.example_path("smcpp/example.smc.gz")
+smcpp_data = smckit.io.read_smcpp_input(smcpp_example)
+smcpp_data = smckit.tl.smcpp(
+    smcpp_data,
+    implementation="native",
+    n_intervals=2,
+    max_iterations=0,
+    regularization=10.0,
+)
+assert smcpp_data.results["smcpp"]["implementation"] == "native"
+assert smcpp_data.results["smcpp"]["n_distinguished"] == 2
 """ % str(run_dir)
     subprocess.run([str(python), "-c", script], check=True, cwd=ROOT, env=env)
