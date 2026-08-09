@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "canonical_source_commit": "95d983d10c4a2f8d9fb6345d133c7d3c4a714d8e",
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "execution_host": "ist-0153.vpn.private.upenn.edu",
+  "execution_threads": 1,
+  "platform": {
+    "system": "Darwin 25.2.0",
+    "machine": "arm64",
+    "cpu": "Apple M3 Pro",
+    "memory_bytes": 19327352832
+  },
+  "runtime": {
+    "python": "3.12.11",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "msprime": "1.4.1",
+    "psutil": "7.2.2",
+    "smckit": "0.0.1b2",
+    "java": "OpenJDK 25.0.2 Homebrew"
+  },
+  "source_sha256": {
+    "src/smckit/tl/_dical2.py": "3817cbbc01c8f3fc899d889545107c5d67c86862ff2333f9903c1230454d5a83",
+    "workflow/publication/scripts/benchmark_dical2_growth.py": "0cbc8d01a35f5bfa89398190e0f7e49684821601d98b498b1a8797e0184717e2",
+    "vendor/diCal2/diCal2.jar": "edd72b7eaee65e8b2e12fdcc3200217a81983c50a1bded828395915dc77acfaf",
+    "vendor/diCal2/examples/expGrowth/mutRec.param": "69b0c99c1c960e7cc16636a190b188d4a0da89fee192a1a379c81c428438629d",
+    "vendor/diCal2/examples/expGrowth/exp_growth.demo": "73d83bb46dbb0c7db7c451138d23b1cf6a98e94df2dca4253db0387b5d8cf300",
+    "vendor/diCal2/examples/expGrowth/exp_growth.rates": "f69b3a10b8923353fb07f1b7f395549f5c316953ce38d2815c02ab9a1c2ffb45",
+    "vendor/diCal2/examples/expGrowth/exp_growth.config": "a694ef1d91d43b7a44ba2d9ffb67c8b1ad784fc380e920d2e4db6fd740f3902e"
+  },
+  "fixture_sha256": {
+    "exponential-growth.vcf": "8a2c7d73c869a3995f584679fe8374108f48ca40a5822a1bd248ea54e7e4b231",
+    "exponential-growth.fa": "3ea3f90d0c3e4d2a4c5710dd482d8da64cd4d8f46ad051537bb807874e034f2b"
+  },
+  "benchmark_record_sha256": {
+    "native": "d89ae9068f8289c1128057720be6944f5c1060df50892aa1656fe847d5cdce87",
+    "upstream": "6a8809f2b476471bb06a4a0a6f56b940f2a8423187a1a225f7cf9b2f582cfc08"
+  },
+  "upstream_status": "Tracked immutable repository snapshot; origin commit metadata remains an explicit preservation-audit blocker.",
+  "privacy_note": "No private manuscript, continuation checkpoint, publication/ai-use.md, or excluded publication prose was included."
+}

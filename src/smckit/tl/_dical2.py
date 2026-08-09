@@ -39,7 +39,7 @@ from typing import cast
 
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.linalg import eig
+from scipy.linalg import eig, expm
 from scipy.optimize import minimize
 from scipy.special import logsumexp
 
@@ -54,7 +54,7 @@ from smckit.io._dical2 import (
 )
 from smckit.tl._implementation import (
     annotate_result,
-    choose_implementation,
+    choose_method_implementation,
     method_upstream_available,
     normalize_implementation,
     require_upstream_available,
@@ -1406,6 +1406,11 @@ def _refined_has_growth(refined: RefinedDemography) -> bool:
     return False
 
 
+def _epoch_has_time_dependent_absorption(epoch: DiCal2Epoch) -> bool:
+    """Return whether absorption rates vary inside this finite epoch."""
+    return not np.isinf(epoch.end) and bool(np.any(np.abs(_epoch_growth_rates(epoch)) > EPS))
+
+
 def _refined_has_pulse(refined: RefinedDemography) -> bool:
     if any(refined.is_pulse(i) for i in range(refined.n_refined)):
         return True
@@ -1482,6 +1487,27 @@ def _integrate_transition_matrix(
     if abs(end_time - start_time) < EPS:
         identity = np.eye(2 * n_anc, dtype=np.float64)
         return identity, None
+
+    if end_time < DICAL2_T_INF - EPS and not _epoch_has_time_dependent_absorption(epoch):
+        rate_matrix = _extended_rate_matrix_at_time(
+            epoch,
+            base_absorption_rates,
+            start_time,
+            extra_loss=extra_loss,
+        )
+        transition = np.asarray(
+            expm((float(end_time) - float(start_time)) * rate_matrix),
+            dtype=np.float64,
+        )
+        transition = np.clip(np.real(transition), 0.0, np.inf)
+        if not dense_output:
+            return transition, None
+
+        def constant_solution(time_point: float) -> np.ndarray:
+            elapsed = float(time_point) - float(start_time)
+            return np.asarray(expm(elapsed * rate_matrix), dtype=np.float64).reshape(-1)
+
+        return transition, constant_solution
 
     def deriv(time_point: float, flat_state: np.ndarray) -> np.ndarray:
         state = flat_state.reshape((2 * n_anc, 2 * n_anc))
@@ -1787,20 +1813,29 @@ def _ode_compute_r_epoch(
             y_start[state_space.idx_apart(first_deme, second_deme)] = float(
                 start_reco[first_deme, second_deme]
             )
-    y_end = _solve_time_dependent_probability_ode(
-        y_start,
-        lambda t: _ode_reco_rate_matrix_at_time(
+
+    def rate_matrix_at_time(time_point: float) -> np.ndarray:
+        return _ode_reco_rate_matrix_at_time(
             epoch=epoch,
             base_absorption_rates=base_absorption_rates,
             recombination_rate=recombination_rate,
             state_space=state_space,
             init_pop_sizes=init_pop_sizes,
             smc_prime=smc_prime,
-            time_point=t,
-        ),
-        interval_start,
-        interval_end,
-    )
+            time_point=time_point,
+        )
+
+    if interval_end < DICAL2_T_INF - EPS and not _epoch_has_time_dependent_absorption(epoch):
+        rate_matrix = rate_matrix_at_time(interval_start)
+        y_end = y_start @ expm((float(interval_end) - float(interval_start)) * rate_matrix)
+        y_end = np.clip(np.real(y_end), 0.0, np.inf)
+    else:
+        y_end = _solve_time_dependent_probability_ode(
+            y_start,
+            rate_matrix_at_time,
+            interval_start,
+            interval_end,
+        )
     no_reco = np.zeros(2 * n_demes, dtype=np.float64)
     reco = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
     for end_deme in range(2 * n_demes):
@@ -1867,26 +1902,40 @@ def _ode_compute_mutation_events(
         result[:, 0, :n_demes] = np.asarray(epoch.pulse_migration, dtype=np.float64)
         return result
     state_space = _MutationStateSpace(n_demes)
-    initial = np.eye(state_space.size, dtype=np.float64).reshape(-1)
-
-    def deriv(time_point: float, flat_state: np.ndarray) -> np.ndarray:
-        state = flat_state.reshape((state_space.size, state_space.size))
+    if interval_end < DICAL2_T_INF - EPS and not _epoch_has_time_dependent_absorption(epoch):
         rate_matrix = _ode_mutation_rate_matrix_at_time(
             epoch=epoch,
             base_absorption_rates=base_absorption_rates,
             mutation_rate=mutation_rate,
             state_space=state_space,
-            time_point=time_point,
+            time_point=interval_start,
         )
-        return (state @ rate_matrix).reshape(-1)
+        transition = np.asarray(
+            expm((float(interval_end) - float(interval_start)) * rate_matrix),
+            dtype=np.float64,
+        )
+        transition = np.clip(np.real(transition), 0.0, np.inf)
+    else:
+        initial = np.eye(state_space.size, dtype=np.float64).reshape(-1)
 
-    flat_transition = _solve_time_dependent_ode_system(
-        initial,
-        deriv,
-        interval_start,
-        interval_end,
-    )
-    transition = flat_transition.reshape((state_space.size, state_space.size))
+        def deriv(time_point: float, flat_state: np.ndarray) -> np.ndarray:
+            state = flat_state.reshape((state_space.size, state_space.size))
+            rate_matrix = _ode_mutation_rate_matrix_at_time(
+                epoch=epoch,
+                base_absorption_rates=base_absorption_rates,
+                mutation_rate=mutation_rate,
+                state_space=state_space,
+                time_point=time_point,
+            )
+            return (state @ rate_matrix).reshape(-1)
+
+        flat_transition = _solve_time_dependent_ode_system(
+            initial,
+            deriv,
+            interval_start,
+            interval_end,
+        )
+        transition = flat_transition.reshape((state_space.size, state_space.size))
     result = np.zeros((n_demes, 2, 2 * n_demes), dtype=np.float64)
     for start_deme in range(n_demes):
         start_idx = state_space.idx(0, start_deme)
@@ -1909,6 +1958,17 @@ def _ode_compute_marginal_transition_matrix(
     n_demes = len(base_absorption_rates)
     if epoch.pulse_migration is not None:
         return _pulse_extended_transition(epoch.pulse_migration)
+    if interval_end < DICAL2_T_INF - EPS and not _epoch_has_time_dependent_absorption(epoch):
+        rate_matrix = _extended_rate_matrix_at_time(
+            epoch,
+            base_absorption_rates,
+            interval_start,
+        )
+        transition = np.asarray(
+            expm((float(interval_end) - float(interval_start)) * rate_matrix),
+            dtype=np.float64,
+        )
+        return np.clip(np.real(transition), 0.0, np.inf)
     transition = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
     for start_deme in range(n_demes):
         y_start = np.zeros(2 * n_demes, dtype=np.float64)
@@ -5856,9 +5916,8 @@ def dical2(
         Same container with results stored in ``data.results['dical2']``.
     """
     implementation = normalize_implementation(implementation)
-    implementation_used = choose_implementation(
+    implementation_used = choose_method_implementation(
         implementation,
-        upstream_available=method_upstream_available("dical2"),
         method_name="dical2",
         requested_capabilities={"upstream_options"} if upstream_options else None,
     )

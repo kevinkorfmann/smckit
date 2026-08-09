@@ -1,0 +1,79 @@
+{
+  "accuracy_records": [],
+  "aggregate_sha256": "0feea348a3d99a9f196eec92ee9bf686302a917611ce55a9fbe61c3a6ba30044",
+  "benchmark_records": [
+    {
+      "dataset": "exponential-growth-msprime-seed211-v1",
+      "implementation": "native",
+      "measurement_component": "fitted-one-step-inference",
+      "method": "dical2",
+      "platform": {
+        "logical_cpu_count": 11,
+        "machine": "arm64",
+        "processor": "arm",
+        "python": "3.12.11",
+        "release": "25.2.0",
+        "system": "Darwin"
+      },
+      "record_sha256": "d89ae9068f8289c1128057720be6944f5c1060df50892aa1656fe847d5cdce87",
+      "threads": 1
+    },
+    {
+      "dataset": "exponential-growth-msprime-seed211-v1",
+      "implementation": "upstream",
+      "measurement_component": "fitted-one-step-inference",
+      "method": "dical2",
+      "platform": {
+        "logical_cpu_count": 11,
+        "machine": "arm64",
+        "processor": "arm",
+        "python": "3.12.11",
+        "release": "25.2.0",
+        "system": "Darwin"
+      },
+      "record_sha256": "6a8809f2b476471bb06a4a0a6f56b940f2a8423187a1a225f7cf9b2f582cfc08",
+      "threads": 1
+    }
+  ],
+  "input_record_sha256": [
+    "6a8809f2b476471bb06a4a0a6f56b940f2a8423187a1a225f7cf9b2f582cfc08",
+    "d89ae9068f8289c1128057720be6944f5c1060df50892aa1656fe847d5cdce87"
+  ],
+  "performance_comparisons": [
+    {
+      "cold_runtime_ratio_upstream_over_native": 1.288068572503753,
+      "confidence": 0.95,
+      "dataset": "exponential-growth-msprime-seed211-v1",
+      "faster_with_confidence": true,
+      "measurement_component": "fitted-one-step-inference",
+      "memory_ratio": 0.5959217644610904,
+      "memory_within_25_percent": true,
+      "method": "dical2",
+      "native_cold_seconds": 0.6145604169578291,
+      "native_startup_seconds": 1.0210270839743316,
+      "native_warm_peak_memory_bytes": 187695104,
+      "platform": {
+        "machine": "arm64",
+        "processor": "arm",
+        "system": "Darwin"
+      },
+      "promotable": true,
+      "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+      "schema_version": 1,
+      "speedup": 1.3052290625866794,
+      "speedup_confidence_interval": [
+        1.2834588164238836,
+        1.354383927150216
+      ],
+      "startup_runtime_ratio_upstream_over_native": 0.9991447328296068,
+      "threads": 1,
+      "upstream_cold_seconds": 0.7915959589881822,
+      "upstream_startup_seconds": 1.020153833029326,
+      "upstream_warm_peak_memory_bytes": 314966016,
+      "warm_repetitions": 10
+    }
+  ],
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "required_warm_repetitions": 10,
+  "schema_version": 1
+}
