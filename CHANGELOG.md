@@ -10,6 +10,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   HMM-simulation entry points through the shell-free preservation runner, record
   NumPy 2 compatibility provenance, freeze a numeric upstream oracle, and add a
   hash-locked OCI/Apptainer runtime definition.
+- Add a typed PSMC+ upstream adapter covering the complete inference option
+  surface, normalized demographic and posterior/recombination results, physical
+  scaling, persistent hashed artifacts, common result accessors, and live fit
+  and decoding oracles while keeping native execution explicitly unavailable.
 - Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
   99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
   sequence decoding unpromoted until its WGS oracle is closed.
