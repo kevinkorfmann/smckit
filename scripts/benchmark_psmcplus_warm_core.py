@@ -10,6 +10,7 @@ import json
 import math
 import platform
 import statistics
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -20,6 +21,7 @@ from smckit._provenance import sha256_file
 from smckit.tl._psmcplus_native import decode_psmcplus_native, fit_psmcplus_native
 
 UPSTREAM_COMMIT = "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -32,15 +34,100 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _measure(call, repetitions: int) -> tuple[list[float], object]:
-    call()
-    times: list[float] = []
-    value: object = None
-    for _ in range(repetitions):
-        started = time.perf_counter()
-        value = call()
-        times.append(time.perf_counter() - started)
-    return times, value
+def _measure_paired(
+    native_call,
+    upstream_call,
+    repetitions: int,
+) -> tuple[list[float], list[float], object, object]:
+    """Warm both engines, then collect counterbalanced timing pairs."""
+    native_value = native_call()
+    upstream_value = upstream_call()
+    native_times: list[float] = []
+    upstream_times: list[float] = []
+    for index in range(repetitions):
+        ordered = (
+            (("native", native_call), ("upstream", upstream_call))
+            if index % 2 == 0
+            else (("upstream", upstream_call), ("native", native_call))
+        )
+        pair: dict[str, float] = {}
+        for label, call in ordered:
+            started = time.perf_counter()
+            value = call()
+            pair[label] = time.perf_counter() - started
+            if label == "native":
+                native_value = value
+            else:
+                upstream_value = value
+        native_times.append(pair["native"])
+        upstream_times.append(pair["upstream"])
+    return native_times, upstream_times, native_value, upstream_value
+
+
+def _paired_summary(
+    native: list[float],
+    upstream: list[float],
+    *,
+    bootstrap_replicates: int,
+    seed: int,
+) -> dict[str, object]:
+    native_array = np.asarray(native, dtype=np.float64)
+    upstream_array = np.asarray(upstream, dtype=np.float64)
+    if native_array.shape != upstream_array.shape or native_array.size < 2:
+        raise ValueError("Paired PSMC+ timings require at least two equal-length vectors.")
+    if np.any(native_array <= 0) or np.any(upstream_array <= 0):
+        raise ValueError("Paired PSMC+ timings must be positive.")
+    pairwise_speedups = upstream_array / native_array
+    rng = np.random.default_rng(seed)
+    indices = rng.integers(
+        0,
+        pairwise_speedups.size,
+        size=(bootstrap_replicates, pairwise_speedups.size),
+    )
+    bootstrapped = np.median(pairwise_speedups[indices], axis=1)
+    interval = np.quantile(bootstrapped, [0.025, 0.975])
+    speedup = float(np.median(pairwise_speedups))
+    return {
+        "native_seconds": native,
+        "upstream_seconds": upstream,
+        "pairwise_speedups": pairwise_speedups.tolist(),
+        "native_median_seconds": statistics.median(native),
+        "upstream_median_seconds": statistics.median(upstream),
+        "speedup": speedup,
+        "speedup_confidence_interval": [float(interval[0]), float(interval[1])],
+        "confidence": 0.95,
+        "bootstrap_design": "paired median speedup",
+        "faster_with_confidence": bool(interval[0] > 1.0),
+    }
+
+
+def _git_state() -> dict[str, object]:
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    status = subprocess.run(
+        [
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=all",
+            "--ignore-submodules=dirty",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    status_lines = status.stdout.splitlines() if status.returncode == 0 else ["unknown"]
+    return {
+        "commit": head.stdout.strip() if head.returncode == 0 else "unknown",
+        "clean": not status_lines,
+        "status": status_lines,
+    }
 
 
 def main() -> int:
@@ -289,53 +376,32 @@ def main() -> int:
         )
         return decode.posterior, decode.log_likelihood
 
-    upstream_fit_times, upstream_fit_value = _measure(upstream_fit, args.repetitions)
-    native_fit_times, native_fit_value = _measure(native_fit, args.repetitions)
-    upstream_decode_times, upstream_decode_value = _measure(upstream_decode, args.repetitions)
-    native_decode_times, native_decode_value = _measure(native_decode, args.repetitions)
+    (
+        native_fit_times,
+        upstream_fit_times,
+        native_fit_value,
+        upstream_fit_value,
+    ) = _measure_paired(native_fit, upstream_fit, args.repetitions)
+    (
+        native_decode_times,
+        upstream_decode_times,
+        native_decode_value,
+        upstream_decode_value,
+    ) = _measure_paired(native_decode, upstream_decode, args.repetitions)
 
     np.testing.assert_allclose(native_fit_value[0], upstream_fit_value[0], rtol=1e-8)
     np.testing.assert_allclose(native_fit_value[1:], upstream_fit_value[1:], rtol=1e-8)
     np.testing.assert_allclose(native_decode_value[0], upstream_decode_value[0], atol=4e-14)
     np.testing.assert_allclose(native_decode_value[1], upstream_decode_value[1], atol=1e-12)
 
-    def summary(native: list[float], upstream: list[float], *, seed: int) -> dict[str, object]:
-        native_median = statistics.median(native)
-        upstream_median = statistics.median(upstream)
-        native_array = np.asarray(native, dtype=np.float64)
-        upstream_array = np.asarray(upstream, dtype=np.float64)
-        rng = np.random.default_rng(seed)
-        sampled_native = rng.choice(
-            native_array,
-            size=(args.bootstrap_replicates, native_array.size),
-            replace=True,
-        )
-        sampled_upstream = rng.choice(
-            upstream_array,
-            size=(args.bootstrap_replicates, upstream_array.size),
-            replace=True,
-        )
-        speedups = np.median(sampled_upstream, axis=1) / np.median(sampled_native, axis=1)
-        interval = np.quantile(speedups, [0.025, 0.975])
-        return {
-            "native_seconds": native,
-            "upstream_seconds": upstream,
-            "native_median_seconds": native_median,
-            "upstream_median_seconds": upstream_median,
-            "speedup": upstream_median / native_median,
-            "speedup_confidence_interval": [float(interval[0]), float(interval[1])],
-            "confidence": 0.95,
-            "faster_with_confidence": bool(interval[0] > 1.0),
-        }
-
-    repository = Path(__file__).resolve().parents[1]
     try:
-        input_label = str(input_path.relative_to(repository))
+        input_label = str(input_path.relative_to(ROOT))
     except ValueError:
         input_label = str(input_path)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "psmcplus",
+        "source": _git_state(),
         "upstream_commit": UPSTREAM_COMMIT,
         "input": input_label,
         "input_sha256": sha256_file(input_path),
@@ -344,13 +410,24 @@ def main() -> int:
         "bootstrap_seed": args.seed,
         "bootstrap_replicates": args.bootstrap_replicates,
         "measurement_component": "warmed inference core; upstream preprocessing excluded",
+        "pair_order": ["native_then_upstream", "upstream_then_native"],
         "environment": {
             "python": platform.python_version(),
             "platform": platform.platform(),
             "numpy": np.__version__,
         },
-        "fit": summary(native_fit_times, upstream_fit_times, seed=args.seed),
-        "decode": summary(native_decode_times, upstream_decode_times, seed=args.seed + 1),
+        "fit": _paired_summary(
+            native_fit_times,
+            upstream_fit_times,
+            bootstrap_replicates=args.bootstrap_replicates,
+            seed=args.seed,
+        ),
+        "decode": _paired_summary(
+            native_decode_times,
+            upstream_decode_times,
+            bootstrap_replicates=args.bootstrap_replicates,
+            seed=args.seed + 1,
+        ),
     }
     payload["runtime_gate_passed"] = bool(
         payload["fit"]["faster_with_confidence"] and payload["decode"]["faster_with_confidence"]

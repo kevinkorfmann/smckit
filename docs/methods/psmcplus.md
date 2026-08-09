@@ -168,11 +168,18 @@ original final-time-grid behavior, and fit/decode outputs. All cases pass the
 strict gate; the frozen JSON and checksum are under
 `workflow/publication/evidence/psmcplus-promotion/sha256-5aa89ae3/`.
 
+The identical twelve-case protocol also passes from a clean macOS ARM64
+checkout. Maximum lambda relative error was `1.73e-8`, maximum fit
+log-likelihood absolute error was `7.02e-10`, maximum posterior absolute error
+was `2.01e-12`, and decoded positions were exact. The checksum-addressed record
+is under
+`workflow/publication/evidence/psmcplus-macos-arm64/sha256-73ea05e5/`.
+
 The frozen one-thread Linux x86-64 benchmark uses five repetitions and 20,000
 bootstrap resamples. With both engines warmed in the same Python process, native
 fit is 2.27x faster (95% CI 2.22--2.32) and decoding is 1.25x faster (95% CI
 1.21--1.27). The separate end-to-end measurement reports native peak memory at
 0.394x upstream or lower and records cold JIT cost independently. The immutable
 records, raw timings, checksums, and reproduction scripts are under
-`benchmarks/psmcplus/`. Human/nonhuman empirical and macOS ARM64 results remain
-required before changing `auto`.
+`benchmarks/psmcplus/`. Human/nonhuman empirical validation and a paired macOS
+performance run remain required before changing `auto`.

@@ -53,14 +53,14 @@
      - ✓
      - n/a
      - ✗
-     - `real-package PSMCFA smoke plus normalized posterior contract`
+     - `real-package PSMCFA, tree-sequence, and indexed-VCF inference plus normalized posterior contract`
      - Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.
    * - PSMC+
      - ✓
      - ✓
      - ✗
-     - `all 12 deterministic capability cases pass strict native/upstream parity; warmed native core is 2.27x faster for fit and 1.25x for decode`
-     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. The independent native engine covers multi-file fitting, local mutation/recombination maps, grouped and fixed parameters, fixed or estimated recombination, approximation controls, decoding, parallel likelihoods, and original-compatible artifacts. Frozen constant and mapped oracles enforce final-output parity. A clean-commit, one-thread Linux x86-64 matrix now passes all 12 deterministic simulation cases, including every approximation control independently and in combination; missing, multi-file, local-rate, estimated-rho, fit, and decode workflows are represented. A separate five-repetition benchmark found warmed-core speedups of 2.27x for fit (95% bootstrap CI 2.22-2.32) and 1.25x for decode (1.21-1.27), with end-to-end peak memory below upstream. Auto remains conservative until human/nonhuman empirical and macOS ARM64 validation close. The NumPy 2 compatibility shim does not modify upstream code.
+     - `all 12 deterministic capability cases pass strict native/upstream parity on Linux x86-64 and macOS ARM64; warmed native Linux core is 2.27x faster for fit and 1.25x for decode`
+     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points plus a typed upstream adapter covering all scientifically meaningful inference controls, normalized fit/decode results, persistent hashed artifacts, and versioned provenance. The independent native engine covers multi-file fitting, local mutation/recombination maps, grouped and fixed parameters, fixed or estimated recombination, approximation controls, decoding, parallel likelihoods, and original-compatible artifacts. Frozen constant and mapped oracles enforce final-output parity. Clean-commit, one-thread Linux x86-64 and macOS ARM64 matrices both pass all 12 deterministic simulation cases, including every approximation control independently and in combination; missing, multi-file, local-rate, estimated-rho, fit, and decode workflows are represented. A separate five-repetition Linux benchmark found warmed-core speedups of 2.27x for fit (95% bootstrap CI 2.22-2.32) and 1.25x for decode (1.21-1.27), with end-to-end peak memory below upstream. Auto remains conservative until human/nonhuman empirical validation and paired macOS performance evidence close. The NumPy 2 compatibility shim does not modify upstream code.
    * - SSM
      - n/a
      - ✓

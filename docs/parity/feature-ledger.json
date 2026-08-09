@@ -174,7 +174,7 @@
         "native_kernel_oracle": "native",
         "deterministic_simulation_capability_matrix": "native",
         "linux_x86_64_capability_matrix": "native",
-        "macos_arm64_capability_matrix": "native_unpromoted",
+        "macos_arm64_capability_matrix": "native",
         "empirical_human_validation": "native_unpromoted",
         "empirical_nonhuman_validation": "native_unpromoted",
         "native_implementation": "native_unpromoted",

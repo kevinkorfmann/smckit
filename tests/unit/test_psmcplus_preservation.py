@@ -8,6 +8,9 @@ from pathlib import Path
 from smckit._provenance import sha256_file
 
 ROOT = Path(__file__).resolve().parents[2]
+MACOS_EVIDENCE = (
+    ROOT / "workflow" / "publication" / "evidence" / "psmcplus-macos-arm64" / "sha256-73ea05e5"
+)
 
 
 def _manifest() -> dict[str, str]:
@@ -65,3 +68,36 @@ def test_psmcplus_container_uses_manifest_base_and_hash_lock() -> None:
         "scipy==1.8.1",
     ]:
         assert requirement in lock
+
+
+def test_psmcplus_macos_arm64_matrix_passes_frozen_capability_gate() -> None:
+    record = json.loads(
+        (MACOS_EVIDENCE / "psmcplus-macos-arm64-matrix.json").read_text(encoding="utf-8")
+    )
+
+    assert record["source"] == {
+        "clean": True,
+        "commit": "9f924bdd385fddd1f45cc214d9cbc80b2e761606",
+        "status": [],
+    }
+    assert record["upstream_commit"] == "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+    assert record["platform"].startswith("macOS-26.2-arm64")
+    assert record["passed"] is True
+    assert len(record["cases"]) == 12
+    assert all(case["comparison"]["passed"] for case in record["cases"])
+
+    fit = [case for case in record["cases"] if case["mode"] == "fit"]
+    decode = [case for case in record["cases"] if case["mode"] == "decode"]
+    assert max(case["comparison"]["lambda_relative_error_max"] for case in fit) < 2e-8
+    assert max(case["comparison"]["log_likelihood_absolute_error"] for case in fit) < 1e-9
+    assert max(case["comparison"]["posterior_absolute_error_max"] for case in decode) < 3e-12
+    assert all(case["comparison"]["position_exact"] for case in decode)
+    assert all(case["comparison"]["marginal_position_exact"] for case in decode)
+
+
+def test_psmcplus_macos_arm64_matrix_checksum() -> None:
+    lines = (MACOS_EVIDENCE / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+    assert lines
+    for line in lines:
+        expected, filename = line.split(maxsplit=1)
+        assert sha256_file(MACOS_EVIDENCE / filename) == expected

@@ -1,0 +1,1318 @@
+{
+  "cases": [
+    {
+      "comparison": {
+        "lambda_relative_error_max": 4.0293456457382403e-10,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 1.2369127944111824e-10,
+        "passed": true,
+        "rho_relative_error": 8.708653440802791e-11,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "constant"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "constant_estimated_rho",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "likelihood_threshold": 0,
+        "number_time_windows": 4
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.40754079388880327,
+            1.742614076835863,
+            1.2931668908134064,
+            9.999951040368627
+          ],
+          "log_likelihood": -459.57797663041873,
+          "rho": 0.00016077618841468555,
+          "scaled_left_time_boundary": [
+            0.0,
+            4.041701134008282e-06,
+            1.9121573521609512e-05,
+            9.046551484614763e-05
+          ],
+          "scaled_right_time_boundary": [
+            4.041701134008282e-06,
+            1.9121573521609512e-05,
+            9.046551484614763e-05,
+            0.00042799874012092767
+          ],
+          "theta": 0.0002197296549727406
+        },
+        "upstream": {
+          "lambda": [
+            0.40754079386672026,
+            1.7426140768091005,
+            1.293166891334468,
+            9.999951040364627
+          ],
+          "log_likelihood": -459.57797663029504,
+          "rho": 0.000160776188428687,
+          "scaled_left_time_boundary": [
+            0.0,
+            4.041701134008282e-06,
+            1.9121573521609512e-05,
+            9.046551484614763e-05
+          ],
+          "scaled_right_time_boundary": [
+            4.041701134008282e-06,
+            1.9121573521609512e-05,
+            9.046551484614763e-05,
+            0.00042799874012092767
+          ],
+          "theta": 0.0002197296549727406
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.8774237499455921,
+        "upstream": 10.984284041973297
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 1.7630718869743846e-12,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 4.888534022029489e-12,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "bottleneck"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "bottleneck_grouped_fixed_rho",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "lambda_initial": [
+          1.6,
+          0.55,
+          1.8
+        ],
+        "lambda_segments": "2*0,2*2",
+        "likelihood_threshold": 0,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            1.6000000000000003,
+            1.6000000000000003,
+            0.6656940146633765,
+            0.6656940146633765,
+            1.5561379877465602,
+            1.5561379877465602
+          ],
+          "log_likelihood": -504.57822006945696,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            5.691939450847456e-06,
+            1.6041066005570575e-05,
+            4.52070512726134e-05,
+            0.0001274028474201771,
+            0.0003590476501749189
+          ],
+          "scaled_right_time_boundary": [
+            5.691939450847456e-06,
+            1.6041066005570575e-05,
+            4.52070512726134e-05,
+            0.0001274028474201771,
+            0.0003590476501749189,
+            0.0010118707525504991
+          ],
+          "theta": 0.0003094459115585559
+        },
+        "upstream": {
+          "lambda": [
+            1.6000000000000003,
+            1.6000000000000003,
+            0.6656940146629192,
+            0.6656940146629192,
+            1.5561379877493038,
+            1.5561379877493038
+          ],
+          "log_likelihood": -504.57822006946185,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            5.691939450847456e-06,
+            1.6041066005570575e-05,
+            4.52070512726134e-05,
+            0.0001274028474201771,
+            0.0003590476501749189
+          ],
+          "scaled_right_time_boundary": [
+            5.691939450847456e-06,
+            1.6041066005570575e-05,
+            4.52070512726134e-05,
+            0.0001274028474201771,
+            0.0003590476501749189,
+            0.0010118707525504991
+          ],
+          "theta": 0.0003094459115585559
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.0055858330451883376,
+        "upstream": 3.9642947500105947
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 8.687398006149366e-10,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 8.810729923425242e-11,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "constant",
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "two_chromosome_missing",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "lambda_initial": [
+          1.25,
+          0.7,
+          1.4,
+          2.0
+        ],
+        "lambda_segments": "1*0,3*1",
+        "likelihood_threshold": 0,
+        "number_time_windows": 4,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            1.25,
+            0.9710716132598589,
+            1.3652045122918754,
+            1.0284600655617664
+          ],
+          "log_likelihood": -906.4283140618928,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.925533330478044e-06,
+            1.8571975438427048e-05,
+            8.786532749768655e-05
+          ],
+          "scaled_right_time_boundary": [
+            3.925533330478044e-06,
+            1.8571975438427048e-05,
+            8.786532749768655e-05,
+            0.0004156970701297453
+          ],
+          "theta": 0.00021341411838497564
+        },
+        "upstream": {
+          "lambda": [
+            1.25,
+            0.9710716132126864,
+            1.3652045121226692,
+            1.0284600646683022
+          ],
+          "log_likelihood": -906.4283140618047,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.925533330478044e-06,
+            1.8571975438427048e-05,
+            8.786532749768655e-05
+          ],
+          "scaled_right_time_boundary": [
+            3.925533330478044e-06,
+            1.8571975438427048e-05,
+            8.786532749768655e-05,
+            0.0004156970701297453
+          ],
+          "theta": 0.00021341411838497564
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.11876074998872355,
+        "upstream": 6.574614375014789
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 1.5543170536061751e-09,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 8.981260180007666e-12,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "expansion_midpoint_transitions",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "likelihood_threshold": 0,
+        "midpoint_transitions": true,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.3272981200136067,
+            0.8713742521206087,
+            0.9161472219986626,
+            1.2157814436678287,
+            2.036839461597127,
+            0.832445920302879
+          ],
+          "log_likelihood": -444.7655816645105,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "lambda": [
+            0.32729812026727784,
+            0.8713742525773454,
+            0.9161472220301338,
+            1.2157814437166252,
+            2.0368394615926855,
+            0.8324459190089941
+          ],
+          "log_likelihood": -444.7655816645015,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.00849024998024106,
+        "upstream": 4.074182833021041
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 1.6429566288808802e-09,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 1.4915713109076023e-10,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "expansion_midpoint_emissions",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "likelihood_threshold": 0,
+        "midpoint_emissions": true,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.31680776579129677,
+            0.8458668459123821,
+            0.9010121834893632,
+            1.1959951049573736,
+            2.0603342697020897,
+            9.999999983588236
+          ],
+          "log_likelihood": -444.7761599898015,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "lambda": [
+            0.3168077663117982,
+            0.8458668460427925,
+            0.9010121838424431,
+            1.1959951050088078,
+            2.0603342696542786,
+            9.999999983588236
+          ],
+          "log_likelihood": -444.77615998995066,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.010978334001265466,
+        "upstream": 4.147821000020485
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 2.397883621005415e-09,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 1.1652900866465643e-11,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "expansion_nonexponential_recombination",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "likelihood_threshold": 0,
+        "nonexponential_recombination": true,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.31451050959126303,
+            0.8396488957931547,
+            0.8957141436767392,
+            1.187933032394702,
+            2.0222112477662266,
+            0.786497195051694
+          ],
+          "log_likelihood": -444.71711274768177,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "lambda": [
+            0.31451050967588745,
+            0.8396488959798157,
+            0.8957141438853146,
+            1.1879330323882173,
+            2.0222112478359096,
+            0.7864971969376228
+          ],
+          "log_likelihood": -444.7171127476934,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0006769183046495346
+          ],
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.00877908302936703,
+        "upstream": 4.080295291962102
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 3.1031607825067452e-09,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 7.021867531875614e-10,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "expansion_final_time_factor",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "final_time_factor": 3.0,
+        "iterations": 1,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "likelihood_threshold": 0,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.3163287449908047,
+            0.8447782611628831,
+            0.9003542006352041,
+            1.1928408634177052,
+            2.042062146277087,
+            9.9999982237952
+          ],
+          "log_likelihood": -444.7094912302593,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0007205839066862711
+          ],
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "lambda": [
+            0.31632874400918576,
+            0.8447782611543161,
+            0.9003542006581867,
+            1.1928408629376834,
+            2.042062146315153,
+            9.999998223794465
+          ],
+          "log_likelihood": -444.7094912295571,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0007205839066862711
+          ],
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.010100915969815105,
+        "upstream": 4.1388068329542875
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 1.728953750535749e-08,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 1.6342482922482304e-10,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "fit",
+      "name": "expansion_approximation_controls",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "final_time_factor": 3.0,
+        "iterations": 1,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "likelihood_threshold": 0,
+        "midpoint_emissions": true,
+        "midpoint_transitions": true,
+        "nonexponential_recombination": true,
+        "number_time_windows": 6,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            0.3259650349616426,
+            0.8671989806055528,
+            0.9123198699294485,
+            1.2206536599920108,
+            2.069361646209858,
+            0.867372782106895
+          ],
+          "log_likelihood": -444.92029724925834,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0007205839066862711
+          ],
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "lambda": [
+            0.3259650361776308,
+            0.8671989809235916,
+            0.9123198698203053,
+            1.2206536600902003,
+            2.0693616478870616,
+            0.8673727971033695
+          ],
+          "log_likelihood": -444.9202972490949,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037
+          ],
+          "scaled_right_time_boundary": [
+            3.8077768267575e-06,
+            1.0731104914231826e-05,
+            3.0242479514827994e-05,
+            8.522958022633981e-05,
+            0.00024019463556209037,
+            0.0007205839066862711
+          ],
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.008533667016308755,
+        "upstream": 4.165377915953286
+      }
+    },
+    {
+      "comparison": {
+        "lambda_relative_error_max": 4.183170815703582e-10,
+        "left_boundary_absolute_error_max": 0.0,
+        "log_likelihood_absolute_error": 5.616129783447832e-11,
+        "passed": true,
+        "rho_relative_error": 0.0,
+        "right_boundary_absolute_error_max": 0.0,
+        "theta_relative_error": 0.0
+      },
+      "datasets": [
+        "bottleneck"
+      ],
+      "map_controls": {
+        "mutation": true,
+        "recombination": true
+      },
+      "mode": "fit",
+      "name": "bottleneck_local_rates",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "iterations": 1,
+        "likelihood_threshold": 0,
+        "number_time_windows": 4,
+        "recombination_map_downsamples": 2,
+        "rho_fixed": true,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "lambda": [
+            2.886999773825801,
+            1.5191073814274025,
+            1.2256287316299421,
+            9.999999983684214
+          ],
+          "log_likelihood": -512.8929744955714,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            5.691939450847456e-06,
+            2.692896755134153e-05,
+            0.0001274028474201771
+          ],
+          "scaled_right_time_boundary": [
+            5.691939450847456e-06,
+            2.692896755134153e-05,
+            0.0001274028474201771,
+            0.0006027518693326332
+          ],
+          "theta": 0.0003094459115585559
+        },
+        "upstream": {
+          "lambda": [
+            2.8869997744405365,
+            1.519107382062871,
+            1.225628731671958,
+            9.999999983684214
+          ],
+          "log_likelihood": -512.8929744955152,
+          "rho": 0.0004,
+          "scaled_left_time_boundary": [
+            0.0,
+            5.691939450847456e-06,
+            2.692896755134153e-05,
+            0.0001274028474201771
+          ],
+          "scaled_right_time_boundary": [
+            5.691939450847456e-06,
+            2.692896755134153e-05,
+            0.0001274028474201771,
+            0.0006027518693326332
+          ],
+          "theta": 0.0003094459115585559
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.014661166991572827,
+        "upstream": 4.153977625013795
+      }
+    },
+    {
+      "comparison": {
+        "log_likelihood_absolute_error": 3.979039320256561e-13,
+        "marginal_position_exact": true,
+        "marginal_recombination_absolute_error_max": 1.3600232051658168e-15,
+        "passed": true,
+        "position_exact": true,
+        "posterior_absolute_error_max": 1.3541077981127358e-13,
+        "posterior_mean_time_absolute_error_max": 1.1506095555502416e-17
+      },
+      "datasets": [
+        "constant"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "decode",
+      "name": "constant_decode",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "decode_downsample": 17,
+        "lambda_initial": [
+          0.65,
+          0.9,
+          1.6,
+          1.1
+        ],
+        "mode": "decode",
+        "number_time_windows": 4,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "b8820a8225f21c735bbfc86f9cc83d2dd263921ada3e6cd9e0c5b00c6ae02cb4",
+              "shape": [
+                7735
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "d6dd9273aa1eda03fd261957a5a65601e1843ff1273e8c38bcaa48c6e9da1a46",
+              "shape": [
+                7735
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "f8bda9b0f41f878226cbede923ce3b07db9c4b3c5eb31236ff7e4a5d16a42a52",
+              "shape": [
+                455
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "026e27e1a3abaebc7f7af0f2591216ea976a03ee59f2b55eafa3443700bfa001",
+              "shape": [
+                455,
+                4
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "9b1c529f15a6b42114c01e66bc2ada8acdfac66b2e4082bfd6b1fb6e5ebf60ee",
+              "shape": [
+                455
+              ]
+            }
+          },
+          "log_likelihood": -460.27190975357314,
+          "rho": 0.0004,
+          "theta": 0.0002197296549727406
+        },
+        "upstream": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "b8820a8225f21c735bbfc86f9cc83d2dd263921ada3e6cd9e0c5b00c6ae02cb4",
+              "shape": [
+                7735
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "a85086e8802b0ecbc17195e3750fbc044b9967667e15c483ab32d2e162bc01ad",
+              "shape": [
+                7735
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "f8bda9b0f41f878226cbede923ce3b07db9c4b3c5eb31236ff7e4a5d16a42a52",
+              "shape": [
+                455
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "f07801bf98e5b7b2d9e2d42f0d0321ae6d280c74c68ef6e724cab7719bbc6646",
+              "shape": [
+                455,
+                4
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "836e699d8cda0c47b44931f940f446cc94c62c13e5018d2a98871d779578efb3",
+              "shape": [
+                455
+              ]
+            }
+          },
+          "log_likelihood": -460.27190975357274,
+          "rho": 0.0004,
+          "theta": 0.0002197296549727406
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.14454704098170623,
+        "upstream": 4.184674124990124
+      }
+    },
+    {
+      "comparison": {
+        "log_likelihood_absolute_error": 7.958078640513122e-13,
+        "marginal_position_exact": true,
+        "marginal_recombination_absolute_error_max": 2.8293339893181724e-15,
+        "passed": true,
+        "position_exact": true,
+        "posterior_absolute_error_max": 8.526512829121202e-14,
+        "posterior_mean_time_absolute_error_max": 1.826880660638075e-17
+      },
+      "datasets": [
+        "expansion"
+      ],
+      "map_controls": {
+        "mutation": false,
+        "recombination": false
+      },
+      "mode": "decode",
+      "name": "expansion_final_time_decode",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "decode_downsample": 23,
+        "final_time_factor": 3.0,
+        "lambda_initial": [
+          0.6,
+          0.8,
+          1.0,
+          1.4,
+          2.0,
+          0.9
+        ],
+        "mode": "decode",
+        "number_time_windows": 6,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "ac0f8ac5cdc09ba859b458368d5dd3f94a097d8afd37410fdb7c9e265f2b5690",
+              "shape": [
+                7792
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "3c24bfcd7d83b6925ddbe0af7088abb22b0bbf12c8e3b66a1ec02bd66d8d468f",
+              "shape": [
+                7792
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "40c18cc29dc57d51043738aee052395b4697ec686e57d17d279e159b4bf8dccd",
+              "shape": [
+                338
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "6f0f6952833946cd589d4601ac31db7e9634d1ae59f73890a0ce505893f6a369",
+              "shape": [
+                338,
+                6
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "a8f079d3a59fe06d5900d7e787237d7f1e84189acc092d58c86e653b22672ad1",
+              "shape": [
+                338
+              ]
+            }
+          },
+          "log_likelihood": -445.08191535272704,
+          "rho": 0.0004,
+          "theta": 0.00020701221110004715
+        },
+        "upstream": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "ac0f8ac5cdc09ba859b458368d5dd3f94a097d8afd37410fdb7c9e265f2b5690",
+              "shape": [
+                7792
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "923cf4ab7ed91332fd70c29eb61e0849579982c3d75f8e6160a1bee9e530b931",
+              "shape": [
+                7792
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "40c18cc29dc57d51043738aee052395b4697ec686e57d17d279e159b4bf8dccd",
+              "shape": [
+                338
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "8ddd5d5da6e2e8ca9a8dbb16e5fd086e43e7bed3e8594ef639aa97b2af046c1f",
+              "shape": [
+                338,
+                6
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "b0fc8338f59cb419fb30ea66bc6245af4f024a1c1ad37e5a67c7a97fd2e4ed1b",
+              "shape": [
+                338
+              ]
+            }
+          },
+          "log_likelihood": -445.08191535272783,
+          "rho": 0.0004,
+          "theta": 0.00020701221110004715
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.016628541983664036,
+        "upstream": 4.1835052910028026
+      }
+    },
+    {
+      "comparison": {
+        "log_likelihood_absolute_error": 9.094947017729282e-13,
+        "marginal_position_exact": true,
+        "marginal_recombination_absolute_error_max": 7.913808497406194e-15,
+        "passed": true,
+        "position_exact": true,
+        "posterior_absolute_error_max": 2.005950960892733e-12,
+        "posterior_mean_time_absolute_error_max": 9.977370492297855e-17
+      },
+      "datasets": [
+        "bottleneck"
+      ],
+      "map_controls": {
+        "mutation": true,
+        "recombination": true
+      },
+      "mode": "decode",
+      "name": "bottleneck_local_rate_decode",
+      "options": {
+        "bin_size": 50,
+        "cores": 1,
+        "decode_downsample": 19,
+        "lambda_initial": [
+          1.5,
+          0.55,
+          1.8,
+          1.1
+        ],
+        "mode": "decode",
+        "number_time_windows": 4,
+        "recombination_map_downsamples": 2,
+        "scaled_recombination_rate": 0.0004
+      },
+      "results": {
+        "native": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "ba24878cf801532d0d2008c93830c9d5b76a77c4708ffd75690f52c5c656a8d7",
+              "shape": [
+                6889
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "34766b899a2b589cd5110e0c2e11bdcb611a8df473c53483c780ae91d66c884f",
+              "shape": [
+                6889
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "9c3d317a7077fb9b70fabb3f49888b5c5e01c761e163009ed8eccca9c33b2c95",
+              "shape": [
+                362
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "e3707153586e4f2e95308dcdde5116b18a0c110275c87eb4983ede1377a7e20f",
+              "shape": [
+                362,
+                4
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "6abe5179dfc64fcbacca7429c5a5a3b6fe4933ab908d7cabc64bfddb7ca3e47b",
+              "shape": [
+                362
+              ]
+            }
+          },
+          "log_likelihood": -513.8968822134063,
+          "rho": 0.0004,
+          "theta": 0.0003094459115585559
+        },
+        "upstream": {
+          "arrays": {
+            "marginal_position": {
+              "dtype": "float64",
+              "sha256": "ba24878cf801532d0d2008c93830c9d5b76a77c4708ffd75690f52c5c656a8d7",
+              "shape": [
+                6889
+              ]
+            },
+            "marginal_recombination_probability": {
+              "dtype": "float64",
+              "sha256": "770e2d3b00905ebfaf420ab775c7756112d9932f4f7f122d3f81b7595623a45c",
+              "shape": [
+                6889
+              ]
+            },
+            "position": {
+              "dtype": "float64",
+              "sha256": "9c3d317a7077fb9b70fabb3f49888b5c5e01c761e163009ed8eccca9c33b2c95",
+              "shape": [
+                362
+              ]
+            },
+            "posterior": {
+              "dtype": "float64",
+              "sha256": "4caf17f2f476bc45e5c65716be091769787c80ab897dc95cb277f7ef5e0ec16a",
+              "shape": [
+                362,
+                4
+              ]
+            },
+            "posterior_mean_time": {
+              "dtype": "float64",
+              "sha256": "dfd41ff31ee24fe0b8e03a11daae5eaf49e9dd16b3e193d459f668aeed405b80",
+              "shape": [
+                362
+              ]
+            }
+          },
+          "log_likelihood": -513.8968822134073,
+          "rho": 0.0004,
+          "theta": 0.0003094459115585559
+        }
+      },
+      "runtime_seconds": {
+        "native": 0.02171841700328514,
+        "upstream": 4.221047582977917
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "ancestry_seed": 701,
+      "demography": "constant",
+      "heterozygotes": 85,
+      "input_path": "constant.multihetsep",
+      "input_path_sha256": "866281d7fe6f292bf5c938ad855857227d627cc8fd008f38d85d6ef921839dc2",
+      "masked_bases": 0,
+      "mutation_map_path": "constant.mutation.bed",
+      "mutation_map_path_sha256": "cc6e7691472058edc28a99565ac163f625caab01832bc454ec9ff1e9dc0e2548",
+      "mutation_seed": 1701,
+      "name": "constant",
+      "recombination_map_path": "constant.recombination.bed",
+      "recombination_map_path_sha256": "43999cf374f1dfc04aa7c4579ac2a21abff735eb8f72b0f3c384efefe7f56a3b",
+      "sequence_length": 400000
+    },
+    {
+      "ancestry_seed": 709,
+      "demography": "bottleneck",
+      "heterozygotes": 103,
+      "input_path": "bottleneck.multihetsep",
+      "input_path_sha256": "908b3f7980d75219d06f18c2b26ff448cff15f4706e076c92c24ce40fcbc2cf4",
+      "masked_bases": 11668,
+      "mutation_map_path": "bottleneck.mutation.bed",
+      "mutation_map_path_sha256": "eec79c3c8bb0e1963373303e51ce892059829953545149b341b609df421ce395",
+      "mutation_seed": 1709,
+      "name": "bottleneck",
+      "recombination_map_path": "bottleneck.recombination.bed",
+      "recombination_map_path_sha256": "a6edf6f86724a0103189511455a704392bfaddfbaea5d3c08f7df24aa7aa4d2b",
+      "sequence_length": 400000
+    },
+    {
+      "ancestry_seed": 719,
+      "demography": "expansion",
+      "heterozygotes": 79,
+      "input_path": "expansion.multihetsep",
+      "input_path_sha256": "5d4e85824dd6a2122f3380267d40d9fe1b720f1c1db908d29d3d019825275583",
+      "masked_bases": 8057,
+      "mutation_map_path": "expansion.mutation.bed",
+      "mutation_map_path_sha256": "8d3ded95e65e523d3a1dcdff560def97ee74c2f8c805a3e6ce0370fd2320f593",
+      "mutation_seed": 1719,
+      "name": "expansion",
+      "recombination_map_path": "expansion.recombination.bed",
+      "recombination_map_path_sha256": "c503165be01b3feeaf3394e4b885925d6a65f44ee10f834b1b4900797f5722ca",
+      "sequence_length": 400000
+    }
+  ],
+  "method": "psmcplus",
+  "passed": true,
+  "platform": "macOS-26.2-arm64-arm-64bit",
+  "purpose": "native promotion capability matrix",
+  "schema_version": 2,
+  "software": {
+    "msprime": "1.4.1",
+    "numpy": "2.4.4",
+    "python": "3.12.11",
+    "smckit": "0.0.1b2"
+  },
+  "source": {
+    "clean": true,
+    "commit": "9f924bdd385fddd1f45cc214d9cbc80b2e761606",
+    "status": []
+  },
+  "thread_environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMBA_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

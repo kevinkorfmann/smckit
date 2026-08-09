@@ -53,7 +53,8 @@
         "constant-population posterior and marginal-recombination decode",
         "mapped mutation/recombination one-iteration fit",
         "mapped posterior and original/corrected marginal-recombination decode",
-        "deterministic 12-case simulation capability matrix at smckit commit ab3a52b"
+        "deterministic 12-case Linux x86-64 simulation capability matrix at smckit commit ab3a52b",
+        "deterministic 12-case macOS ARM64 simulation capability matrix at smckit commit 9f924bd"
       ],
       "intermediates": [
         "binned heterozygote and masked-base counts",
@@ -106,6 +107,17 @@
         "maximum_lambda_relative_error": 1.1664965352175737e-8,
         "maximum_log_likelihood_absolute_error": 1.017610884446185e-9,
         "maximum_posterior_absolute_error": 7.199241203181828e-13,
+        "all_cases_passed": true
+      },
+      "macos_arm64_capability_matrix_acceptance": {
+        "cases": 12,
+        "environment": "macOS 26.2 ARM64, Python 3.12.11, NumPy 2.4.4, one thread",
+        "source_commit": "9f924bdd385fddd1f45cc214d9cbc80b2e761606",
+        "record_sha256": "73ea05e5c1e0000298d132d7072edd9900e9f71ec9807a42ac8e7089bd630b03",
+        "maximum_lambda_relative_error": 1.728953750535749e-8,
+        "maximum_fit_log_likelihood_absolute_error": 7.021867531875614e-10,
+        "maximum_posterior_absolute_error": 2.005950960892733e-12,
+        "positions_exact": true,
         "all_cases_passed": true
       },
       "performance_acceptance": {

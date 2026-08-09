@@ -37,10 +37,12 @@ PYTHONPATH=src python workflow/publication/scripts/validate_psmcplus_matrix.py \
 ```
 
 The retained clean-commit Linux x86-64 record is under
-`evidence/psmcplus-promotion/sha256-5aa89ae3/`. It passes all twelve fit/decode
-cases. This closes the expanded deterministic simulation surface, but does not
-by itself authorize native `auto`; human/nonhuman empirical validation and the
-macOS ARM64 matrix remain open gates.
+`evidence/psmcplus-promotion/sha256-5aa89ae3/`, and the matching macOS ARM64
+record is under `evidence/psmcplus-macos-arm64/sha256-73ea05e5/`. Both pass all
+twelve fit/decode cases. This closes the cross-platform deterministic
+simulation surface, but does not by itself authorize native `auto`;
+accession-recorded human/nonhuman empirical validation and a paired macOS
+performance run remain open gates.
 
 The conceptual preservation/promotion schematic is code-generated and can be
 rendered independently of benchmark evidence:
