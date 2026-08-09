@@ -275,3 +275,57 @@ Both agree within `1e-8`. These features remain unpromoted until one-step EM,
 file/per-contig permutations, random-start sequences, and broader independent
 fixtures are covered. This slice closes the known implementation gap without
 claiming full native equivalence.
+
+### 15. Posterior-weighted PAC EM and both generated-start modes have live oracles
+
+The next live Java checks moved beyond fixed-point likelihoods. With two
+generated permutations and CSD trunk sizes 1 and 7, one native EM step reaches
+the same five-parameter endpoint as the pinned jar: every parameter differs by
+less than `2e-13`, and the final log-likelihood differs by about `2.23e-11`.
+This directly validates that permutation posterior weights are applied to the
+expected counts used by the M-step, not only to the reported likelihood.
+
+A separate two-contig check supplies two permutation files with two distinct
+orders each. Native and Java agree within `1e-8`, and native provenance records
+both resolved order sets and both file hashes. This test also exposed and fixed
+a typed-upstream bridge bug: optional per-contig paths represented as
+`[None, None]` now mean the option is absent, while a genuinely partial list
+still fails clearly.
+
+Finally, the seeded random-start oracle freezes all three Java-generated points
+for a five-parameter model as well as the selected winner. Together with the
+32-point grid oracle, both generated initialization strategies now have exact
+sequence evidence.
+
+These checks close the originally identified PAC/search semantics gap, but do
+not promote native diCal2. Structured PAC models, invalid-candidate resampling,
+the pinned jar's empty-trunk failure, complete artifacts, and performance still
+require independent evidence.
+
+### 16. Independent structured fixtures exposed boundary and pulse semantics
+
+Four deterministic msprime fixtures now exercise the pinned Java tool and the
+native implementation with independently generated VCFs. Clean split,
+migration window, and three-population fixed points pass: their largest total
+log-likelihood difference is about `1.37e-6`, or less than `3e-10` per simulated
+base. These checks use Java's ODE core and native `ODECore` on the same typed
+inputs.
+
+The clean-split fixture initially failed before likelihood evaluation because a
+demographic boundary at `0.2` and a log-uniform HMM boundary a few ulps away
+were treated as a zero-duration pulse. Refinement now merges numerically
+coincident boundaries while retaining duplicates only for real pulse events.
+
+The introgression fixture found a separate preservation defect: the demo reader
+discarded the instantaneous-migration matrix attached to the start of a normal
+epoch, including its `?1` placeholder. Native parsing now retains that matrix
+and parameter identity, constructs the zero-duration pulse used by Java, and
+fills its diagonal as one minus the outgoing pulse probability. Unit tests
+freeze the resulting `0.03` migration and `0.97` stay probabilities.
+
+Likelihood parity for that introgression fixture is intentionally still a
+strict expected failure. The pinned tool requires `--useEigenCore`; the native
+structured ODE path differs by about `3.01e-2` total log-likelihood, and forcing
+the current native Eigen path reduces but does not close the gap (about
+`7.58e-3`). This remains a promotion blocker rather than being hidden behind a
+looser tolerance.

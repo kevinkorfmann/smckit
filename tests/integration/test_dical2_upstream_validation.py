@@ -80,6 +80,15 @@ def _read_im_data():
     )
 
 
+def _expectation_points(stdout: str) -> list[np.ndarray]:
+    points = []
+    for line in stdout.splitlines():
+        if "[EXPECTATION_0_0_" not in line:
+            continue
+        points.append(np.fromstring(line.split("\t", 1)[1].strip("[]"), sep=","))
+    return points
+
+
 def _exp_native_options(*, record_meta_trace: bool = False) -> dict[str, object]:
     options = dict(EXP_NATIVE_OPTIONS)
     if record_meta_trace:
@@ -200,6 +209,114 @@ def test_dical2_native_pac_permutations_match_upstream_fixed_point() -> None:
 
 
 @pytest.mark.oracle
+def test_dical2_native_pac_one_step_em_matches_upstream() -> None:
+    common = {
+        "n_em_iterations": 1,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "pac",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "number_iterations_mstep": 1,
+        "trunk_style": "simple",
+        "num_permutations": 2,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=1e-8
+    )
+    assert len(native["rounds"]) == 2
+    assert len(upstream["em_path"]) == 2
+    for weights in native["rounds"][0]["permutation_weights"]:
+        assert sum(weights) == pytest.approx(1.0)
+
+
+@pytest.mark.oracle
+def test_dical2_native_file_permutations_match_upstream_per_contig(
+    tmp_path: Path,
+) -> None:
+    permutation_files = [tmp_path / "contig-1.perm", tmp_path / "contig-2.perm"]
+    permutation_files[0].write_text(
+        "0 1 2 3 4 5 6 7\n7 6 5 4 3 2 1 0\n",
+        encoding="utf-8",
+    )
+    permutation_files[1].write_text(
+        "1 0 3 2 5 4 7 6\n2 3 0 1 6 7 4 5\n",
+        encoding="utf-8",
+    )
+    data_kwargs = {
+        "sequences": [ROOT / "test.vcf", ROOT / "test.vcf"],
+        "param_file": ROOT / "test.param",
+        "demo_file": ROOT / "exp.demo",
+        "rates_file": ROOT / "exp.rates",
+        "config_file": ROOT / "exp.config",
+        "reference_file": [ROOT / "test.fa", ROOT / "test.fa"],
+    }
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 23,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "pac",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": "simple",
+        "permutation_files": permutation_files,
+        "different_permutations_per_contig": True,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    expected = [
+        [[0, 1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1, 0]],
+        [[1, 0, 3, 2, 5, 4, 7, 6], [2, 3, 0, 1, 6, 7, 4, 5]],
+    ]
+    assert native["permutations"]["per_contig"] == expected
+    assert len(native["permutations"]["files"]) == 2
+    assert all(record["sha256"] for record in native["permutations"]["files"])
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=1e-8
+    )
+
+
+@pytest.mark.oracle
 @pytest.mark.slow
 def test_dical2_native_meta_grid_sequence_matches_upstream() -> None:
     bounds = "300,400;0.011,0.012;0.05,0.06;0.09,0.1;1.1,1.2"
@@ -230,13 +347,7 @@ def test_dical2_native_meta_grid_sequence_matches_upstream() -> None:
         **common,
     ).results["dical2"]
 
-    upstream_points = []
-    for line in upstream["upstream"]["stdout"].splitlines():
-        if "[EXPECTATION_0_0_" not in line:
-            continue
-        upstream_points.append(
-            np.fromstring(line.split("\t", 1)[1].strip("[]"), sep=",")
-        )
+    upstream_points = _expectation_points(upstream["upstream"]["stdout"])
     native_points = [run["start_point"] for run in native["meta_trace"][0]["runs"]]
     np.testing.assert_allclose(native_points, upstream_points, rtol=0.0, atol=1e-14)
     assert len(native_points) == 32
@@ -244,6 +355,54 @@ def test_dical2_native_meta_grid_sequence_matches_upstream() -> None:
         "strategy": "log_grid",
         "points_per_dimension": 2,
         "n_start_points": 32,
+    }
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=1e-8
+    )
+
+
+@pytest.mark.oracle
+def test_dical2_native_random_start_sequence_matches_upstream() -> None:
+    bounds = "300,400;0.011,0.012;0.05,0.06;0.09,0.1;1.1,1.2"
+    common = {
+        "n_em_iterations": 0,
+        "seed": 17,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "lol",
+        "bounds": bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "meta_num_start_points": 3,
+    }
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options={**options, "record_meta_trace": True},
+        **common,
+    ).results["dical2"]
+
+    upstream_points = _expectation_points(upstream["upstream"]["stdout"])
+    native_points = [run["start_point"] for run in native["meta_trace"][0]["runs"]]
+    np.testing.assert_allclose(native_points, upstream_points, rtol=0.0, atol=1e-13)
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-13,
+    )
+    assert native["initialization"] == {
+        "strategy": "log_uniform_random",
+        "n_start_points": 3,
+        "seed": 17,
     }
     assert native["log_likelihood"] == pytest.approx(
         upstream["log_likelihood"], abs=1e-8

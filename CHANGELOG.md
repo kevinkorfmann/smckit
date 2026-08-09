@@ -74,8 +74,9 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   file-backed orders, selectable CSD counts, per-contig controls,
   posterior-weighted EM statistics, and generated log-grid/log-uniform
   multi-start search. The typed upstream bridge preserves the corresponding
-  original CLI options, and live Java oracles freeze PAC likelihood and grid
-  sequence parity.
+  original CLI options, and live Java oracles freeze fixed-point and one-step
+  PAC endpoints, file-backed per-contig permutations, and exact grid/random
+  start sequences.
 - Lossless one/two-population SMC++ I/O, contig-level regularization
   cross-validation, reloadable model initialization, upstream-readable model
   JSON, hashed result artifacts, and publication-ready demography/CV plots.
@@ -94,6 +95,11 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Forward typed diCal2 trunk, cake, ancient-deme-state, and additional-trunk
   controls to the preserved Java implementation instead of recording them
   without changing execution.
+- Treat optional per-contig diCal2 path lists containing only `None` as absent
+  in the typed Java bridge while still rejecting genuinely partial lists.
+- Preserve parameterized instantaneous-migration matrices from diCal2 demo
+  files, refine them into stochastic pulse epochs, and avoid false pulse
+  intervals when demographic and HMM boundaries differ only by rounding.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

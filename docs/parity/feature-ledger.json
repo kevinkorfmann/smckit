@@ -103,6 +103,7 @@
         "configuration_language": "native",
         "population_structure": "native",
         "migration_and_growth": "native",
+        "pulse_migration": "native_unpromoted",
         "composite_likelihood_modes": "native",
         "meta_start_strategies": "native",
         "exact_likelihood_semantics": "native",
@@ -112,8 +113,9 @@
         "external_and_vcf_header_references": "native",
         "typed_upstream_vcf_controls": "native",
         "output_files": "native",
-        "pac_permutation_controls": "upstream_only",
-        "grid_start_strategy": "upstream_only",
+        "pac_permutation_controls": "native_unpromoted",
+        "grid_start_strategy": "native_unpromoted",
+        "random_start_strategy": "native_unpromoted",
         "native_parallel_execution": "upstream_only"
       }
     },

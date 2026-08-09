@@ -205,18 +205,31 @@ On the tracked README fixtures, parity is materially tighter than before:
   vectors as upstream on both README `exp` and README `IM`
 - at the upstream best-fit parameter vector on README `IM`, the native
   fixed-point log-likelihood delta is about `2.88e-9`
+- independent simulated clean-split, migration-window, and three-population
+  fixed points agree within `1.4e-6` total log-likelihood and within the frozen
+  `1e-6` per-base criterion
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
 Native promotion still requires independent simulation families, remaining
 feature-ledger closure, and the performance gate.
 
+Parameterized instantaneous migration is now preserved by the native demo
+reader and refined into a stochastic pulse epoch. The independent
+introgression oracle remains a strict expected failure: its native likelihood
+does not yet meet the Java EigenCore tolerance, so introgression must still use
+`implementation="upstream"` for consequential analyses.
+
 The authoritative option-by-option status is recorded in
 [the diCal2 feature ledger](../parity/dical2-feature-ledger.json). PAC
 permutation controls and generated grid/random starts are implemented but
-remain unpromoted until direct Java oracle coverage is frozen. Native parallel
-execution remains upstream-only; use exact upstream execution when those
-workflows are scientifically consequential.
+remain unpromoted. Direct Java checks now cover generated fixed-point and
+one-step PAC EM, two file-backed per-contig permutation sets, and exact grid and
+seeded-random start sequences, plus the three passing independent structured
+fixed points above. Growth, introgression, fitted structured/empirical breadth,
+and the performance gate are still missing. Native parallel execution remains
+upstream-only; use exact upstream execution when those workflows are
+scientifically consequential.
 
 ## Learn more
 

@@ -24,8 +24,8 @@
       "id": "demographic_placeholders",
       "manual_surface": ["piecewise size", "growth", "migration", "split", "pulse migration"],
       "native_status": "native_unpromoted",
-      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "Freeze independent clean-split, migration-window, three-population, and introgression oracles."
+      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py"],
+      "remaining": "Independent simulated clean-split, migration-window, and three-population fixed points pass. Close the strict introgression EigenCore xfail, add independent growth inference, and expand beyond fixed-point evaluation."
     },
     {
       "id": "vcf_external_reference",
@@ -69,14 +69,14 @@
       "manual_surface": ["LOL", "PCL", "PAC"],
       "native_status": "native_unpromoted",
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "The two-permutation fixed-point Java oracle is frozen; add posterior-weighted one-step EM coverage."
+      "remaining": "Generated PAC fixed-point and posterior-weighted one-step EM endpoints are frozen; broaden to structured and empirical fixtures."
     },
     {
       "id": "pac_permutations",
       "manual_surface": ["--numPermutations", "--permutationsFile", "--numCsdsPerPerm", "--diffPermsPerChunk"],
       "native_status": "native_unpromoted",
-      "evidence": ["TestPacPermutations", "TestReadDical2.test_native_pac_mixes_generated_permutations_with_logsumexp", "test_dical2_native_pac_permutations_match_upstream_fixed_point", "TestReadDical2.test_upstream_bridge_preserves_multicontig_vcf_controls"],
-      "remaining": "Generated reduced-CSD fixed-point parity is frozen; add one-step EM, file-backed, and per-contig Java oracles."
+      "evidence": ["TestPacPermutations", "TestReadDical2.test_native_pac_mixes_generated_permutations_with_logsumexp", "test_dical2_native_pac_permutations_match_upstream_fixed_point", "test_dical2_native_pac_one_step_em_matches_upstream", "test_dical2_native_file_permutations_match_upstream_per_contig", "TestReadDical2.test_upstream_bridge_preserves_multicontig_vcf_controls"],
+      "remaining": "Generated one-step EM and two-file/two-contig fixed-point parity are frozen; add structured and one-step file/per-contig Java oracles and characterize the pinned jar's empty-trunk failure."
     },
     {
       "id": "interval_factories",
@@ -94,14 +94,14 @@
       "id": "explicit_and_meta_start",
       "manual_surface": ["--startPoint", "--metaStartFile", "--metaNumStartPoints", "--metaGridStart", "--metaNumIterations", "--metaKeepBest", "--metaNumPoints"],
       "native_status": "native",
-      "evidence": ["TestMetaStartGeneration", "TestResolvedOptions", "test_dical2_native_meta_grid_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"]
+      "evidence": ["TestMetaStartGeneration", "TestResolvedOptions", "test_dical2_native_meta_grid_sequence_matches_upstream", "test_dical2_native_random_start_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"]
     },
     {
       "id": "bounds_and_generated_start_search",
       "manual_surface": ["--bounds", "--metaNumStartPoints", "--metaGridStart"],
       "native_status": "native_unpromoted",
-      "evidence": ["TestMetaStartGeneration", "test_dical2_native_meta_grid_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "The generated log-grid candidate sequence and fixed-point winner are frozen; add an exact Java random-start sequence oracle."
+      "evidence": ["TestMetaStartGeneration", "test_dical2_native_meta_grid_sequence_matches_upstream", "test_dical2_native_random_start_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"],
+      "remaining": "Exact Java sequences and winners are frozen for both log-grid and seeded log-uniform starts; broaden to structured models and invalid-candidate resampling."
     },
     {
       "id": "trunk_and_hidden_state_controls",
@@ -125,8 +125,8 @@
     }
   ],
   "promotion_blockers": [
-    "Independent structured, growth, split, migration-window, three-population, and introgression oracle families",
-    "One-step EM and file/per-contig Java oracles for PAC permutations; random-start Java sequence oracle",
+    "Independent growth and introgression parity plus fitted structured-demography oracle families",
+    "Structured and one-step file/per-contig PAC Java oracles plus pinned empty-trunk failure characterization",
     "Complete original-compatible artifact catalogue",
     "Warmed runtime confidence interval and peak-memory gate"
   ]

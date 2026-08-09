@@ -225,13 +225,21 @@
         "README isolation-migration",
         "repeated-contig fixed-point regression",
         "shifted VCF and BED-mask regression",
-        "structured simulation"
+        "README exponential generated and file-backed PAC permutations",
+        "README exponential generated grid and random starts",
+        "independent clean-split simulation",
+        "independent migration-window simulation",
+        "independent three-population simulation",
+        "independent introgression simulation (strict expected failure until EigenCore parity closes)"
       ],
       "workflows": [
         "external and VCF-header references",
         "multiple independent VCF contigs",
         "VCF coordinate offsets and zero-based half-open BED exclusions",
         "LOL, PCL, and PAC composite likelihoods",
+        "generated, file-backed, and per-contig PAC permutations",
+        "posterior-weighted PAC one-step EM",
+        "generated log-grid and seeded log-uniform starts",
         "explicit and iterative meta-start searches",
         "parser-compatible objective and normalized JSON artifacts"
       ],
@@ -239,10 +247,17 @@
         "refined demographic intervals",
         "initial, transition, recombination, and emission probabilities",
         "per-contig expected counts",
+        "permutation sequences, component likelihoods, and posterior weights",
+        "generated start-point sequences",
         "EM Q function and meta-start generations"
       ],
       "acceptance": {
         "readme_fixed_point_log_likelihood_atol": 1e-8,
+        "pac_one_step_parameter_rtol": 1e-10,
+        "pac_one_step_parameter_atol": 1e-12,
+        "generated_start_sequence_atol": 1e-13,
+        "structured_fixed_point_log_likelihood_atol": 1e-5,
+        "structured_fixed_point_per_base_log_likelihood_atol": 1e-6,
         "repeated_identical_contig_log_likelihood": "exactly additive within floating-point pytest approximation",
         "offset_preprocessing": "exact arrays",
         "bed_mask_preprocessing": "exact positions and reference states"
