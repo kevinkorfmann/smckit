@@ -323,9 +323,17 @@ and parameter identity, constructs the zero-duration pulse used by Java, and
 fills its diagonal as one minus the outgoing pulse probability. Unit tests
 freeze the resulting `0.03` migration and `0.97` stay probabilities.
 
-Likelihood parity for that introgression fixture is intentionally still a
-strict expected failure. The pinned tool requires `--useEigenCore`; the native
-structured ODE path differs by about `3.01e-2` total log-likelihood, and forcing
-the current native Eigen path reduces but does not close the gap (about
-`7.58e-3`). This remains a promotion blocker rather than being hidden behind a
-looser tolerance.
+The pinned tool requires `--useEigenCore` for pulse migration. Applying the
+pulse transition to the native extended lineage matrix, no-recombination and
+recombination distributions, mutation-event distribution, and marginal
+lineage transition closes the independent introgression fixed point. The
+native EigenCore endpoint differs from Java by about `4.32e-6` total
+log-likelihood, inside the frozen `1e-5` tolerance and well inside the `1e-6`
+per-base criterion.
+
+The exact ancient-recombination calculation now builds interval tensors with
+batched contractions and reuses equivalent core matrices across CSDs. This
+removes the worst scalar Python nesting, but a one-step fitted introgression
+diagnostic still exceeded two minutes versus roughly 1.3 seconds for Java.
+Accordingly, fitted introgression and the performance gate remain explicit
+promotion blockers even though fixed-point correctness is now enforced.

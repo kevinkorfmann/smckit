@@ -321,9 +321,7 @@ def _resolve_dical2_options(
         "metaNumPoints",
         default=meta_num_points,
     )
-    resolved_meta_num_points = (
-        None if raw_meta_num_points is None else int(raw_meta_num_points)
-    )
+    resolved_meta_num_points = None if raw_meta_num_points is None else int(raw_meta_num_points)
     if resolved_meta_num_iterations < 1:
         raise ValueError("meta_num_iterations must be at least 1.")
     if resolved_meta_num_iterations > 1:
@@ -803,19 +801,12 @@ def refine_demography(
     pulse_epochs = [
         (epoch_idx, float(epoch.start))
         for epoch_idx, epoch in enumerate(demo.epochs)
-        if (
-            abs(float(epoch.end) - float(epoch.start)) < EPS
-            or epoch.pulse_migration is not None
-        )
+        if (abs(float(epoch.end) - float(epoch.start)) < EPS or epoch.pulse_migration is not None)
         and float(epoch.start) <= DICAL2_T_INF + EPS
     ]
     for _, pulse_time in pulse_epochs:
         boundary_idx = next(
-            (
-                idx
-                for idx, boundary in enumerate(sorted_b)
-                if abs(boundary - pulse_time) < EPS
-            ),
+            (idx for idx, boundary in enumerate(sorted_b) if abs(boundary - pulse_time) < EPS),
             None,
         )
         if boundary_idx is None:  # pragma: no cover - model boundary invariant
@@ -835,9 +826,7 @@ def refine_demography(
             pulse_match = next(
                 (
                     (position, epoch_idx)
-                    for position, (epoch_idx, pulse_time) in enumerate(
-                        unused_pulse_epochs
-                    )
+                    for position, (epoch_idx, pulse_time) in enumerate(unused_pulse_epochs)
                     if abs(float(refined[i]) - pulse_time) < EPS
                 ),
                 None,
@@ -1367,6 +1356,16 @@ def build_extended_matrix(
     return Z
 
 
+def _pulse_extended_transition(pulse_migration: np.ndarray) -> np.ndarray:
+    """Return Java diCal2's extended transition for a pulse epoch."""
+    pulse = np.asarray(pulse_migration, dtype=np.float64)
+    n_demes = pulse.shape[0]
+    transition = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
+    transition[:n_demes, :n_demes] = pulse
+    transition[n_demes:, n_demes:] = np.eye(n_demes, dtype=np.float64)
+    return transition
+
+
 def _epoch_growth_rates(epoch: DiCal2Epoch) -> np.ndarray:
     if epoch.growth_rates is None:
         return np.zeros(len(epoch.partition), dtype=np.float64)
@@ -1452,6 +1451,8 @@ def _integrate_transition_matrix(
     n_anc = len(base_absorption_rates)
     if n_anc == 0:
         return np.zeros((0, 0), dtype=np.float64), None
+    if epoch.pulse_migration is not None:
+        return _pulse_extended_transition(epoch.pulse_migration), None
     if abs(end_time - start_time) < EPS:
         identity = np.eye(2 * n_anc, dtype=np.float64)
         return identity, None
@@ -1744,6 +1745,13 @@ def _ode_compute_r_epoch(
     smc_prime: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     n_demes = len(base_absorption_rates)
+    if epoch.pulse_migration is not None:
+        pulse = np.asarray(epoch.pulse_migration, dtype=np.float64)
+        no_reco = np.zeros(2 * n_demes, dtype=np.float64)
+        reco = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
+        no_reco[:n_demes] = np.asarray(start_no_reco, dtype=np.float64) @ pulse
+        reco[:n_demes, :n_demes] = pulse.T @ np.asarray(start_reco, dtype=np.float64) @ pulse
+        return no_reco, reco
     state_space = _RecoStateSpace(n_demes)
     y_start = np.zeros(state_space.size, dtype=np.float64)
     for deme in range(n_demes):
@@ -1828,6 +1836,10 @@ def _ode_compute_mutation_events(
     interval_end: float,
 ) -> np.ndarray:
     n_demes = len(base_absorption_rates)
+    if epoch.pulse_migration is not None:
+        result = np.zeros((n_demes, 2, 2 * n_demes), dtype=np.float64)
+        result[:, 0, :n_demes] = np.asarray(epoch.pulse_migration, dtype=np.float64)
+        return result
     state_space = _MutationStateSpace(n_demes)
     initial = np.eye(state_space.size, dtype=np.float64).reshape(-1)
 
@@ -1869,6 +1881,8 @@ def _ode_compute_marginal_transition_matrix(
     interval_end: float,
 ) -> np.ndarray:
     n_demes = len(base_absorption_rates)
+    if epoch.pulse_migration is not None:
+        return _pulse_extended_transition(epoch.pulse_migration)
     transition = np.zeros((2 * n_demes, 2 * n_demes), dtype=np.float64)
     for start_deme in range(n_demes):
         y_start = np.zeros(2 * n_demes, dtype=np.float64)
@@ -2107,7 +2121,11 @@ class EigenCore:
             alpha = self.trunk.absorption_rates(i, pop_sizes)
             Z = build_extended_matrix(epoch.migration_matrix, alpha)
 
-            f = matrix_exp_eig(Z, dt)
+            f = (
+                _pulse_extended_transition(epoch.pulse_migration)
+                if epoch.pulse_migration is not None
+                else matrix_exp_eig(Z, dt)
+            )
             eig_decomp = EigDecomp.from_matrix(Z)
 
             self.alpha_per_interval.append(alpha)
@@ -2396,19 +2414,34 @@ class EigenCore:
         h_tensor = h_per_interval[interval]
         assert h_tensor is not None
         n_anc = self.n_anc_per_interval[interval]
-
-        total = 0.0 + 0.0j
-        for reco_ancient_deme in range(n_anc):
-            for k in range(len(eig_decomp.eigvals)):
-                for m in range(len(eig_decomp.eigvals)):
-                    for n in range(len(eig_decomp.eigvals)):
-                        total += (
-                            eig_decomp.VW[k][start_ancient_deme, reco_ancient_deme]
-                            * eig_decomp.VW[m][reco_ancient_deme, first_end_ancient_deme]
-                            * eig_decomp.VW[n][reco_ancient_deme, second_end_ancient_deme]
-                            * h_tensor[k, m, n]
-                        )
-        value = recombination_rate * float(np.real(total))
+        tensor_cache: dict[int, np.ndarray] = getattr(
+            self,
+            "_exact_r_tensor_cache",
+            {},
+        )
+        r_tensor = tensor_cache.get(interval)
+        if r_tensor is None:
+            vw = np.asarray(eig_decomp.VW, dtype=np.complex128)
+            r_tensor = recombination_rate * np.real(
+                np.einsum(
+                    "ksr,mrf,nrg,kmn->sfg",
+                    vw[:, :n_anc, :n_anc],
+                    vw[:, :n_anc, :],
+                    vw[:, :n_anc, :],
+                    h_tensor,
+                    optimize=True,
+                )
+            )
+            r_tensor = np.clip(r_tensor, 0.0, np.inf)
+            tensor_cache[interval] = r_tensor
+            self._exact_r_tensor_cache = tensor_cache
+        value = float(
+            r_tensor[
+                start_ancient_deme,
+                first_end_ancient_deme,
+                second_end_ancient_deme,
+            ]
+        )
         cache[key] = max(value, 0.0)
         return cache[key]
 
@@ -2477,6 +2510,7 @@ class EigenCore:
         self,
         recombination_rate: float,
     ) -> list[list[np.ndarray]]:
+        self._exact_r_tensor_cache: dict[int, np.ndarray] = {}
         h_per_interval: list[np.ndarray | None] = []
         for interval, eig_decomp in enumerate(self.eig_per_interval):
             if self.refined.is_pulse(interval):
@@ -2497,114 +2531,136 @@ class EigenCore:
                         )
             h_per_interval.append(curr_h)
 
-        r_cache: dict[tuple[int, int, int, int], float] = {}
-        joint_logs: list[list[np.ndarray]] = []
-        for prev_absorb_epoch in range(self.refined.n_refined):
-            prev_epoch_rows: list[np.ndarray] = []
-            joint_logs.append(prev_epoch_rows)
-            for next_absorb_epoch in range(self.refined.n_refined):
-                curr = np.full(
+        r_tensors: list[np.ndarray] = []
+        merge_maps: list[np.ndarray] = []
+        for interval, h_tensor in enumerate(h_per_interval):
+            n_anc = self.n_anc_per_interval[interval]
+            if h_tensor is None:
+                r_tensors.append(np.zeros((n_anc, 2 * n_anc, 2 * n_anc)))
+            else:
+                vw = np.asarray(self.eig_per_interval[interval].VW, dtype=np.complex128)
+                tensor = recombination_rate * np.real(
+                    np.einsum(
+                        "ksr,mrf,nrg,kmn->sfg",
+                        vw[:, :n_anc, :n_anc],
+                        vw[:, :n_anc, :],
+                        vw[:, :n_anc, :],
+                        h_tensor,
+                        optimize=True,
+                    )
+                )
+                r_tensors.append(np.clip(tensor, 0.0, np.inf))
+            if interval + 1 >= self.refined.n_refined:
+                continue
+            next_n_anc = self.n_anc_per_interval[interval + 1]
+            merge = np.zeros((n_anc, next_n_anc), dtype=np.float64)
+            for member in range(n_anc):
+                member_group = set(self.partition_per_interval[interval][member])
+                for next_deme in range(next_n_anc):
+                    if member_group.issubset(
+                        set(self.partition_per_interval[interval + 1][next_deme])
+                    ):
+                        merge[member, next_deme] = 1.0
+                        break
+            merge_maps.append(merge)
+
+        n_intervals = self.refined.n_refined
+        joint_probs: list[list[np.ndarray]] = [
+            [
+                np.zeros(
                     (
-                        self.n_anc_per_interval[prev_absorb_epoch],
-                        self.n_anc_per_interval[next_absorb_epoch],
+                        self.n_anc_per_interval[first_interval],
+                        self.n_anc_per_interval[second_interval],
                     ),
-                    LOG_ZERO,
                     dtype=np.float64,
                 )
-                prev_epoch_rows.append(curr)
-                for prev_absorb_deme in range(curr.shape[0]):
-                    for next_absorb_deme in range(curr.shape[1]):
-                        if self._is_non_absorbing(
-                            prev_absorb_epoch, prev_absorb_deme
-                        ) or self._is_non_absorbing(next_absorb_epoch, next_absorb_deme):
-                            continue
-                        min_absorb_epoch = min(prev_absorb_epoch, next_absorb_epoch)
-                        pre_z = 0.0
-                        for reco_interval in range(min_absorb_epoch):
-                            summand = 0.0
-                            curr_n_anc = self.n_anc_per_interval[reco_interval]
-                            next_n_anc = self.n_anc_per_interval[reco_interval + 1]
-                            for reco_interval_start_deme in range(curr_n_anc):
-                                for prev_next_start_deme in range(next_n_anc):
-                                    prev_members = [
-                                        member
-                                        for member in range(curr_n_anc)
-                                        if set(
-                                            self.partition_per_interval[reco_interval][member]
-                                        ).issubset(
-                                            set(
-                                                self.partition_per_interval[reco_interval + 1][
-                                                    prev_next_start_deme
-                                                ]
-                                            )
-                                        )
-                                    ]
-                                    for next_next_start_deme in range(next_n_anc):
-                                        next_members = [
-                                            member
-                                            for member in range(curr_n_anc)
-                                            if set(
-                                                self.partition_per_interval[reco_interval][member]
-                                            ).issubset(
-                                                set(
-                                                    self.partition_per_interval[reco_interval + 1][
-                                                        next_next_start_deme
-                                                    ]
-                                                )
-                                            )
-                                        ]
-                                        for prev_member_deme in prev_members:
-                                            for next_member_deme in next_members:
-                                                tmp = self.P[0][reco_interval][
-                                                    self.start_anc,
-                                                    reco_interval_start_deme,
-                                                ]
-                                                tmp *= self._r_term(
-                                                    reco_interval_start_deme,
-                                                    reco_interval,
-                                                    prev_member_deme,
-                                                    next_member_deme,
-                                                    recombination_rate,
-                                                    h_per_interval,
-                                                    r_cache,
-                                                )
-                                                tmp *= self.Q[reco_interval + 1][
-                                                    prev_absorb_epoch
-                                                ][
-                                                    prev_next_start_deme,
-                                                    prev_absorb_deme,
-                                                ]
-                                                tmp *= self.Q[reco_interval + 1][
-                                                    next_absorb_epoch
-                                                ][
-                                                    next_next_start_deme,
-                                                    next_absorb_deme,
-                                                ]
-                                                summand += tmp
-                            pre_z += summand
+                for second_interval in range(n_intervals)
+            ]
+            for first_interval in range(n_intervals)
+        ]
+        for first_interval in range(n_intervals):
+            first_n_anc = self.n_anc_per_interval[first_interval]
+            for second_interval in range(first_interval, n_intervals):
+                second_n_anc = self.n_anc_per_interval[second_interval]
+                probability = np.zeros(
+                    (first_n_anc, second_n_anc),
+                    dtype=np.float64,
+                )
 
-                        summand = 0.0
-                        for reco_interval_start_deme in range(
-                            self.n_anc_per_interval[min_absorb_epoch]
-                        ):
-                            tmp = self.P[0][min_absorb_epoch][
-                                self.start_anc,
-                                reco_interval_start_deme,
-                            ]
-                            tmp *= self._w_term(
-                                reco_interval_start_deme,
-                                prev_absorb_epoch,
-                                prev_absorb_deme,
-                                next_absorb_epoch,
-                                next_absorb_deme,
-                                recombination_rate,
-                                h_per_interval,
-                                r_cache,
+                for reco_interval in range(first_interval):
+                    if self.refined.is_pulse(reco_interval):
+                        continue
+                    curr_n_anc = self.n_anc_per_interval[reco_interval]
+                    merge = merge_maps[reco_interval]
+                    pre_merge = np.einsum(
+                        "spq,pu,qv->suv",
+                        r_tensors[reco_interval][
+                            :,
+                            :curr_n_anc,
+                            :curr_n_anc,
+                        ],
+                        merge,
+                        merge,
+                        optimize=True,
+                    )
+                    start_weighted = np.einsum(
+                        "s,suv->uv",
+                        self.P[0][reco_interval][self.start_anc],
+                        pre_merge,
+                        optimize=True,
+                    )
+                    probability += (
+                        self.Q[reco_interval + 1][first_interval].T
+                        @ start_weighted
+                        @ self.Q[reco_interval + 1][second_interval]
+                    )
+
+                if not self.refined.is_pulse(first_interval):
+                    start_weights = self.P[0][first_interval][self.start_anc]
+                    if first_interval == second_interval:
+                        probability += np.einsum(
+                            "s,sab->ab",
+                            start_weights,
+                            r_tensors[first_interval][
+                                :,
+                                first_n_anc : 2 * first_n_anc,
+                                first_n_anc : 2 * first_n_anc,
+                            ],
+                            optimize=True,
+                        )
+                    else:
+                        mixed = np.einsum(
+                            "sap,pu->sau",
+                            r_tensors[first_interval][
+                                :,
+                                first_n_anc : 2 * first_n_anc,
+                                :first_n_anc,
+                            ],
+                            merge_maps[first_interval],
+                            optimize=True,
+                        )
+                        probability += (
+                            np.einsum(
+                                "s,sau->au",
+                                start_weights,
+                                mixed,
+                                optimize=True,
                             )
-                            summand += tmp
-                        pre_z += summand
-                        curr[prev_absorb_deme, next_absorb_deme] = np.log(max(pre_z, 1e-300))
-        return joint_logs
+                            @ self.Q[first_interval + 1][second_interval]
+                        )
+
+                first_absorbing = self.alpha_per_interval[first_interval] > EPS
+                second_absorbing = self.alpha_per_interval[second_interval] > EPS
+                probability[~first_absorbing, :] = 0.0
+                probability[:, ~second_absorbing] = 0.0
+                probability = np.clip(probability, 0.0, np.inf)
+                joint_probs[first_interval][second_interval] = probability
+                if first_interval != second_interval:
+                    joint_probs[second_interval][first_interval] = probability.T.copy()
+
+        return [
+            [np.log(np.maximum(probability, 1e-300)) for probability in row] for row in joint_probs
+        ]
 
     def _compute_exact_ancient_emission_log_probs(self) -> list[np.ndarray]:
         h_per_interval: list[np.ndarray | None] = []
@@ -3266,8 +3322,9 @@ def _build_native_core(
     rho: float,
 ) -> tuple[EigenCore | ODECore, str]:
     has_growth = _refined_has_growth(refined)
-    use_ode = has_growth or _refined_is_structured(refined)
-    if has_growth and _refined_has_pulse(refined):
+    has_pulse = _refined_has_pulse(refined)
+    use_ode = has_growth or (_refined_is_structured(refined) and not has_pulse)
+    if has_growth and has_pulse:
         raise NotImplementedError(
             "Native diCal2 does not support combining pulse migration with ODECore."
         )
@@ -3934,10 +3991,7 @@ def _pac_trunk_sizes(n_hap: int, num_csds_per_permutation: int | None) -> set[in
     if num_csds_per_permutation == 2:
         return {1, n_hap - 1}
     highest_idx = num_csds_per_permutation - 1
-    return {
-        int(1 + idx * ((n_hap - 2) / float(highest_idx)))
-        for idx in range(highest_idx + 1)
-    }
+    return {int(1 + idx * ((n_hap - 2) / float(highest_idx))) for idx in range(highest_idx + 1)}
 
 
 def _pac_csd_pairs(
@@ -4037,9 +4091,7 @@ def _resolve_csd_groups(
         else:
             if len(paths) != n_contigs:
                 raise ValueError("Provide one permutation file or one file per contig.")
-            per_contig_permutations = [
-                _read_dical2_permutations(path, n_hap) for path in paths
-            ]
+            per_contig_permutations = [_read_dical2_permutations(path, n_hap) for path in paths]
         file_records = [
             {"path": str(Path(path).expanduser().resolve()), "sha256": sha256_file(path)}
             for path in paths
@@ -4063,10 +4115,7 @@ def _resolve_csd_groups(
         per_contig_permutations = [[list(range(n_hap))] for _ in range(n_contigs)]
 
     groups = [
-        [
-            _pac_csd_pairs(order, resolved.num_csds_per_permutation)
-            for order in contig_permutations
-        ]
+        [_pac_csd_pairs(order, resolved.num_csds_per_permutation) for order in contig_permutations]
         for contig_permutations in per_contig_permutations
     ]
     metadata: dict[str, object] = {
@@ -4143,9 +4192,7 @@ class DemoParameters:
         bound_map = {param_id: idx for idx, param_id in enumerate(self.boundary_param_ids)}
         pop_map = {param_id: idx for idx, param_id in enumerate(self.pop_param_ids)}
         mig_map = {param_id: idx for idx, param_id in enumerate(self.migration_param_ids)}
-        pulse_map = {
-            param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)
-        }
+        pulse_map = {param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)}
         growth_map = {param_id: idx for idx, param_id in enumerate(self.growth_param_ids)}
         for param_id in self.ordered_param_ids:
             if param_id in bound_map:
@@ -4168,9 +4215,7 @@ class DemoParameters:
         bound_map = {param_id: idx for idx, param_id in enumerate(self.boundary_param_ids)}
         pop_map = {param_id: idx for idx, param_id in enumerate(self.pop_param_ids)}
         mig_map = {param_id: idx for idx, param_id in enumerate(self.migration_param_ids)}
-        pulse_map = {
-            param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)
-        }
+        pulse_map = {param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)}
         growth_map = {param_id: idx for idx, param_id in enumerate(self.growth_param_ids)}
         for param_id, value in zip(self.ordered_param_ids, values):
             if param_id in bound_map:
@@ -4236,9 +4281,7 @@ class DemoParameters:
                 1.0,
             )
         if len(self.growth_rate_values):
-            self.growth_rate_values = opt_params[
-                n_bound + n_pop + n_mig + n_pulse :
-            ].copy()
+            self.growth_rate_values = opt_params[n_bound + n_pop + n_mig + n_pulse :].copy()
 
     def to_demo(self, demo_template: DiCal2Demo) -> DiCal2Demo:
         """Build a fresh DiCal2Demo from the current parameter values."""
@@ -4489,9 +4532,7 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
                     if param_id is None:
                         continue
                     saw_explicit_ids = True
-                    pulse_groups_by_id.setdefault(param_id, []).append(
-                        (e_idx, src_idx, dst_idx)
-                    )
+                    pulse_groups_by_id.setdefault(param_id, []).append((e_idx, src_idx, dst_idx))
                     pulse_values_by_id.setdefault(
                         param_id,
                         float(ep.pulse_migration[src_idx, dst_idx]),
@@ -4526,11 +4567,7 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
     pulse_ids = sorted(pulse_groups_by_id)
     growth_ids = sorted(growth_groups_by_id)
     ordered_ids = sorted(
-        set(boundary_ids)
-        | set(pop_ids)
-        | set(migration_ids)
-        | set(pulse_ids)
-        | set(growth_ids)
+        set(boundary_ids) | set(pop_ids) | set(migration_ids) | set(pulse_ids) | set(growth_ids)
     )
     return DemoParameters(
         ordered_param_ids=ordered_ids,
@@ -4548,9 +4585,7 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
             [migration_values_by_id[param_id] for param_id in migration_ids],
             dtype=np.float64,
         ),
-        free_pulse_migration_groups=[
-            pulse_groups_by_id[param_id] for param_id in pulse_ids
-        ],
+        free_pulse_migration_groups=[pulse_groups_by_id[param_id] for param_id in pulse_ids],
         pulse_migration_values=np.array(
             [pulse_values_by_id[param_id] for param_id in pulse_ids],
             dtype=np.float64,
@@ -4605,6 +4640,10 @@ def _q_function(
     refined = refine_demography(objective_demo, interval_boundaries)
 
     total_q = 0.0
+    core_cache: dict[
+        tuple[int, tuple[float, ...]],
+        CoreMatrices,
+    ] = {}
     for (additional_idx, trunk_idxs, observed_present), counts in zip(csd_setups, counts_list):
         trunk = SimpleTrunk(
             config=config,
@@ -4614,15 +4653,22 @@ def _q_function(
             trunk_style=trunk_style,
             cake_style=cake_style,
         )
-        core_obj, _ = _build_native_core(
-            refined=refined,
-            trunk=trunk,
-            observed_present_deme=observed_present,
-            mutation_matrix=mutation_matrix,
-            theta=theta,
-            rho=rho,
+        cache_key = (
+            int(observed_present),
+            tuple(float(value) for value in trunk.sample_sizes),
         )
-        core = core_obj.core_matrices()
+        core = core_cache.get(cache_key)
+        if core is None:
+            core_obj, _ = _build_native_core(
+                refined=refined,
+                trunk=trunk,
+                observed_present_deme=observed_present,
+                mutation_matrix=mutation_matrix,
+                theta=theta,
+                rho=rho,
+            )
+            core = core_obj.core_matrices()
+            core_cache[cache_key] = core
         # The expected counts may have a different state space if the
         # refined grid changed: assume same here (boundaries are fixed).
         if core.n_states != counts.n_states if hasattr(counts, "n_states") else False:
@@ -4676,6 +4722,10 @@ def _evaluate_total_log_likelihood(
     objective_demo = _halve_demo_migration_rates(demo) if half_migration_rate else demo
     refined = refine_demography(objective_demo, interval_boundaries)
     total_ll = 0.0
+    core_cache: dict[
+        tuple[int, tuple[float, ...]],
+        tuple[EigenCore | ODECore, CoreMatrices],
+    ] = {}
     for additional_idx, trunk_idxs in _enumerate_csd_pairs(sequences.shape[0], composite_mode):
         if not trunk_idxs:
             continue
@@ -4688,15 +4738,24 @@ def _evaluate_total_log_likelihood(
             trunk_style=trunk_style,
             cake_style=cake_style,
         )
-        core_obj, _ = _build_native_core(
-            refined=refined,
-            trunk=trunk,
-            observed_present_deme=present_deme,
-            mutation_matrix=mutation_matrix,
-            theta=theta,
-            rho=rho,
+        cache_key = (
+            int(present_deme),
+            tuple(float(value) for value in trunk.sample_sizes),
         )
-        core = core_obj.core_matrices()
+        cached_core = core_cache.get(cache_key)
+        if cached_core is None:
+            core_obj, _ = _build_native_core(
+                refined=refined,
+                trunk=trunk,
+                observed_present_deme=present_deme,
+                mutation_matrix=mutation_matrix,
+                theta=theta,
+                rho=rho,
+            )
+            core = core_obj.core_matrices()
+            core_cache[cache_key] = (core_obj, core)
+        else:
+            core_obj, core = cached_core
         grouped_trunks = {
             h: _group_observations(sequences[h], loci_per_hmm_step)[0] for h in trunk_idxs
         }
@@ -4750,9 +4809,7 @@ def _clone_demo_parameters(params: DemoParameters) -> DemoParameters:
         pop_size_values=params.pop_size_values.copy(),
         free_migration_groups=[list(group) for group in params.free_migration_groups],
         migration_values=params.migration_values.copy(),
-        free_pulse_migration_groups=[
-            list(group) for group in params.free_pulse_migration_groups
-        ],
+        free_pulse_migration_groups=[list(group) for group in params.free_pulse_migration_groups],
         pulse_migration_values=params.pulse_migration_values.copy(),
         free_growth_rate_groups=[list(group) for group in params.free_growth_rate_groups],
         growth_rate_values=params.growth_rate_values.copy(),
@@ -5344,10 +5401,7 @@ def _meta_random_points(
     for _ in range(num_start_points):
         for tries in range(1, _META_MAX_NEW_POINT_TRIES + 1):
             point = np.asarray(
-                [
-                    _meta_logify(rng.random(), lower, upper)
-                    for lower, upper in bounds
-                ],
+                [_meta_logify(rng.random(), lower, upper) for lower, upper in bounds],
                 dtype=np.float64,
             )
             candidate = _clone_demo_parameters(params)
@@ -5413,19 +5467,19 @@ def _run_dical2_em(
         total_ll = 0.0
         contig_permutation_log_likelihoods: list[list[float]] = []
         contig_permutation_weights: list[list[float]] = []
+        core_cache: dict[
+            tuple[int, tuple[float, ...]],
+            tuple[EigenCore | ODECore, CoreMatrices, str],
+        ] = {}
 
         for contig, csd_groups in zip(contigs, csd_groups_by_contig, strict=True):
             sequences = np.asarray(contig.sequences, dtype=np.int8)
             if sequences.shape[0] != n_hap:
                 raise ValueError("All diCal2 contigs must contain the same haplotypes.")
-            permutation_records: list[
-                list[tuple[ExpectedCounts, tuple[int, list[int], int]]]
-            ] = []
+            permutation_records: list[list[tuple[ExpectedCounts, tuple[int, list[int], int]]]] = []
             permutation_lls: list[float] = []
             for csd_pairs in csd_groups:
-                current_records: list[
-                    tuple[ExpectedCounts, tuple[int, list[int], int]]
-                ] = []
+                current_records: list[tuple[ExpectedCounts, tuple[int, list[int], int]]] = []
                 permutation_ll = 0.0
                 for additional_idx, trunk_idxs in csd_pairs:
                     if not trunk_idxs:
@@ -5439,15 +5493,28 @@ def _run_dical2_em(
                         trunk_style=trunk_style,
                         cake_style=cake_style,
                     )
-                    core_obj, selected_core_type = _build_native_core(
-                        refined=refined,
-                        trunk=trunk,
-                        observed_present_deme=present_deme,
-                        mutation_matrix=mutation_matrix,
-                        theta=theta,
-                        rho=rho,
+                    cache_key = (
+                        int(present_deme),
+                        tuple(float(value) for value in trunk.sample_sizes),
                     )
-                    core = core_obj.core_matrices()
+                    cached_core = core_cache.get(cache_key)
+                    if cached_core is None:
+                        core_obj, selected_core_type = _build_native_core(
+                            refined=refined,
+                            trunk=trunk,
+                            observed_present_deme=present_deme,
+                            mutation_matrix=mutation_matrix,
+                            theta=theta,
+                            rho=rho,
+                        )
+                        core = core_obj.core_matrices()
+                        core_cache[cache_key] = (
+                            core_obj,
+                            core,
+                            selected_core_type,
+                        )
+                    else:
+                        core_obj, core, selected_core_type = cached_core
                     grouped_trunks = {
                         h: _group_observations(sequences[h], loci_per_hmm_step)[0]
                         for h in trunk_idxs
@@ -5569,6 +5636,7 @@ def _run_dical2_em(
                 cake_style,
                 half_migration_rate,
             )
+
         mstep_trace: dict[str, object] | None = {} if record_mstep_trace else None
         try:
             if coordinatewise_mstep:
@@ -6553,14 +6621,10 @@ def _dical2_upstream(
                     "metaGridStart": bool(resolved.meta_grid_start),
                     "metaNumIterations": int(resolved.meta_num_iterations),
                     "metaKeepBest": (
-                        int(resolved.meta_keep_best)
-                        if resolved.meta_num_iterations > 1
-                        else None
+                        int(resolved.meta_keep_best) if resolved.meta_num_iterations > 1 else None
                     ),
                     "metaNumPoints": (
-                        resolved.meta_num_points
-                        if resolved.meta_num_iterations > 1
-                        else None
+                        resolved.meta_num_points if resolved.meta_num_iterations > 1 else None
                     ),
                     "numPermutations": resolved.num_permutations,
                     "permutationsFile": (
@@ -6571,9 +6635,7 @@ def _dical2_upstream(
                             for path in resolved.permutation_files
                         ]
                     ),
-                    "diffPermsPerChunk": bool(
-                        resolved.different_permutations_per_contig
-                    ),
+                    "diffPermsPerChunk": bool(resolved.different_permutations_per_contig),
                     "numCsdsPerPerm": resolved.num_csds_per_permutation,
                     "trunkStyle": resolved.trunk_style,
                     "cakeStyle": resolved.cake_style,

@@ -66,23 +66,14 @@ SCENARIOS = [
         demography="three_populations",
         seed=107,
     ),
-    pytest.param(
-        StructuredScenario(
-            name="introgression",
-            example_dir="introgression",
-            demo_file="introgression.demo",
-            config_file="introgression.config",
-            start_point=(0.05, 0.03),
-            demography="introgression",
-            seed=109,
-        ),
-        marks=pytest.mark.xfail(
-            strict=True,
-            reason=(
-                "Native pulse-migration evaluation is preserved but has not yet "
-                "reached the Java EigenCore likelihood tolerance."
-            ),
-        ),
+    StructuredScenario(
+        name="introgression",
+        example_dir="introgression",
+        demo_file="introgression.demo",
+        config_file="introgression.config",
+        start_point=(0.05, 0.03),
+        demography="introgression",
+        seed=109,
     ),
 ]
 

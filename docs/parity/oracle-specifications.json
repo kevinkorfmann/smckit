@@ -230,7 +230,7 @@
         "independent clean-split simulation",
         "independent migration-window simulation",
         "independent three-population simulation",
-        "independent introgression simulation (strict expected failure until EigenCore parity closes)"
+        "independent introgression simulation with pulse migration and Java EigenCore"
       ],
       "workflows": [
         "external and VCF-header references",
