@@ -47,8 +47,8 @@
      - ✓
      - ✓
      - ✗
-     - `README exp and IM searches match best parameters; fixed-point dloglik <=5.38e-11.`
-     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README exponential-growth and isolation-migration searches reach the upstream best-fit parameter vectors, and their fixed-point likelihoods agree within 5.38e-11 after reproducing the upstream ODE tolerance and Ethan-trunk equilibrium behavior.
+     - `README searches match; independent fitted structured endpoints match within 1e-12 parameters and 1e-5 log likelihood.`
+     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README searches and independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth one-step fits reproduce the pinned Java endpoints. Transition-distance statistics and Java's default recombination-to-self conditioning are preserved.
    * - PHLASH
      - ✓
      - n/a

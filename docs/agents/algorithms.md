@@ -76,7 +76,8 @@
 - Purpose: fit structured demographic histories with migration and multiple populations.
 - Input: `.param`, `.demo`, `.config`, phased sequence data.
 - Upstream status: vendored `diCal2.jar` plus public stdout-parsing upstream bridge.
-- Native status: available with tracked oracle comparisons; README `exp`
-  oracle-point and explicit-start parity are now close, but full meta-start
-  interchangeability is still pending.
+- Native status: README searches and independent fitted clean-split,
+  migration-window, three-population, pulse-introgression, and growth oracles
+  reproduce the Java endpoints. Structured PAC/trunk controls, detailed
+  artifacts, and broader cross-platform performance remain unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.

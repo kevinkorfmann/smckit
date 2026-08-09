@@ -208,14 +208,18 @@ On the tracked README fixtures, parity is materially tighter than before:
 - independent simulated clean-split, migration-window, and three-population
   fixed points agree within `1.4e-6` total log-likelihood and within the frozen
   `1e-6` per-base criterion
+- one-step fits for clean split, migration window, and three populations now
+  reproduce Java's parameter vectors within `1e-12` and final likelihoods
+  within `1e-5`; the native E-step retains physical transition distances and
+  the M-step reproduces Java's default recombination-to-self conditioning
 - independent one-step exponential-growth fitting returns exactly the same two
   fitted parameters as Java, with final log-likelihood difference below
   `4e-12`
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
-Native promotion still requires independent simulation families, remaining
-feature-ledger closure, and the performance gate.
+Native promotion still requires structured PAC/trunk-control families,
+remaining feature-ledger closure, and cross-platform performance gates.
 
 Parameterized instantaneous migration is preserved by the native demo reader
 and refined into a stochastic pulse epoch. Pulse transitions are applied to
@@ -227,7 +231,7 @@ vector as Java within `1e-14`, with the likelihood inside the same strict
 tolerance. On the frozen macOS ARM64 benchmark, native was `1.1381x` faster
 (paired-bootstrap 95% CI `1.1343-1.1433x`) and used `0.4909x` peak process-tree
 memory across ten warmed repetitions. This capability remains unpromoted until
-broader structured families and Linux evidence close.
+structured PAC/trunk-control families and Linux evidence close.
 
 The independent fitted-growth capability also clears its macOS ARM64 gate.
 Across ten warmed paired repetitions, native was `1.3052x` faster than Java

@@ -3638,6 +3638,8 @@ class ExpectedCounts:
     no_reco_expect: np.ndarray  # (n_states,)
     reco_expect: np.ndarray  # (n_states, n_states)
     emission_expect: np.ndarray  # (n_states, n_alleles, n_alleles)
+    transition_expectations: dict[int, tuple[np.ndarray, np.ndarray]] | None = None
+    self_reco_expectations: dict[int, np.ndarray] | None = None
 
 
 @dataclass
@@ -3722,6 +3724,8 @@ def expected_counts(
     # Transition expectations
     no_reco_expect = np.zeros(S, dtype=np.float64)
     reco_expect = np.zeros((S, S), dtype=np.float64)
+    transition_expectations: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    self_reco_expectations: dict[int, np.ndarray] = {}
 
     for ll_i in range(L - 1):
         em_next = _block_emission_log(core, obs_additional[ll_i + 1], obs_trunk[ll_i + 1])
@@ -3738,6 +3742,17 @@ def expected_counts(
             logF[ll_i][:, None] + log_reco_step + em_next[None, :] + logB[ll_i + 1][None, :] - ll
         )
         reco_expect += xi_re
+        transition_step = int(step_sizes[ll_i])
+        step_no_reco, step_reco = transition_expectations.setdefault(
+            transition_step,
+            (np.zeros(S, dtype=np.float64), np.zeros((S, S), dtype=np.float64)),
+        )
+        step_no_reco += xi_no
+        step_reco += xi_re
+        self_reco_expectations.setdefault(
+            transition_step,
+            np.zeros(S, dtype=np.float64),
+        )[:] += np.diag(xi_re)
 
     return ExpectedCounts(
         log_likelihood=ll,
@@ -3745,6 +3760,8 @@ def expected_counts(
         no_reco_expect=no_reco_expect,
         reco_expect=reco_expect,
         emission_expect=emission_expect,
+        transition_expectations=transition_expectations,
+        self_reco_expectations=self_reco_expectations,
     )
 
 
@@ -3908,6 +3925,8 @@ def _expanded_expected_counts(
     no_reco_expect = np.zeros(core.n_states, dtype=np.float64)
     reco_expect = np.zeros((core.n_states, core.n_states), dtype=np.float64)
     emission_expect = np.zeros((core.n_states, n_alleles, n_alleles), dtype=np.float64)
+    transition_expectations: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    self_reco_expectations: dict[int, np.ndarray] = {}
     base_aggregation = np.zeros((H, core.n_states), dtype=np.float64)
     base_aggregation[np.arange(H), base_states] = 1.0
 
@@ -3941,7 +3960,23 @@ def _expanded_expected_counts(
         xi_re = np.exp(
             logF[ll_i][:, None] + log_reco_step + nxt_em[None, :] + logB[ll_i + 1][None, :] - ll
         )
-        reco_expect += base_aggregation.T @ xi_re @ base_aggregation
+        base_xi_no = xi_no @ base_aggregation
+        base_xi_re = base_aggregation.T @ xi_re @ base_aggregation
+        reco_expect += base_xi_re
+        transition_step = int(step_sizes[ll_i])
+        step_no_reco, step_reco = transition_expectations.setdefault(
+            transition_step,
+            (
+                np.zeros(core.n_states, dtype=np.float64),
+                np.zeros((core.n_states, core.n_states), dtype=np.float64),
+            ),
+        )
+        step_no_reco += base_xi_no
+        step_reco += base_xi_re
+        self_reco_expectations.setdefault(
+            transition_step,
+            np.zeros(core.n_states, dtype=np.float64),
+        )[:] += np.diag(xi_re) @ base_aggregation
 
     return ExpectedCounts(
         log_likelihood=float(ll),
@@ -3949,6 +3984,8 @@ def _expanded_expected_counts(
         no_reco_expect=no_reco_expect,
         reco_expect=reco_expect,
         emission_expect=emission_expect,
+        transition_expectations=transition_expectations,
+        self_reco_expectations=self_reco_expectations,
     )
 
 
@@ -4693,8 +4730,32 @@ def _q_function(
             continue
 
         q_init = float(np.sum(counts.initial_expect * core.log_initial))
-        q_no = float(np.sum(counts.no_reco_expect * core.log_no_reco))
-        q_re = float(np.sum(counts.reco_expect * core.log_reco))
+        if counts.transition_expectations is None:
+            q_no = float(np.sum(counts.no_reco_expect * core.log_no_reco))
+            q_re = float(np.sum(counts.reco_expect * core.log_reco))
+        else:
+            q_no = 0.0
+            q_re = 0.0
+            for step_size, (no_reco_expect, reco_expect) in counts.transition_expectations.items():
+                log_no_reco, log_reco = _scaled_transition_logs(core, step_size)
+                self_reco_expect = (
+                    np.zeros_like(no_reco_expect)
+                    if counts.self_reco_expectations is None
+                    else counts.self_reco_expectations[step_size]
+                )
+                state_present = (
+                    core.state_ancient if core.state_present is None else core.state_present
+                )
+                trunk_totals = np.asarray(trunk.sample_sizes, dtype=np.float64)[state_present]
+                log_stay = np.logaddexp(
+                    log_no_reco,
+                    np.diag(log_reco) - np.log(trunk_totals),
+                )
+                adjusted_reco_expect = reco_expect.copy()
+                diagonal = np.diag_indices_from(adjusted_reco_expect)
+                adjusted_reco_expect[diagonal] -= self_reco_expect
+                q_no += float(np.sum((no_reco_expect + self_reco_expect) * log_stay))
+                q_re += float(np.sum(adjusted_reco_expect * log_reco))
         q_em = float(np.sum(counts.emission_expect * core.log_emission))
         total_q += q_init + q_no + q_re + q_em
 
@@ -5628,6 +5689,13 @@ def _run_dical2_em(
                     counts.no_reco_expect *= weight
                     counts.reco_expect *= weight
                     counts.emission_expect *= weight
+                    if counts.transition_expectations is not None:
+                        for no_reco_expect, reco_expect in counts.transition_expectations.values():
+                            no_reco_expect *= weight
+                            reco_expect *= weight
+                    if counts.self_reco_expectations is not None:
+                        for self_reco_expect in counts.self_reco_expectations.values():
+                            self_reco_expect *= weight
                     counts_list.append(counts)
                     csd_setups.append(setup)
 

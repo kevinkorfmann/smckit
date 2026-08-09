@@ -34,6 +34,7 @@ class StructuredScenario:
     demo_file: str
     config_file: str
     start_point: tuple[float, ...]
+    bounds: str
     demography: str
     seed: int
 
@@ -45,6 +46,7 @@ SCENARIOS = [
         demo_file="clean_split.demo",
         config_file="clean_split.config",
         start_point=(0.2, 0.25, 0.25, 1.0),
+        bounds="0.002,20;0.01,20;0.01,20;0.01,20",
         demography="split",
         seed=101,
     ),
@@ -54,6 +56,7 @@ SCENARIOS = [
         demo_file="isolation_migration_window.demo",
         config_file="isolation_migration_window.config",
         start_point=(0.1, 0.2, 0.25, 0.25, 0.1, 1.0),
+        bounds="0.02,20;0.002,20;0.01,20;0.01,20;0.01,100;0.01,20",
         demography="migration_window",
         seed=103,
     ),
@@ -63,6 +66,7 @@ SCENARIOS = [
         demo_file="three_populations.demo",
         config_file="three_populations.config",
         start_point=(0.2, 0.4),
+        bounds="0.02,20;0.02,20",
         demography="three_populations",
         seed=107,
     ),
@@ -72,6 +76,7 @@ SCENARIOS = [
         demo_file="introgression.demo",
         config_file="introgression.config",
         start_point=(0.05, 0.03),
+        bounds="0.001,20;0.0001,0.9999",
         demography="introgression",
         seed=109,
     ),
@@ -342,6 +347,66 @@ def test_native_introgression_one_step_matches_upstream(tmp_path: Path) -> None:
         np.asarray(upstream["best_params"]),
         rtol=0.0,
         atol=1e-14,
+    )
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [item for item in SCENARIOS if item.demography != "introgression"],
+    ids=lambda scenario: scenario.name,
+)
+def test_native_structured_one_step_matches_upstream(
+    scenario: StructuredScenario,
+    tmp_path: Path,
+) -> None:
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(ts, tmp_path, scenario.name)
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": scenario.start_point,
+        "seed": scenario.seed,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "lol",
+        "bounds": scenario.bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert upstream["resolved_options"]["number_iterations_mstep"] == 1
+    assert native["resolved_options"]["number_iterations_mstep"] == 1
+    assert native["core_type"] == "ode"
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=STRUCTURED_LL_ABS_TOL,
+    ), (native["best_params"], upstream["best_params"])
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-12,
     )
 
 

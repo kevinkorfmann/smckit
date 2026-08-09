@@ -389,3 +389,33 @@ The frozen macOS ARM64 record contains ten warmed pairs. Native achieved a
 memory. Fitted parameters were identical in every pair and the maximum final
 log-likelihood difference was `3.7516656448e-12`. This closes only the fitted
 growth capability on macOS; broader structured families and Linux remain open.
+
+### 18. Fitted structured EM must preserve Java's latent-transition conditioning
+
+Independent one-step fits now cover clean split, a finite migration window, and
+three populations in addition to pulse introgression and exponential growth.
+The migration-window and three-population endpoints initially agreed, but the
+clean-split optimizer exposed an almost tied population-size coordinate.
+
+The mismatch had two causes in the native sufficient statistics. First,
+transition counts from a grouped physical-locus HMM were accumulated without
+retaining the transition distance, so the M-step could evaluate a 50-locus
+transition against one-locus probabilities. Second, the Java default
+`ConditionLineage` objective does not condition on whether a lineage stayed
+put through no recombination or recombined back into the same absorbing
+lineage. The native objective had incorrectly kept those latent events
+separate.
+
+Expected counts now retain a map from physical transition distance to
+no-recombination and recombination statistics, plus the recombination-to-self
+subset. Candidate transition matrices are rebuilt at each recorded distance.
+For the default objective, self-recombination is removed from the ordinary
+recombination table and combined with no recombination using the same log-sum
+expression as Java. The clean-split fit consequently selects the same four
+parameters as the pinned jar; all three new structured one-step oracles meet
+`1e-12` parameter and `1e-5` final-likelihood tolerances.
+
+This closes the ordinary LOL fitted-structure family represented by these
+simulations. Structured PAC, alternate trunk styles, explicit
+`--condOnTransitionType` semantics, detailed artifacts, and Linux performance
+remain promotion blockers.
