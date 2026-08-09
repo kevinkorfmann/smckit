@@ -79,7 +79,9 @@
 - Native status: README searches and independent fitted clean-split,
   migration-window, three-population, pulse-introgression, and growth oracles
   reproduce the Java endpoints; transition-type conditioning also has a strict
-  fitted oracle. Native marginal-KL repairs a pinned Java null-rate crash and
-  remains experimental. Structured PAC/trunk controls, detailed artifacts,
-  and broader cross-platform performance remain unpromoted.
+  fitted oracle. Generated and file-backed structured PAC one-step fits also
+  agree. Native marginal-KL and the all-CSD PAC default repair distinct pinned
+  Java null-reference crashes and remain experimental. Alternate trunk
+  controls, detailed artifacts, and broader cross-platform performance remain
+  unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.

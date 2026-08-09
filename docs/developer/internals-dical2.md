@@ -442,3 +442,30 @@ execution deliberately preserves that failure. A deterministic native
 endpoint and the upstream error are both frozen, and native emits a specific
 experimental warning. Marginal-KL remains unpromoted until a legally distinct
 repaired-source oracle is available; PAC weighting is not claimed equivalent.
+
+### 20. Structured and file-backed PAC fitting must ignore impossible zero-trunk states
+
+Generated two-permutation PAC one-step fits now cover independent clean split,
+migration-window, and three-population simulations. A separate clean-split
+oracle uses two VCF chunks, two different permutation files, and posterior-
+weighted one-step EM. Every fitted parameter agrees with Java within `1e-12`,
+and final likelihoods meet the structured `1e-5` tolerance. The existing
+one-population two-contig file-backed workflow now also has a fitted, rather
+than fixed-point-only, oracle.
+
+The clean-split PAC fit exposed a numerical bug that ordinary leave-one-out
+tests could not reach. A partial PAC trunk can contain no sample from one
+present deme, making some demographic states impossible. Native formed the
+default self-recombination log-sum for every state, including an undefined
+`log(0)` trunk fraction, and then multiplied the result by a zero expectation.
+The resulting NaN made the optimizer silently retain its starting point. The
+M-step now evaluates the log-sum only for supported trunk states and rejects a
+positive expectation in an unsupported state. This matches Java's explicit
+zero-expectation skip and closes all three structured PAC endpoints.
+
+The original all-CSD default has a distinct pinned-upstream defect. When
+`--numCsdsPerPerm` is omitted, Java includes trunk size zero, then dereferences
+the null trunk while constructing the core. Exact upstream execution preserves
+that `NullPointerException`. Native intentionally evaluates all non-empty CSDs;
+its deterministic endpoint and Java failure are frozen. This repaired default
+remains unpromoted pending empirical validation.

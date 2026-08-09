@@ -131,6 +131,11 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   one-step fit has strict Java parity. Exact upstream marginal-KL preserves a
   pinned null-mutation-rate crash; native implements the intended source
   formula behind an explicit experimental warning and frozen endpoint.
+- Close structured diCal2 PAC one-step parity across clean split, migration
+  window, and three populations, plus fitted two-contig file-backed workflows.
+  The native M-step now skips impossible zero-trunk states instead of producing
+  `0 * NaN`. The pinned jar's separate null-trunk crash for the default all-CSD
+  set is frozen while native's non-empty-CSD repair remains unpromoted.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

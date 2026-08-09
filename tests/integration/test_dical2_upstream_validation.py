@@ -203,9 +203,7 @@ def test_dical2_native_pac_permutations_match_upstream_fixed_point() -> None:
     for permutation in expected_permutations:
         row = "\t".join(str(value) for value in permutation)
         assert f"# HAP PERMUTATION:\t{row}\t" in upstream["upstream"]["stdout"]
-    assert native["log_likelihood"] == pytest.approx(
-        upstream["log_likelihood"], abs=1e-8
-    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
 
 
 @pytest.mark.oracle
@@ -245,13 +243,45 @@ def test_dical2_native_pac_one_step_em_matches_upstream() -> None:
         rtol=1e-10,
         atol=1e-12,
     )
-    assert native["log_likelihood"] == pytest.approx(
-        upstream["log_likelihood"], abs=1e-8
-    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
     assert len(native["rounds"]) == 2
     assert len(upstream["em_path"]) == 2
     for weights in native["rounds"][0]["permutation_weights"]:
         assert sum(weights) == pytest.approx(1.0)
+
+
+@pytest.mark.oracle
+def test_dical2_pac_all_csds_characterizes_upstream_empty_trunk_failure() -> None:
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "pac",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": "simple",
+        "num_permutations": 1,
+    }
+    with pytest.raises(RuntimeError, match="trunk.*null"):
+        dical2(
+            _read_exp_data(),
+            implementation="upstream",
+            upstream_options=options,
+            **common,
+        )
+
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+    assert native["permutations"]["per_contig"] == [[[2, 6, 7, 0, 3, 1, 4, 5]]]
+    assert native["log_likelihood"] == pytest.approx(-24.1478058840125, abs=1e-12)
 
 
 @pytest.mark.oracle
@@ -311,9 +341,72 @@ def test_dical2_native_file_permutations_match_upstream_per_contig(
     assert native["permutations"]["per_contig"] == expected
     assert len(native["permutations"]["files"]) == 2
     assert all(record["sha256"] for record in native["permutations"]["files"])
-    assert native["log_likelihood"] == pytest.approx(
-        upstream["log_likelihood"], abs=1e-8
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
+
+
+@pytest.mark.oracle
+def test_dical2_native_file_permutations_one_step_match_upstream_per_contig(
+    tmp_path: Path,
+) -> None:
+    permutation_files = [tmp_path / "contig-1.perm", tmp_path / "contig-2.perm"]
+    permutation_files[0].write_text(
+        "0 1 2 3 4 5 6 7\n7 6 5 4 3 2 1 0\n",
+        encoding="utf-8",
     )
+    permutation_files[1].write_text(
+        "1 0 3 2 5 4 7 6\n2 3 0 1 6 7 4 5\n",
+        encoding="utf-8",
+    )
+    data_kwargs = {
+        "sequences": [ROOT / "test.vcf", ROOT / "test.vcf"],
+        "param_file": ROOT / "test.param",
+        "demo_file": ROOT / "exp.demo",
+        "rates_file": ROOT / "exp.rates",
+        "config_file": ROOT / "exp.config",
+        "reference_file": [ROOT / "test.fa", ROOT / "test.fa"],
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 23,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "pac",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "number_iterations_mstep": 1,
+        "trunk_style": "simple",
+        "permutation_files": permutation_files,
+        "different_permutations_per_contig": True,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=1e-8,
+    )
+    assert len(native["rounds"]) == 2
+    assert len(native["permutations"]["files"]) == 2
 
 
 @pytest.mark.oracle
@@ -356,9 +449,7 @@ def test_dical2_native_meta_grid_sequence_matches_upstream() -> None:
         "points_per_dimension": 2,
         "n_start_points": 32,
     }
-    assert native["log_likelihood"] == pytest.approx(
-        upstream["log_likelihood"], abs=1e-8
-    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
 
 
 @pytest.mark.oracle
@@ -404,9 +495,7 @@ def test_dical2_native_random_start_sequence_matches_upstream() -> None:
         "n_start_points": 3,
         "seed": 17,
     }
-    assert native["log_likelihood"] == pytest.approx(
-        upstream["log_likelihood"], abs=1e-8
-    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
 
 
 @pytest.mark.oracle
