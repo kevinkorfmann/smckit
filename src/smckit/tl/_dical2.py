@@ -7293,6 +7293,10 @@ def _dical2_upstream(
         cmd.extend(["--bedFile", ",".join(bed_paths)])
     if any(int(offset or 0) != 0 for offset in offsets):
         cmd.extend(["--vcfOffset", ",".join(str(int(offset or 0)) for offset in offsets)])
+    if bool(data.uns.get("accept_unphased_as_missing", False)):
+        cmd.append("--acceptUnphasedAsMissing")
+    if bool(data.uns.get("vcf_ignore_double_entries", False)):
+        cmd.append("--vcfIgnoreDoubleEntries")
     if resolved_paths.get("rates_file"):
         cmd.extend(["--ratesFile", resolved_paths["rates_file"][0]])
     if resolved.number_iterations_mstep is not None:
@@ -7426,6 +7430,12 @@ def _dical2_upstream(
                     "vcfFile": sequence_paths,
                     "vcfReferenceFile": reference_paths,
                     "vcfFilterPassString": str(data.uns.get("filter_pass_string", ".")),
+                    "acceptUnphasedAsMissing": bool(
+                        data.uns.get("accept_unphased_as_missing", False)
+                    ),
+                    "vcfIgnoreDoubleEntries": bool(
+                        data.uns.get("vcf_ignore_double_entries", False)
+                    ),
                     "bedFile": bed_paths,
                     "vcfOffset": [int(offset or 0) for offset in offsets],
                     "cli_args": cli_args,

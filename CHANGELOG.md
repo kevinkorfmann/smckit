@@ -74,6 +74,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   coordinate offsets, zero-based half-open BED exclusions, VCF-header
   references, and lossless typed forwarding of those controls to the original
   Java CLI.
+- Direct immutable-Java diCal2 VCF-reader oracles plus native support for
+  haploid and allele-specific partial-missing genotypes, strict default
+  unphased rejection, opt-in unphased-to-missing conversion, four-allele
+  mapping, and duplicate-record repair with typed upstream provenance.
 - Native diCal2 PAC permutation mixtures with Java-compatible generated or
   file-backed orders, selectable CSD counts, per-contig controls,
   posterior-weighted EM statistics, and generated log-grid/log-uniform

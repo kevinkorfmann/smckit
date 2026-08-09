@@ -22,6 +22,7 @@ from smckit.io._dical2 import (
     read_dical2_demo,
     read_dical2_param,
     read_dical2_rates,
+    read_dical2_vcf,
     write_dical2_output,
 )
 from smckit.tl import dical2
@@ -558,6 +559,47 @@ class TestConfigReader:
 
 
 class TestReadDical2:
+    @staticmethod
+    def _vcf_config(n_haplotypes, *, n_alleles=2, include=None):
+        if include is None:
+            include = [True] * n_haplotypes
+        multiplicities = np.asarray([[int(value)] for value in include], dtype=np.int64)
+        return DiCal2Config(
+            seq_length=8,
+            n_alleles=n_alleles,
+            n_populations=1,
+            haplotype_populations=[0 if value else -1 for value in include],
+            haplotypes_to_include=list(include),
+            haplotype_multiplicities=multiplicities,
+            sample_sizes=multiplicities.sum(axis=0),
+        )
+
+    @staticmethod
+    def _write_vcf_case(tmp_path, rows):
+        reference = tmp_path / "reference.fa"
+        reference.write_text("ACGTACGT\n")
+        vcf = tmp_path / "case.vcf"
+        sample_count = len(rows[0][-1])
+        header = [
+            "#CHROM",
+            "POS",
+            "ID",
+            "REF",
+            "ALT",
+            "QUAL",
+            "FILTER",
+            "INFO",
+            "FORMAT",
+            *[f"S{idx + 1}" for idx in range(sample_count)],
+        ]
+        lines = ["\t".join(header)]
+        for pos, ref, alt, genotypes in rows:
+            lines.append(
+                "\t".join(["1", str(pos), ".", ref, alt, ".", ".", ".", "GT", *genotypes])
+            )
+        vcf.write_text("\n".join(lines) + "\n")
+        return vcf, reference
+
     def test_basic_array_input(self):
         rng = np.random.default_rng(0)
         seqs = (rng.random((4, 100)) < 0.05).astype(np.int8)
@@ -598,6 +640,90 @@ class TestReadDical2:
                 dtype=np.int8,
             ),
         )
+
+    def test_vcf_haploid_and_partially_missing_phased_genotypes(self, tmp_path):
+        haploid_vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", ["0", "1"]), (4, "T", "A", ["1", "0"])],
+        )
+        sequences, positions, _, _ = read_dical2_vcf(
+            haploid_vcf,
+            reference,
+            self._vcf_config(2),
+        )
+        np.testing.assert_array_equal(sequences, np.array([[0, 1], [1, 0]], dtype=np.int8))
+        np.testing.assert_array_equal(positions, np.array([1, 3], dtype=np.int64))
+
+        partial_vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", ["0|.", "1|0"])],
+        )
+        sequences, positions, _, _ = read_dical2_vcf(
+            partial_vcf,
+            reference,
+            self._vcf_config(4),
+        )
+        np.testing.assert_array_equal(sequences[:, 0], np.array([0, -1, 1, 0], dtype=np.int8))
+        np.testing.assert_array_equal(positions, np.array([1], dtype=np.int64))
+
+    def test_vcf_unphased_heterozygote_matches_opt_in_missing_semantics(self, tmp_path):
+        vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", ["0/1", "0|1"])],
+        )
+        config = self._vcf_config(4)
+        with pytest.raises(ValueError, match="is not phased"):
+            read_dical2_vcf(vcf, reference, config)
+
+        sequences, _, _, _ = read_dical2_vcf(
+            vcf,
+            reference,
+            config,
+            accept_unphased_as_missing=True,
+        )
+        np.testing.assert_array_equal(sequences[:, 0], np.array([-1, -1, 0, 1], dtype=np.int8))
+
+    def test_vcf_four_allele_mapping_and_excluded_sample_semantics(self, tmp_path):
+        vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", ["0|1", "x|y"])],
+        )
+        sequences, _, _, _ = read_dical2_vcf(
+            vcf,
+            reference,
+            self._vcf_config(4, n_alleles=4, include=[True, True, False, False]),
+        )
+        np.testing.assert_array_equal(sequences[:, 0], np.array([1, 2], dtype=np.int8))
+
+    @pytest.mark.parametrize(
+        ("genotype", "message"),
+        [("0|10", "one haploid allele"), ("2|0", "Invalid allele")],
+    )
+    def test_vcf_malformed_genotypes_fail_clearly(self, tmp_path, genotype, message):
+        vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", [genotype, "0|1"])],
+        )
+        with pytest.raises(ValueError, match=message):
+            read_dical2_vcf(vcf, reference, self._vcf_config(4))
+
+    def test_vcf_duplicate_entry_switch_retains_first_record(self, tmp_path):
+        vcf, reference = self._write_vcf_case(
+            tmp_path,
+            [(2, "C", "G", ["0|1"]), (2, "C", "T", ["1|0"])],
+        )
+        config = self._vcf_config(2)
+        with pytest.raises(ValueError, match="duplicate entry"):
+            read_dical2_vcf(vcf, reference, config)
+
+        sequences, positions, _, _ = read_dical2_vcf(
+            vcf,
+            reference,
+            config,
+            vcf_ignore_double_entries=True,
+        )
+        np.testing.assert_array_equal(sequences[:, 0], np.array([0, 1], dtype=np.int8))
+        np.testing.assert_array_equal(positions, np.array([1], dtype=np.int64))
 
     def test_vcf_compacts_config_to_filtered_haplotype_order(self, tmp_path):
         config_path = tmp_path / "pair.config"
@@ -872,6 +998,8 @@ class TestReadDical2:
             filter_pass_string="PASS",
             bed_files=[bed, bed],
             vcf_offsets=[100, 100],
+            accept_unphased_as_missing=True,
+            vcf_ignore_double_entries=True,
         )
         resolved = _resolve_dical2_options(
             n_intervals=11,
@@ -932,6 +1060,8 @@ class TestReadDical2:
         assert bed_arg == ",".join([str(bed.resolve())] * 2)
         assert cmd[cmd.index("--vcfFilterPassString") + 1] == "PASS"
         assert cmd[cmd.index("--vcfOffset") + 1] == "100,100"
+        assert "--acceptUnphasedAsMissing" in cmd
+        assert "--vcfIgnoreDoubleEntries" in cmd
         assert cmd[cmd.index("--metaNumStartPoints") + 1] == "2"
         assert "--metaGridStart" in cmd
         assert cmd[cmd.index("--metaNumIterations") + 1] == "2"
@@ -944,6 +1074,8 @@ class TestReadDical2:
         assert cmd[cmd.index("--numCsdsPerPerm") + 1] == "2"
         assert run_kwargs["cwd"] == Path("vendor/diCal2").resolve()
         assert result["upstream"]["effective_args"]["vcfOffset"] == [100, 100]
+        assert result["upstream"]["effective_args"]["acceptUnphasedAsMissing"] is True
+        assert result["upstream"]["effective_args"]["vcfIgnoreDoubleEntries"] is True
         assert result["upstream"]["effective_args"]["metaGridStart"] is True
         assert result["upstream"]["effective_args"]["diffPermsPerChunk"] is True
 

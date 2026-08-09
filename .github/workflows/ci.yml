@@ -48,8 +48,11 @@ jobs:
             src/smckit/_capabilities.py \
             src/smckit/_provenance.py \
             src/smckit/cli.py \
+            src/smckit/io/_dical2.py \
+            src/smckit/tl/_dical2.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
+            tests/integration/test_dical2_vcf_semantics_oracle.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
             scripts/aggregate_psmcplus_benchmark.py \
@@ -69,8 +72,11 @@ jobs:
             src/smckit/_capabilities.py \
             src/smckit/_provenance.py \
             src/smckit/cli.py \
+            src/smckit/io/_dical2.py \
+            src/smckit/tl/_dical2.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
+            tests/integration/test_dical2_vcf_semantics_oracle.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
             scripts/aggregate_psmcplus_benchmark.py \
@@ -107,6 +113,8 @@ jobs:
             --output "$repair_dir/dical2-marginal-kl-oracle.jar" \
             > "$repair_dir/metadata.json"
           uv run python -m json.tool "$repair_dir/metadata.json" > /dev/null
+      - name: Run direct immutable-Java diCal2 VCF reader oracle
+        run: uv run pytest -q tests/integration/test_dical2_vcf_semantics_oracle.py
       - run: uv run python -m build
       - run: uv run pytest -q tests/integration/test_build_install_smoke.py
       - run: uv run sphinx-build -W -b html docs docs/_build/html

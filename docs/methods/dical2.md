@@ -48,6 +48,13 @@ omitted, each VCF must provide a `##reference=file://` header. These controls
 are preserved by the typed upstream bridge as comma-separated original CLI
 arguments.
 
+Unphased heterozygotes are rejected by default, matching diCal2. Set
+`accept_unphased_as_missing=True` to reproduce `--acceptUnphasedAsMissing`,
+which converts both alleles to missing. Set `vcf_ignore_double_entries=True`
+to reproduce `--vcfIgnoreDoubleEntries`, retaining the first record at a
+duplicated position. Phased partial missingness remains allele-specific, so
+`0|.` is represented as one observed and one missing haplotype.
+
 Packaged quickstart files:
 
 - `smckit.io.example_path("dical2/test.param")`
@@ -282,6 +289,9 @@ are also native: the latter recomputes mean-absorption quantiles independently
 for every CSD trunk and every candidate demography. README exponential and
 isolation-migration oracles cover fixed points, one-step fitting, and both
 controls in combination.
+The VCF preprocessing surface also has a direct immutable-Java reader oracle:
+seven valid cases compare segregating positions, compact haplotype arrays, and
+reference states exactly, while four invalid cases freeze rejection behavior.
 Broader empirical coverage and the complete cross-platform performance gate
 are still missing. Native parallel execution remains upstream-only; use exact
 upstream execution when those workflows are scientifically consequential.

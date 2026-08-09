@@ -537,3 +537,22 @@ particle. The normalized JSON retains the same complete `em_path`, the selected
 optimum, resolved controls, permutations, demography, and provenance. The
 audited contract and evidence are listed in
 `docs/parity/dical2-output-catalogue.md`.
+
+### 24. VCF parity requires the original reader, not inferred likelihood agreement
+
+The native VCF adapter previously collapsed a phased partial call such as
+`0|.` to two missing alleles and silently converted unphased heterozygotes even
+when the original default would reject them. It also parsed excluded sample
+columns that Java deliberately skips and did not expose the original
+duplicate-record repair switch.
+
+A small independent Java harness now calls the immutable
+`ReadSequences.readVcf` entry point directly. Seven valid cases compare exact
+segregating positions, selected haplotype arrays, and normalized full-reference
+states for haploid, partial-missing, opt-in unphased, four-allele, missing-ALT,
+duplicate-repair, and excluded-malformed-sample inputs. Four error cases freeze
+the default failures for unphased heterozygotes, malformed genotype width,
+invalid allele indices, and duplicate positions. The typed reader and upstream
+bridge now expose `accept_unphased_as_missing` / `--acceptUnphasedAsMissing`
+and `vcf_ignore_double_entries` / `--vcfIgnoreDoubleEntries` with recorded
+provenance.

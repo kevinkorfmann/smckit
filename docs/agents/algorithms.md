@@ -89,7 +89,9 @@
   GPL oracle for LOL and PAC, while the repaired all-CSD default remains
   empirical-validation-only. Ancient-state aggregation
   and per-CSD additional trunk intervals now have fixed-point and fitted
-  oracles. The original stdout artifact surface is catalogued and native
+  oracles. A direct immutable-Java reader oracle also closes haploid,
+  partial-missing, unphased, four-allele, malformed, and duplicate-entry VCF
+  semantics. The original stdout artifact surface is catalogued and native
   persists every EM row plus normalized JSON. Empirical PAC validation and
   broader cross-platform performance remain unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.

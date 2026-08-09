@@ -327,12 +327,14 @@
         "README exponential and isolation-migration ancient-deme-state fixed points and one-step fits",
         "README exponential and isolation-migration per-CSD additional-trunk-interval fixed points and one-step fits",
         "independent pulse-introgression ancient-state plus additional-trunk-interval fixed point",
-        "normal inference stdout and multi-particle native artifact round trip"
+        "normal inference stdout and multi-particle native artifact round trip",
+        "direct immutable-Java VCF reader matrix for haploid, partially missing phased, opt-in unphased, four-allele, missing-ALT, duplicate-repair, excluded-malformed-sample, and invalid input cases"
       ],
       "workflows": [
         "external and VCF-header references",
         "multiple independent VCF contigs",
         "VCF coordinate offsets and zero-based half-open BED exclusions",
+        "GT-only haploid/diploid VCF parsing, partial missingness, explicit unphased conversion, four-allele mapping, and duplicate-entry repair",
         "LOL, PCL, and PAC composite likelihoods",
         "generated, file-backed, and per-contig PAC permutations",
         "posterior-weighted PAC one-step EM",
@@ -384,6 +386,7 @@
         "repeated_identical_contig_log_likelihood": "exactly additive within floating-point pytest approximation",
         "offset_preprocessing": "exact arrays",
         "bed_mask_preprocessing": "exact positions and reference states",
+        "vcf_gt_and_missing_semantics": "exact segregating positions, compact haplotype arrays, and normalized reference states against the immutable Java reader; both paths must reject unphased-default, malformed-width, invalid-index, and duplicate-default inputs",
         "output_artifact_acceptance": "exact captured Java stdout upstream; native has one parser-compatible likelihood/time/parameter/id row for every E-step and meta-start particle"
       },
       "status": "enforced_partial"
