@@ -25,7 +25,7 @@
       "manual_surface": ["piecewise size", "growth", "migration", "split", "pulse migration"],
       "native_status": "native_unpromoted",
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py"],
-      "remaining": "Independent simulated clean-split, migration-window, and three-population fixed points pass. Close the strict introgression EigenCore xfail, add independent growth inference, and expand beyond fixed-point evaluation."
+      "remaining": "Independent simulated clean-split, migration-window, three-population, and pulse-introgression fixed points pass. Add independent growth inference, fitted structured-demography families, and performance evidence."
     },
     {
       "id": "vcf_external_reference",
@@ -125,7 +125,7 @@
     }
   ],
   "promotion_blockers": [
-    "Independent growth and introgression parity plus fitted structured-demography oracle families",
+    "Independent growth inference plus fitted structured-demography oracle families, including introgression",
     "Structured and one-step file/per-contig PAC Java oracles plus pinned empty-trunk failure characterization",
     "Complete original-compatible artifact catalogue",
     "Warmed runtime confidence interval and peak-memory gate"

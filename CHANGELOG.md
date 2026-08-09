@@ -100,6 +100,12 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Preserve parameterized instantaneous-migration matrices from diCal2 demo
   files, refine them into stochastic pulse epochs, and avoid false pulse
   intervals when demographic and HMM boundaries differ only by rounding.
+- Apply diCal2 pulse migration consistently to lineage, recombination,
+  mutation, marginal, and EigenCore transition surfaces. Independent simulated
+  introgression now meets the pinned Java EigenCore fixed-point oracle, and
+  exact ancient-recombination tensors use batched linear algebra with reusable
+  core matrices. Fitted introgression remains unpromoted pending further
+  optimizer-performance work.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

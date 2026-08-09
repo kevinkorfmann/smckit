@@ -34,11 +34,14 @@ from smckit.tl._dical2 import (
     _generate_java_permutations,
     _JavaRandom,
     _meta_grid_points,
+    _ode_compute_mutation_events,
+    _ode_compute_r_epoch,
     _old_interval_boundaries,
     _pac_csd_pairs,
     _pac_trunk_sizes,
     _parse_dical2_stdout,
     _persist_dical2_outputs,
+    _pulse_extended_transition,
     _read_dical2_permutations,
     _refined_interval_epoch,
     _resolve_csd_groups,
@@ -406,9 +409,7 @@ class TestRefineDemography:
             moved,
             np.array([0.0, 0.1, DICAL2_T_INF], dtype=np.float64),
         )
-        pulse_indices = [
-            idx for idx in range(refined.n_refined) if refined.is_pulse(idx)
-        ]
+        pulse_indices = [idx for idx in range(refined.n_refined) if refined.is_pulse(idx)]
         assert len(pulse_indices) == 1
         pulse_epoch = _refined_interval_epoch(refined, pulse_indices[0])
         assert pulse_epoch.pulse_migration is not None
@@ -692,9 +693,7 @@ class TestReadDical2:
             composite_mode="pac",
         ).results["dical2"]
 
-        permutation_lls = np.asarray(
-            result["rounds"][0]["permutation_log_likelihoods"][0]
-        )
+        permutation_lls = np.asarray(result["rounds"][0]["permutation_log_likelihoods"][0])
         maximum = float(permutation_lls.max())
         expected = maximum + np.log(np.exp(permutation_lls - maximum).sum())
         assert result["log_likelihood"] == pytest.approx(expected)
@@ -987,6 +986,52 @@ def _make_simple_demo(n_intervals: int = 4) -> DiCal2Demo:
 
 
 class TestEigenCore:
+    def test_pulse_transition_updates_all_lineage_state_surfaces(self):
+        pulse = np.array([[0.8, 0.2], [0.1, 0.9]], dtype=np.float64)
+        np.testing.assert_allclose(
+            _pulse_extended_transition(pulse),
+            np.array(
+                [
+                    [0.8, 0.2, 0.0, 0.0],
+                    [0.1, 0.9, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            ),
+        )
+        epoch = DiCal2Epoch(
+            start=0.5,
+            end=0.5,
+            partition=[[0], [1]],
+            pop_sizes=None,
+            migration_matrix=None,
+            pulse_migration=pulse,
+            growth_rates=None,
+        )
+        start_no_reco = np.array([0.25, 0.75], dtype=np.float64)
+        start_reco = np.array([[0.4, 0.1], [0.2, 0.3]], dtype=np.float64)
+        no_reco, reco = _ode_compute_r_epoch(
+            epoch=epoch,
+            base_absorption_rates=np.zeros(2),
+            recombination_rate=0.5,
+            start_no_reco=start_no_reco,
+            start_reco=start_reco,
+            interval_start=0.5,
+            interval_end=0.5,
+            init_pop_sizes=np.ones(2),
+        )
+        np.testing.assert_allclose(no_reco[:2], start_no_reco @ pulse)
+        np.testing.assert_allclose(reco[:2, :2], pulse.T @ start_reco @ pulse)
+        mutation = _ode_compute_mutation_events(
+            epoch=epoch,
+            base_absorption_rates=np.zeros(2),
+            mutation_rate=0.5,
+            interval_start=0.5,
+            interval_end=0.5,
+        )
+        np.testing.assert_allclose(mutation[:, 0, :2], pulse)
+        np.testing.assert_array_equal(mutation[:, 1], 0.0)
+
     def test_constructs(self):
         demo = _make_simple_demo()
         config = DiCal2Config(
@@ -1150,6 +1195,28 @@ class TestEigenCore:
         )
         assert core_type == "ode"
         assert isinstance(core_obj, ODECore)
+
+    def test_native_core_selector_uses_eigen_for_pulse_migration(self):
+        demo = read_dical2_demo(f"{VENDOR_EXAMPLES}/introgression/introgression.demo")
+        params = _build_free_params(demo)
+        params.set_ordered_param_values(np.array([0.05, 0.03]))
+        refined = refine_demography(
+            params.to_demo(demo),
+            np.array([0.0, 0.1, DICAL2_T_INF], dtype=np.float64),
+        )
+        config = read_dical2_config(f"{VENDOR_EXAMPLES}/introgression/introgression.config")
+        trunk = SimpleTrunk(config=config, additional_hap_idx=0)
+        mut_mat = np.array([[0.0, 1.0], [1.0, 0.0]])
+        core_obj, core_type = _build_native_core(
+            refined=refined,
+            trunk=trunk,
+            observed_present_deme=0,
+            mutation_matrix=mut_mat,
+            theta=0.0005,
+            rho=0.0005,
+        )
+        assert core_type == "eigen"
+        assert isinstance(core_obj, EigenCore)
 
     def test_native_core_selector_rejects_growth_with_pulse(self):
         demo = DiCal2Demo(
