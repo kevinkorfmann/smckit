@@ -208,6 +208,9 @@ On the tracked README fixtures, parity is materially tighter than before:
 - independent simulated clean-split, migration-window, and three-population
   fixed points agree within `1.4e-6` total log-likelihood and within the frozen
   `1e-6` per-base criterion
+- independent one-step exponential-growth fitting returns exactly the same two
+  fitted parameters as Java, with final log-likelihood difference below
+  `4e-12`
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
@@ -226,14 +229,22 @@ tolerance. On the frozen macOS ARM64 benchmark, native was `1.1381x` faster
 memory across ten warmed repetitions. This capability remains unpromoted until
 broader structured families and Linux evidence close.
 
+The independent fitted-growth capability also clears its macOS ARM64 gate.
+Across ten warmed paired repetitions, native was `1.3052x` faster than Java
+(paired-bootstrap 95% CI `1.2835-1.3544x`) and used `0.5959x` peak
+process-tree memory. Finite constant-rate refined epochs use exact matrix
+exponentials; genuinely time-varying growth epochs retain the strict ODE
+solver. This evidence is capability-specific and does not promote all diCal2
+workflows.
+
 The authoritative option-by-option status is recorded in
 [the diCal2 feature ledger](../parity/dical2-feature-ledger.json). PAC
 permutation controls and generated grid/random starts are implemented but
 remain unpromoted. Direct Java checks now cover generated fixed-point and
 one-step PAC EM, two file-backed per-contig permutation sets, and exact grid and
 seeded-random start sequences, four passing independent structured fixed
-points, and fitted pulse introgression. Independent growth inference, broader
-fitted structured/empirical coverage, and the complete cross-platform
+points, fitted pulse introgression, and fitted exponential growth. Broader
+fitted structured/empirical coverage and the complete cross-platform
 performance gate are still missing. Native parallel execution remains
 upstream-only; use exact upstream execution when those workflows are
 scientifically consequential.
@@ -247,3 +258,5 @@ scientifically consequential.
 - [Developer parity notes](../developer/internals-dical2.md)
 - Frozen fitted-introgression performance evidence:
   `workflow/publication/evidence/dical2-introgression/sha256-c339dbb6/`
+- Frozen fitted-growth performance evidence:
+  `workflow/publication/evidence/dical2-growth/sha256-c339dbb6/`

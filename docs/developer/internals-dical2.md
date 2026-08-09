@@ -382,3 +382,10 @@ contract of `implementation="native"`. Native trust warnings are now generated
 from the static method manifest and do not perform subprocess probes. The
 persistent growth worker separately records startup, fixture preparation,
 cold inference, warmed inference, and process-tree memory.
+
+The frozen macOS ARM64 record contains ten warmed pairs. Native achieved a
+`1.3052290626x` speedup with a 95% paired-bootstrap interval of
+`1.2834588164-1.3543839272x`, while using `0.5959217645x` peak process-tree
+memory. Fitted parameters were identical in every pair and the maximum final
+log-likelihood difference was `3.7516656448e-12`. This closes only the fitted
+growth capability on macOS; broader structured families and Linux remain open.

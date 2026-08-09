@@ -24,8 +24,8 @@
       "id": "demographic_placeholders",
       "manual_surface": ["piecewise size", "growth", "migration", "split", "pulse migration"],
       "native_status": "native_unpromoted",
-      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py", "workflow/publication/evidence/dical2-introgression/sha256-c339dbb6"],
-      "remaining": "Independent simulated clean-split, migration-window, three-population, and pulse-introgression fixed points pass, and pulse introgression has a strict fitted one-step oracle. Add independent growth inference, broader fitted structured-demography families, and cross-platform performance evidence."
+      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py", "workflow/publication/evidence/dical2-introgression/sha256-c339dbb6", "workflow/publication/evidence/dical2-growth/sha256-c339dbb6"],
+      "remaining": "Independent simulated clean-split, migration-window, three-population, pulse-introgression, and fitted exponential-growth oracles pass. Pulse introgression and growth both clear capability-specific macOS correctness/performance gates. Add broader fitted structured-demography families and cross-platform evidence."
     },
     {
       "id": "vcf_external_reference",
@@ -125,7 +125,7 @@
     }
   ],
   "promotion_blockers": [
-    "Independent growth inference plus broader fitted structured-demography oracle families",
+    "Broader fitted structured-demography oracle families beyond pulse introgression and exponential growth",
     "Structured and one-step file/per-contig PAC Java oracles plus pinned empty-trunk failure characterization",
     "Complete original-compatible artifact catalogue",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"

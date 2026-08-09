@@ -231,7 +231,8 @@
         "independent migration-window simulation",
         "independent three-population simulation",
         "independent introgression simulation with pulse migration and Java EigenCore",
-        "independent fitted introgression one-step EM"
+        "independent fitted introgression one-step EM",
+        "independent fitted exponential-growth one-step EM"
       ],
       "workflows": [
         "external and VCF-header references",
@@ -241,6 +242,7 @@
         "generated, file-backed, and per-contig PAC permutations",
         "posterior-weighted PAC one-step EM",
         "fitted pulse-introgression one-step EM",
+        "fitted exponential-growth one-step EM",
         "generated log-grid and seeded log-uniform starts",
         "explicit and iterative meta-start searches",
         "parser-compatible objective and normalized JSON artifacts"
@@ -260,6 +262,9 @@
         "generated_start_sequence_atol": 1e-13,
         "structured_fixed_point_log_likelihood_atol": 1e-5,
         "structured_fixed_point_per_base_log_likelihood_atol": 1e-6,
+        "fitted_growth_parameter_atol": 1e-14,
+        "fitted_growth_log_likelihood_atol": 1e-8,
+        "fitted_growth_performance": "ten warmed paired repetitions with bootstrap speedup interval above 1 and native peak memory no more than 1.25 times upstream",
         "repeated_identical_contig_log_likelihood": "exactly additive within floating-point pytest approximation",
         "offset_preprocessing": "exact arrays",
         "bed_mask_preprocessing": "exact positions and reference states"

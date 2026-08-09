@@ -117,7 +117,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Add an independent fitted exponential-growth Java oracle and persistent
   benchmark worker. Finite constant-rate ODE epochs now use exact matrix
   exponentials while genuine growth retains high-accuracy integration, and
-  explicit native diCal2 calls no longer probe the Java runtime.
+  explicit native diCal2 calls no longer probe the Java runtime. Frozen macOS
+  ARM64 evidence records a `1.3052x` warmed speedup (95% CI
+  `1.2835-1.3544x`), a `0.5959` peak-memory ratio, identical fitted
+  parameters, and a maximum final-likelihood difference below `4e-12`.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.
