@@ -325,12 +325,13 @@
     "phlash": {
       "fixtures": [
         "synthetic PSMCFA real-package smoke",
-        "mocked VCF/BCF contract",
-        "simulated tree sequence"
+        "indexed VCF from a deterministic msprime simulation",
+        "tree sequence from the same deterministic msprime simulation"
       ],
       "workflows": [
         "PSMCFA parsing and inference through PHLASH 1.0.6",
-        "VCF/BCF and tree-sequence Contig construction",
+        "real-package indexed-VCF and tree-sequence Contig construction and inference",
+        "explicit window-size forwarding and constructed-contig holdout",
         "deterministic JAX key construction",
         "posterior median and credible intervals",
         "normalized JSON and compressed NumPy artifacts",

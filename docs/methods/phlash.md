@@ -26,7 +26,10 @@ The complete original interface is always available through `import phlash`.
 - constructed PHLASH `Contig` objects
 
 One call uses one input family. VCF/BCF inputs require a bcftools-style region;
-tree sequences do not accept a region.
+tree sequences do not accept a region. For VCF, tree-sequence, and constructed
+Contig inputs, `window_size` is forwarded to `phlash.fit`. When `hold_out=True`
+and more than one input is supplied, smckit reserves the first constructed
+contig as PHLASH test data; an explicit `test_input` takes precedence.
 
 ## Normalized results
 
@@ -54,7 +57,10 @@ return the expected representation bypass the shim.
 
 ## Current validation
 
-The test suite includes a real PHLASH 1.0.6/JAX PSMCFA inference smoke test,
-deterministic option and input-contract tests, posterior quantile checks,
-artifact round trips, and plot exports. The publication workflow will add
-multi-replicate accuracy and coverage evidence before the 1.0 release.
+The test suite includes real PHLASH 1.0.6/JAX inference from PSMCFA, a
+deterministic msprime tree sequence, and an indexed VCF generated from the same
+simulation. These run in a dedicated scheduled Python 3.12 environment in
+addition to deterministic option and input-contract tests, posterior quantile
+checks, artifact round trips, and plot exports. The publication workflow will
+still add multi-replicate accuracy and posterior-coverage evidence before the
+1.0 release.
