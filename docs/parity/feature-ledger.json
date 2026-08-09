@@ -169,6 +169,8 @@
         "typed_fit_oracle": "native",
         "typed_decode_oracle": "native",
         "native_multihetsep_preprocessing": "native",
+        "called_vcf_and_callability_to_multihetsep": "native",
+        "msmc_tools_generate_multihetsep_oracle": "native",
         "native_local_rate_maps": "native",
         "native_preprocessing_oracle": "native",
         "native_hmm_kernels": "native",

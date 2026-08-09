@@ -1,7 +1,9 @@
 """Frozen publication workflow entrypoint.
 
-Rules intentionally refuse to invent empirical accession manifests. Add the
-reviewed manifests before enabling empirical and full publication targets.
+The human source manifest is now pinned but intentionally marked
+``source_pinned``. Empirical execution remains disabled until its callability
+pipeline is independently oracled and the manifest reaches ``ready``; nonhuman
+manifests remain required as well.
 """
 
 configfile: "config.yaml"

@@ -50,6 +50,28 @@ smckit.tl.psmcplus(
 )
 ```
 
+For empirical data, construct multihetsep from a sample-level called VCF and
+explicit callability masks rather than treating every site absent from a
+variant VCF as callable:
+
+```python
+data = smckit.pp.multihetsep_from_vcf(
+    "sample.chr22.called.vcf.gz",
+    "sample.chr22.multihetsep",
+    mask_paths=["sample.chr22.depth-callable.bed.gz"],
+    negative_mask_paths=["chr22.exclusions.bed.gz"],
+)
+```
+
+The native converter streams arbitrarily distant sites without chromosome-sized
+arrays, supports multiple individuals and trio phasing/removal, and records a
+complete preprocessing provenance block. Its shared behavior is executed
+against checksum-pinned `msmc-tools` `generate_multihetsep.py` in CI. The
+native negative-mask implementation deliberately repairs the helper's
+end-of-file behavior by treating positions after the last excluded interval as
+eligible; exact historical behavior remains available by running the pinned
+helper itself.
+
 The result is stored at `data.results["psmcplus"]`. Fit results expose common
 fields including `time`, `ne`, `lambda`, `theta`, `rho`, and
 `log_likelihood`, alongside the original scaled boundaries, hashed artifacts,

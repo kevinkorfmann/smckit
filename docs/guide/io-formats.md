@@ -10,7 +10,8 @@ This page answers two practical questions:
 | Function | File type | Used by |
 |---|---|---|
 | {func}`smckit.io.read_psmcfa` | `.psmcfa` | PSMC, eSMC2 |
-| {func}`smckit.io.read_multihetsep` | `.multihetsep` | MSMC2 |
+| {func}`smckit.io.read_multihetsep` | `.multihetsep` | MSMC2, PSMC+ |
+| {func}`smckit.pp.multihetsep_from_vcf` | called VCF(s) + callability BED mask(s) | MSMC2, PSMC+ preparation |
 | {func}`smckit.io.read_msmc_combined_output` | `.combined.msmc2.final.txt` | MSMC-IM |
 | {func}`smckit.io.read_asmc` | prefix for `.hap.gz`, `.samples`, `.map.gz` | ASMC |
 | {func}`smckit.io.read_decoding_quantities` | `.decodingQuantities.gz` | ASMC |
@@ -33,11 +34,24 @@ Example:
 
 ## Multihetsep
 
-Used by: **MSMC2**
+Used by: **MSMC2**, **PSMC+**
 
 A `.multihetsep` file is a variant-centric table. Each row records one
-segregating site, the distance from the previous site, and the alleles for the
-haplotypes in the analysis.
+segregating site, the number of callable bases since the previous segregating
+site, and the alleles for the haplotypes in the analysis.
+
+Use {func}`smckit.pp.multihetsep_from_vcf` to stream-join one called VCF per
+individual, intersect sample/mappability masks, subtract exclusion masks,
+represent unphased configurations, and optionally resolve/remove trios. The
+converter refuses variant-only input by default: sites absent from a VCF are
+not scientifically equivalent to confidently called homozygous-reference
+sites. Set `assume_all_sites_callable=True` only for synthetic or independently
+validated all-sites inputs.
+
+Three-column BED masks use standard zero-based, half-open coordinates. The
+two-column one-based, inclusive mask convention from `msmc-tools` is also
+accepted. Source/output hashes, samples, controls, counts, and the pinned
+compatibility-oracle identity are stored in `data.uns["preprocessing"]`.
 
 Example:
 
