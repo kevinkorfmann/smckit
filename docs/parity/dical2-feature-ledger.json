@@ -59,10 +59,9 @@
     },
     {
       "id": "vcf_gt_and_missing_semantics",
-      "manual_surface": ["GT-only FORMAT", "phased/haploid genotypes", "unphased heterozygotes as missing"],
-      "native_status": "native_unpromoted",
-      "evidence": ["smckit.io.read_dical2_vcf"],
-      "remaining": "Freeze direct Java fixtures for haploid, partially missing, four-allele, malformed, and duplicate-site cases."
+      "manual_surface": ["GT-only FORMAT", "phased/haploid genotypes", "--acceptUnphasedAsMissing", "--vcfIgnoreDoubleEntries"],
+      "native_status": "native",
+      "evidence": ["tests/integration/test_dical2_vcf_semantics_oracle.py", "TestReadDical2.test_vcf_haploid_and_partially_missing_phased_genotypes", "TestReadDical2.test_vcf_unphased_heterozygote_matches_opt_in_missing_semantics", "TestReadDical2.test_vcf_four_allele_mapping_and_excluded_sample_semantics", "TestReadDical2.test_vcf_malformed_genotypes_fail_clearly", "TestReadDical2.test_vcf_duplicate_entry_switch_retains_first_record"]
     },
     {
       "id": "composite_likelihoods",

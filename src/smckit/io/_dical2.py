@@ -586,6 +586,8 @@ def read_dical2_vcf(
     *,
     bed_file: str | Path | None = None,
     vcf_offset: int = 0,
+    accept_unphased_as_missing: bool = False,
+    vcf_ignore_double_entries: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, int, np.ndarray]:
     """Read a diCal2-style VCF plus reference into a haplotype matrix.
 
@@ -694,6 +696,8 @@ def read_dical2_vcf(
                     f"{len(reference)}."
                 )
             if pos <= previous_pos:
+                if pos == previous_pos and vcf_ignore_double_entries:
+                    continue
                 if pos == previous_pos:
                     raise ValueError(f"VCF contains a duplicate entry at position {fields[1]}.")
                 raise ValueError("VCF positions must be sorted after applying vcf_offset.")
@@ -706,7 +710,9 @@ def read_dical2_vcf(
             if filt != filter_pass_string:
                 reference_alleles[pos] = -1
                 continue
-            alt_alleles = [] if alt_field == "." else alt_field.split(",")
+            # The pinned Java reader treats ALT="." as one missing alternate
+            # allele rather than as an empty alternate list.
+            alt_alleles = alt_field.split(",")
             if len(alt_alleles) > config.n_alleles - 1:
                 reference_alleles[pos] = -1
                 continue
@@ -723,41 +729,77 @@ def read_dical2_vcf(
                 base_to_idx = {"A": 0, "C": 1, "G": 2, "T": 3}
                 allele_map = {"0": base_to_idx.get(ref_allele, -1)}
                 for idx, alt in enumerate(alt_alleles, start=1):
+                    if alt not in base_to_idx and alt not in missing_bases:
+                        raise ValueError(
+                            f"Invalid alternative allele in VCF at position {fields[1]}: {alt}."
+                        )
                     allele_map[str(idx)] = base_to_idx.get(alt, -1)
             else:
                 allele_map = {"0": -1 if ref_allele in missing_bases else 0}
                 for idx, alt in enumerate(alt_alleles, start=1):
+                    if alt not in {"A", "C", "G", "T"} and alt not in missing_bases:
+                        raise ValueError(
+                            f"Invalid alternative allele in VCF at position {fields[1]}: {alt}."
+                        )
                     allele_map[str(idx)] = -1 if alt in missing_bases else idx
             if len(set(allele_map.values())) != len(allele_map):
                 raise ValueError("Reference and alternative VCF alleles must be distinct.")
             if fields[8] != "GT":
                 raise ValueError("diCal2 requires the VCF FORMAT column to equal 'GT'.")
 
-            full_column: list[int] = []
+            selected_column: list[int] = []
+            running_first_haplotype = 0
             for sample in fields[9:]:
-                gt = sample
-                if "|" in gt:
-                    a, b = gt.split("|")
-                elif "/" in gt:
-                    a, b = gt.split("/")
-                    if a != b:
-                        full_column.extend([-1, -1])
-                        continue
+                if len(sample) == 1:
+                    ploidy = 1
+                elif len(sample) == 3:
+                    ploidy = 2
                 else:
-                    a = gt
-                    full_column.append(allele_map.get(a, -1))
+                    raise ValueError(
+                        "VCF genotype must contain one haploid allele or two single-digit "
+                        f"alleles and a divider; got {sample!r}."
+                    )
+                last_haplotype = running_first_haplotype + ploidy
+                if last_haplotype > len(include_mask):
+                    raise ValueError(
+                        "VCF exposes more haplotypes than the diCal2 config specifies."
+                    )
+                selected = include_mask[running_first_haplotype:last_haplotype]
+                running_first_haplotype = last_haplotype
+                if not np.any(selected):
                     continue
-                if a == "." or b == ".":
-                    full_column.extend([-1, -1])
-                    continue
-                full_column.extend([allele_map.get(a, -1), allele_map.get(b, -1)])
 
-            n_haps_total = len(full_column)
+                def _allele(value: str) -> int:
+                    if value == ".":
+                        return -1
+                    if value not in allele_map:
+                        raise ValueError(f"Invalid allele {value!r} in VCF genotype {sample!r}.")
+                    return int(allele_map[value])
+
+                if ploidy == 1:
+                    sample_alleles = [_allele(sample)]
+                else:
+                    sample_alleles = [_allele(sample[0]), _allele(sample[2])]
+                    if sample_alleles[0] != sample_alleles[1] and sample[1] != "|":
+                        if not accept_unphased_as_missing:
+                            raise ValueError(
+                                f"VCF genotype {sample!r} is not phased; set "
+                                "accept_unphased_as_missing=True to convert both alleles "
+                                "to missing."
+                            )
+                        sample_alleles = [-1, -1]
+                selected_column.extend(
+                    allele
+                    for allele, include in zip(sample_alleles, selected, strict=True)
+                    if include
+                )
+
+            n_haps_total = running_first_haplotype
             if n_haps_total != len(include_mask):
                 raise ValueError(
                     f"VCF exposes {n_haps_total} haplotypes but config has {len(include_mask)}"
                 )
-            column = np.array(full_column, dtype=np.int8)[include_mask]
+            column = np.asarray(selected_column, dtype=np.int8)
             uniq = set(int(x) for x in column)
             if len(uniq) <= 1:
                 reference_alleles[pos] = np.int8(next(iter(uniq)))
@@ -817,6 +859,8 @@ def read_dical2(
     theta: float = 0.0005,
     rho: float = 0.0005,
     n_alleles: int = 2,
+    accept_unphased_as_missing: bool = False,
+    vcf_ignore_double_entries: bool = False,
 ) -> SmcData:
     """Read diCal2 inputs into SmcData.
 
@@ -845,6 +889,12 @@ def read_dical2(
     vcf_offsets : int or sequence of int
         Coordinate offset subtracted from VCF positions, one value or one per
         VCF contig.
+    accept_unphased_as_missing : bool
+        Match diCal2's ``--acceptUnphasedAsMissing`` switch. Unphased
+        heterozygotes fail by default; when enabled, both alleles are missing.
+    vcf_ignore_double_entries : bool
+        Match diCal2's ``--vcfIgnoreDoubleEntries`` switch by retaining the
+        first VCF record at a duplicated physical position.
     theta : float
         Mutation rate (used only when *param_file* is None).
     rho : float
@@ -904,6 +954,8 @@ def read_dical2(
                     filter_pass_string=filter_pass_string,
                     bed_file=bed_input,
                     vcf_offset=int(offset_input or 0),
+                    accept_unphased_as_missing=accept_unphased_as_missing,
+                    vcf_ignore_double_entries=vcf_ignore_double_entries,
                 )
             else:
                 if bed_input is not None or int(offset_input or 0) != 0:
@@ -978,6 +1030,8 @@ def read_dical2(
             "reference_alleles": contigs[0].reference_alleles if len(contigs) == 1 else None,
             "n_alleles": n_alleles,
             "filter_pass_string": filter_pass_string,
+            "accept_unphased_as_missing": bool(accept_unphased_as_missing),
+            "vcf_ignore_double_entries": bool(vcf_ignore_double_entries),
             "source_paths": {
                 "sequences": (
                     [contig.source_path for contig in contigs]

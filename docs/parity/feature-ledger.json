@@ -112,6 +112,7 @@
         "bed_masks": "native",
         "external_and_vcf_header_references": "native",
         "typed_upstream_vcf_controls": "native",
+        "vcf_gt_and_missing_semantics": "native",
         "output_files": "native",
         "pac_permutation_controls": "native_unpromoted",
         "grid_start_strategy": "native_unpromoted",
