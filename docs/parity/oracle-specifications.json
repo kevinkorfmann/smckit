@@ -243,7 +243,10 @@
         "README exponential pinned empty-trunk failure",
         "README exponential all runnable trunk/cake fixed points and fitted one-step endpoints",
         "README isolation-migration structured trunk-family fixed points",
-        "README exponential pinned recursive null-trunk failure"
+        "README exponential pinned recursive null-trunk failure",
+        "README exponential and isolation-migration ancient-deme-state fixed points and one-step fits",
+        "README exponential and isolation-migration per-CSD additional-trunk-interval fixed points and one-step fits",
+        "independent pulse-introgression ancient-state plus additional-trunk-interval fixed point"
       ],
       "workflows": [
         "external and VCF-header references",
@@ -259,6 +262,8 @@
         "fitted exponential-growth one-step EM",
         "default, transition-type-conditioned, and marginal-KL objectives",
         "simple, cake, updating-cake, migrating-cake, exact-cake, and Ethan trunk families",
+        "interval-present and epoch-ancient-present hidden-state aggregation",
+        "per-CSD mean-rate additional trunk refinement, alone and with ancient-deme states",
         "generated log-grid and seeded log-uniform starts",
         "explicit and iterative meta-start searches",
         "parser-compatible objective and normalized JSON artifacts"
@@ -281,6 +286,8 @@
         "trunk_style_one_step_parameter_atol": 1e-12,
         "trunk_style_one_step_log_likelihood_atol": 1e-7,
         "recursive_trunk_acceptance": "pinned Java normal-CLI null-trunk failure is frozen; native must fail explicitly rather than substitute another trunk",
+        "hidden_state_parameter_atol": 1e-12,
+        "hidden_state_log_likelihood_atol": 1e-7,
         "all_csd_pac_acceptance": "pinned Java null-trunk failure is frozen; native non-empty-CSD endpoint log likelihood must remain -24.1478058840125",
         "generated_start_sequence_atol": 1e-13,
         "structured_fixed_point_log_likelihood_atol": 1e-5,

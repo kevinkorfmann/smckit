@@ -48,7 +48,7 @@
      - ✓
      - ✗
      - `README searches match; default and transition-conditioned fitted endpoints match within 1e-12 parameters and 1e-5 log likelihood.`
-     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README searches and independent clean-split, migration-window, three-population, pulse-introgression, exponential-growth, and structured PAC one-step fits reproduce the pinned Java endpoints. All runnable original trunk families now have native fixed-point coverage, and the newly closed cake/exact families have fitted one-step coverage; the pinned recursive CLI null-trunk failure is preserved. Transition-distance statistics and both Java conditioning modes are preserved. Native marginal-KL and all-nonempty-CSD PAC repair distinct pinned Java null-reference crashes and remain unpromoted.
+     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README searches and independent clean-split, migration-window, three-population, pulse-introgression, exponential-growth, and structured PAC one-step fits reproduce the pinned Java endpoints. All runnable original trunk families, valid cake modes, epoch-ancient-present hidden states, and per-CSD additional trunk intervals have native fixed-point and fitted coverage; the pinned recursive CLI null-trunk failure is preserved. Transition-distance statistics and both Java conditioning modes are preserved. Native marginal-KL and all-nonempty-CSD PAC repair distinct pinned Java null-reference crashes and remain unpromoted.
    * - PHLASH
      - ✓
      - n/a

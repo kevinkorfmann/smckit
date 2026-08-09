@@ -35,6 +35,7 @@ from smckit.tl._dical2 import (
     _dical2_upstream,
     _generate_java_permutations,
     _JavaRandom,
+    _mean_rate_additional_boundaries,
     _meta_grid_points,
     _ode_compute_marginal_transition_matrix,
     _ode_compute_mutation_events,
@@ -148,6 +149,14 @@ class TestIntervalFactories:
         )
         np.testing.assert_allclose(boundaries, expected, rtol=1e-10, atol=1e-10)
 
+    def test_mean_rate_additional_boundaries_match_constant_rate_quantiles(self):
+        demo = _make_simple_demo()
+        sample_sizes = np.array([4.0])
+        boundaries = _mean_rate_additional_boundaries(demo, sample_sizes, 2)
+        assert boundaries is not None
+        expected = np.array([-np.log(2 / 3) / 4.0, -np.log(1 / 3) / 4.0])
+        np.testing.assert_allclose(boundaries, expected, rtol=1e-14, atol=1e-14)
+
 
 class TestResolvedOptions:
     @staticmethod
@@ -249,6 +258,14 @@ class TestResolvedOptions:
             (
                 {"condition_on_transition_type": True, "marginalKL": True},
                 "mutually exclusive",
+            ),
+            (
+                {"ancient_deme_states": True, "interval_type": "logUniform"},
+                "mutually exclusive",
+            ),
+            (
+                {"ancient_deme_states": True, "interval_params": "1,2"},
+                "does not accept interval_params",
             ),
         ],
     )
