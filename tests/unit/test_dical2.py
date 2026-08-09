@@ -40,6 +40,8 @@ from smckit.tl._dical2 import (
     _parse_dical2_stdout,
     _persist_dical2_outputs,
     _read_dical2_permutations,
+    _refined_interval_epoch,
+    _resolve_csd_groups,
     _resolve_dical2_options,
     _resolve_interval_boundaries,
     backward_log,
@@ -212,6 +214,21 @@ class TestResolvedOptions:
         with pytest.raises(ValueError, match=message):
             self.resolve(method_options)
 
+    def test_per_contig_permutation_switch_is_pac_only(self):
+        resolved = self.resolve(
+            {
+                "composite_mode": "lol",
+                "different_permutations_per_contig": True,
+            }
+        )
+        with pytest.raises(ValueError, match="only valid with composite_mode='pac'"):
+            _resolve_csd_groups(
+                n_hap=4,
+                n_contigs=2,
+                resolved=resolved,
+                rng=_JavaRandom(1),
+            )
+
 
 class TestJavaRandom:
     def test_next_long_matches_java_random(self):
@@ -355,6 +372,56 @@ class TestDemoReader:
     def test_boundary_placeholder_ids_preserved(self):
         d = read_dical2_demo("vendor/diCal2/examples/fromReadme/exp.demo")
         assert d.boundary_param_ids == [None, 1, 2, None]
+
+    def test_introgression_pulse_parameter_is_preserved(self):
+        demo = read_dical2_demo(f"{VENDOR_EXAMPLES}/introgression/introgression.demo")
+        pulse_epoch = demo.epochs[1]
+        assert pulse_epoch.pulse_migration is not None
+        assert pulse_epoch.pulse_migration[1, 2] == pytest.approx(0.0)
+        assert pulse_epoch.pulse_migration_param_ids is not None
+        assert pulse_epoch.pulse_migration_param_ids[1][2] == 1
+
+
+class TestRefineDemography:
+    def test_near_duplicate_grid_boundary_does_not_create_pulse(self):
+        demo = read_dical2_demo(f"{VENDOR_EXAMPLES}/cleanSplit/clean_split.demo")
+        params = _build_free_params(demo)
+        params.set_ordered_param_values(np.array([0.2, 0.25, 0.25, 1.0]))
+        moved = params.to_demo(demo)
+        grid = np.array([0.0, np.nextafter(0.2, 0.0), DICAL2_T_INF])
+        refined = refine_demography(moved, grid)
+        assert not any(refined.is_pulse(idx) for idx in range(refined.n_refined))
+
+    def test_parameterized_pulse_becomes_stochastic_refined_epoch(self):
+        demo = read_dical2_demo(f"{VENDOR_EXAMPLES}/introgression/introgression.demo")
+        params = _build_free_params(demo)
+        assert params.ordered_param_ids == [0, 1]
+        assert params.pulse_migration_param_ids == [1]
+        params.set_ordered_param_values(np.array([0.05, 0.03]))
+        packed = params.pack_opt_params()
+        params.unpack_opt_params(packed)
+        np.testing.assert_allclose(params.ordered_param_values(), [0.05, 0.03])
+        moved = params.to_demo(demo)
+        refined = refine_demography(
+            moved,
+            np.array([0.0, 0.1, DICAL2_T_INF], dtype=np.float64),
+        )
+        pulse_indices = [
+            idx for idx in range(refined.n_refined) if refined.is_pulse(idx)
+        ]
+        assert len(pulse_indices) == 1
+        pulse_epoch = _refined_interval_epoch(refined, pulse_indices[0])
+        assert pulse_epoch.pulse_migration is not None
+        np.testing.assert_allclose(
+            pulse_epoch.pulse_migration,
+            np.array(
+                [
+                    [1.0, 0.0, 0.0],
+                    [0.0, 0.97, 0.03],
+                    [0.0, 0.0, 1.0],
+                ]
+            ),
+        )
 
 
 class TestRatesReader:
@@ -761,6 +828,19 @@ class TestReadDical2:
         assert result["upstream"]["effective_args"]["vcfOffset"] == [100, 100]
         assert result["upstream"]["effective_args"]["metaGridStart"] is True
         assert result["upstream"]["effective_args"]["diffPermsPerChunk"] is True
+
+        data.uns["source_paths"]["bed_files"] = [None, None]
+        captured["calls"].clear()
+        _dical2_upstream(
+            data,
+            resolved=resolved,
+            cli_args=[],
+            implementation_requested="upstream",
+        )
+        command_without_bed = next(
+            command for command, _ in captured["calls"] if "--vcfFile" in command
+        )
+        assert "--bedFile" not in command_without_bed
 
 
 class TestDical2Output:

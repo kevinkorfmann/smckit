@@ -54,6 +54,7 @@ class DiCal2Epoch:
     pop_size_param_ids: list[int | None] | None = None
     migration_param_ids: list[list[int | None]] | None = None
     growth_rate_param_ids: list[int | None] | None = None
+    pulse_migration_param_ids: list[list[int | None]] | None = None
 
 
 @dataclass
@@ -313,20 +314,28 @@ def read_dical2_demo(
 
         # Pulse migration matrix (or null)
         pulse_migration: np.ndarray | None = None
+        pulse_migration_param_ids: list[list[int | None]] | None = None
         if idx < len(lines):
             if lines[idx].lower() == "null":
                 idx += 1
             else:
                 pulse_rows = []
+                pulse_param_rows = []
                 # n_ancient rows for the pulse matrix
                 for _ in range(n_ancient):
                     if idx < len(lines):
-                        pulse_rows.append(
-                            [_parse_value(x, default=0.0)[0] for x in lines[idx].split()]
-                        )
+                        row_values = []
+                        row_ids = []
+                        for value in lines[idx].split():
+                            parsed, is_placeholder = _parse_value(value, default=0.0)
+                            row_values.append(parsed)
+                            row_ids.append(int(value.strip()[1:]) if is_placeholder else None)
+                        pulse_rows.append(row_values)
+                        pulse_param_rows.append(row_ids)
                         idx += 1
                 if pulse_rows:
                     pulse_migration = np.array(pulse_rows, dtype=np.float64)
+                    pulse_migration_param_ids = pulse_param_rows
 
         # Continuous migration matrix
         migration_matrix: np.ndarray | None = None
@@ -367,9 +376,10 @@ def read_dical2_demo(
                 pop_size_param_ids=None if is_pulse else pop_size_param_ids,
                 migration_matrix=None if is_pulse else migration_matrix,
                 migration_param_ids=None if is_pulse else migration_param_ids,
-                pulse_migration=pulse_migration if is_pulse else None,
+                pulse_migration=pulse_migration,
                 growth_rates=None,
                 growth_rate_param_ids=None,
+                pulse_migration_param_ids=pulse_migration_param_ids,
             )
         )
 
@@ -422,6 +432,11 @@ def read_dical2_rates(
             ),
             pulse_migration=(
                 None if epoch.pulse_migration is None else epoch.pulse_migration.copy()
+            ),
+            pulse_migration_param_ids=(
+                None
+                if epoch.pulse_migration_param_ids is None
+                else [list(row) for row in epoch.pulse_migration_param_ids]
             ),
             growth_rates=None,
             growth_rate_param_ids=None,

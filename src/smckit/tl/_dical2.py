@@ -768,14 +768,59 @@ def refine_demography(
     -------
     RefinedDemography
     """
-    boundaries = set()
-    for b in interval_boundaries:
-        boundaries.add(float(b))
-    for b in demo.epoch_boundaries:
-        if np.isfinite(b):
-            boundaries.add(float(b))
-    boundaries.add(DICAL2_T_INF)
-    sorted_b = sorted(boundaries)
+    # Merge numerically coincident HMM and demographic boundaries without
+    # manufacturing zero-duration pulse epochs.  A plain ``set`` is not
+    # sufficient here: independently computed values such as 0.2 and the
+    # corresponding log-uniform grid point can differ by a few ulps.  It also
+    # discards the intentional duplicate boundary that represents a pulse in
+    # a diCal2 demographic model.
+    candidates = [
+        (float(boundary), False)
+        for boundary in np.asarray(interval_boundaries, dtype=np.float64)
+        if np.isfinite(boundary) and boundary <= DICAL2_T_INF + EPS
+    ]
+    candidates.extend(
+        (float(boundary), True)
+        for boundary in np.asarray(demo.epoch_boundaries, dtype=np.float64)
+        if np.isfinite(boundary) and boundary <= DICAL2_T_INF + EPS
+    )
+    candidates.append((DICAL2_T_INF, False))
+    candidates.sort(key=lambda item: item[0])
+
+    sorted_b: list[float] = []
+    representative_is_demo: list[bool] = []
+    for boundary, is_demo in candidates:
+        if sorted_b and abs(boundary - sorted_b[-1]) < EPS:
+            # Prefer the demographic boundary as the cluster representative so
+            # midpoint-to-epoch assignment remains anchored to the model.
+            if is_demo and not representative_is_demo[-1]:
+                sorted_b[-1] = boundary
+                representative_is_demo[-1] = True
+            continue
+        sorted_b.append(boundary)
+        representative_is_demo.append(is_demo)
+
+    pulse_epochs = [
+        (epoch_idx, float(epoch.start))
+        for epoch_idx, epoch in enumerate(demo.epochs)
+        if (
+            abs(float(epoch.end) - float(epoch.start)) < EPS
+            or epoch.pulse_migration is not None
+        )
+        and float(epoch.start) <= DICAL2_T_INF + EPS
+    ]
+    for _, pulse_time in pulse_epochs:
+        boundary_idx = next(
+            (
+                idx
+                for idx, boundary in enumerate(sorted_b)
+                if abs(boundary - pulse_time) < EPS
+            ),
+            None,
+        )
+        if boundary_idx is None:  # pragma: no cover - model boundary invariant
+            raise ValueError(f"Pulse boundary {pulse_time} is absent from the refined grid.")
+        sorted_b.insert(boundary_idx + 1, sorted_b[boundary_idx])
 
     hidden_boundaries = np.asarray(interval_boundaries, dtype=np.float64)
     refined = np.array(sorted_b, dtype=np.float64)
@@ -784,17 +829,38 @@ def refine_demography(
     # For each refined interval, find which original epoch it belongs to.
     epoch_map = np.zeros(n_refined, dtype=np.int64)
     refined_to_hidden = np.zeros(n_refined, dtype=np.int64)
+    unused_pulse_epochs = list(pulse_epochs)
     for i in range(n_refined):
-        if np.isfinite(refined[i + 1]):
+        if abs(refined[i + 1] - refined[i]) < EPS:
+            pulse_match = next(
+                (
+                    (position, epoch_idx)
+                    for position, (epoch_idx, pulse_time) in enumerate(
+                        unused_pulse_epochs
+                    )
+                    if abs(float(refined[i]) - pulse_time) < EPS
+                ),
+                None,
+            )
+            if pulse_match is None:  # pragma: no cover - construction invariant
+                raise ValueError(
+                    f"Refined zero-duration interval at {refined[i]} has no pulse epoch."
+                )
+            position, epoch_idx = pulse_match
+            epoch_map[i] = epoch_idx
+            unused_pulse_epochs.pop(position)
+            mid = float(refined[i])
+        elif np.isfinite(refined[i + 1]):
             mid = 0.5 * (refined[i] + refined[i + 1])
         else:
             mid = refined[i]
-        for e in range(len(demo.epochs)):
-            if demo.epochs[e].start <= mid < demo.epochs[e].end:
-                epoch_map[i] = e
-                break
-        else:
-            epoch_map[i] = len(demo.epochs) - 1
+        if abs(refined[i + 1] - refined[i]) >= EPS:
+            for e in range(len(demo.epochs)):
+                if demo.epochs[e].start <= mid < demo.epochs[e].end:
+                    epoch_map[i] = e
+                    break
+            else:
+                epoch_map[i] = len(demo.epochs) - 1
         hidden_idx = np.searchsorted(hidden_boundaries, mid, side="right") - 1
         hidden_idx = max(0, min(hidden_idx, len(hidden_boundaries) - 2))
         refined_to_hidden[i] = hidden_idx
@@ -813,6 +879,18 @@ def _refined_interval_epoch(refined: RefinedDemography, interval: int) -> DiCal2
     interval_start = float(refined.refined_boundaries[interval])
     interval_end = float(refined.refined_boundaries[interval + 1])
     if refined.is_pulse(interval):
+        pulse_migration = None
+        if base_epoch.pulse_migration is not None:
+            pulse_migration = np.asarray(
+                base_epoch.pulse_migration,
+                dtype=np.float64,
+            ).copy()
+            for row_idx in range(pulse_migration.shape[0]):
+                off_diagonal = (
+                    pulse_migration[row_idx, :row_idx].sum()
+                    + pulse_migration[row_idx, row_idx + 1 :].sum()
+                )
+                pulse_migration[row_idx, row_idx] = 1.0 - off_diagonal
         return DiCal2Epoch(
             start=interval_start,
             end=interval_end,
@@ -829,10 +907,11 @@ def _refined_interval_epoch(refined: RefinedDemography, interval: int) -> DiCal2
                 if base_epoch.migration_param_ids is None
                 else [list(row) for row in base_epoch.migration_param_ids]
             ),
-            pulse_migration=(
+            pulse_migration=pulse_migration,
+            pulse_migration_param_ids=(
                 None
-                if base_epoch.pulse_migration is None
-                else np.asarray(base_epoch.pulse_migration, dtype=np.float64).copy()
+                if base_epoch.pulse_migration_param_ids is None
+                else [list(row) for row in base_epoch.pulse_migration_param_ids]
             ),
             growth_rates=None,
             growth_rate_param_ids=(
@@ -943,6 +1022,11 @@ def _halve_demo_migration_rates(demo: DiCal2Demo) -> DiCal2Demo:
                     None
                     if epoch.pulse_migration is None
                     else np.asarray(epoch.pulse_migration, dtype=np.float64).copy()
+                ),
+                pulse_migration_param_ids=(
+                    None
+                    if epoch.pulse_migration_param_ids is None
+                    else [list(row) for row in epoch.pulse_migration_param_ids]
                 ),
                 growth_rates=(
                     None
@@ -3924,7 +4008,9 @@ def _resolve_csd_groups(
     """Resolve per-contig, per-permutation CSD groups and provenance."""
     mode = resolved.composite_mode
     has_permutation_control = (
-        resolved.num_permutations is not None or resolved.permutation_files is not None
+        resolved.num_permutations is not None
+        or resolved.permutation_files is not None
+        or resolved.different_permutations_per_contig
     )
     if mode != "pac":
         if has_permutation_control:
@@ -4031,11 +4117,14 @@ class DemoParameters:
     pop_size_values: np.ndarray
     free_migration_groups: list[list[tuple[int, int, int]]]
     migration_values: np.ndarray
+    free_pulse_migration_groups: list[list[tuple[int, int, int]]]
+    pulse_migration_values: np.ndarray
     free_growth_rate_groups: list[list[tuple[int, int]]]
     growth_rate_values: np.ndarray
     boundary_param_ids: list[int]
     pop_param_ids: list[int]
     migration_param_ids: list[int]
+    pulse_migration_param_ids: list[int]
     growth_param_ids: list[int]
     ordered_lower_bounds: np.ndarray | None = None
     ordered_upper_bounds: np.ndarray | None = None
@@ -4045,6 +4134,7 @@ class DemoParameters:
             len(self.boundary_values)
             + len(self.pop_size_values)
             + len(self.migration_values)
+            + len(self.pulse_migration_values)
             + len(self.growth_rate_values)
         )
 
@@ -4053,6 +4143,9 @@ class DemoParameters:
         bound_map = {param_id: idx for idx, param_id in enumerate(self.boundary_param_ids)}
         pop_map = {param_id: idx for idx, param_id in enumerate(self.pop_param_ids)}
         mig_map = {param_id: idx for idx, param_id in enumerate(self.migration_param_ids)}
+        pulse_map = {
+            param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)
+        }
         growth_map = {param_id: idx for idx, param_id in enumerate(self.growth_param_ids)}
         for param_id in self.ordered_param_ids:
             if param_id in bound_map:
@@ -4061,6 +4154,8 @@ class DemoParameters:
                 values.append(float(self.pop_size_values[pop_map[param_id]]))
             elif param_id in mig_map:
                 values.append(float(self.migration_values[mig_map[param_id]]))
+            elif param_id in pulse_map:
+                values.append(float(self.pulse_migration_values[pulse_map[param_id]]))
             elif param_id in growth_map:
                 values.append(float(self.growth_rate_values[growth_map[param_id]]))
         return np.array(values, dtype=np.float64)
@@ -4073,6 +4168,9 @@ class DemoParameters:
         bound_map = {param_id: idx for idx, param_id in enumerate(self.boundary_param_ids)}
         pop_map = {param_id: idx for idx, param_id in enumerate(self.pop_param_ids)}
         mig_map = {param_id: idx for idx, param_id in enumerate(self.migration_param_ids)}
+        pulse_map = {
+            param_id: idx for idx, param_id in enumerate(self.pulse_migration_param_ids)
+        }
         growth_map = {param_id: idx for idx, param_id in enumerate(self.growth_param_ids)}
         for param_id, value in zip(self.ordered_param_ids, values):
             if param_id in bound_map:
@@ -4081,6 +4179,8 @@ class DemoParameters:
                 self.pop_size_values[pop_map[param_id]] = float(value)
             elif param_id in mig_map:
                 self.migration_values[mig_map[param_id]] = float(value)
+            elif param_id in pulse_map:
+                self.pulse_migration_values[pulse_map[param_id]] = float(value)
             elif param_id in growth_map:
                 self.growth_rate_values[growth_map[param_id]] = float(value)
 
@@ -4099,6 +4199,8 @@ class DemoParameters:
             parts.append(np.log(np.maximum(self.pop_size_values, 1e-3)))
         if len(self.migration_values):
             parts.append(np.log(np.maximum(self.migration_values, 1e-8)))
+        if len(self.pulse_migration_values):
+            parts.append(np.log(np.maximum(self.pulse_migration_values, 1e-8)))
         if len(self.growth_rate_values):
             parts.append(self.growth_rate_values.copy())
         if not parts:
@@ -4109,6 +4211,7 @@ class DemoParameters:
         n_bound = len(self.boundary_values)
         n_pop = len(self.pop_size_values)
         n_mig = len(self.migration_values)
+        n_pulse = len(self.pulse_migration_values)
         if n_bound:
             self.boundary_values = np.clip(np.exp(opt_params[:n_bound]), 1e-6, 1e3)
         if n_pop:
@@ -4125,8 +4228,17 @@ class DemoParameters:
                 1e-8,
                 1e6,
             )
+        if n_pulse:
+            start = n_bound + n_pop + n_mig
+            self.pulse_migration_values = np.clip(
+                np.exp(opt_params[start : start + n_pulse]),
+                1e-8,
+                1.0,
+            )
         if len(self.growth_rate_values):
-            self.growth_rate_values = opt_params[n_bound + n_pop + n_mig :].copy()
+            self.growth_rate_values = opt_params[
+                n_bound + n_pop + n_mig + n_pulse :
+            ].copy()
 
     def to_demo(self, demo_template: DiCal2Demo) -> DiCal2Demo:
         """Build a fresh DiCal2Demo from the current parameter values."""
@@ -4156,6 +4268,11 @@ class DemoParameters:
                         else [list(row) for row in ep.migration_param_ids]
                     ),
                     pulse_migration=new_pulse,
+                    pulse_migration_param_ids=(
+                        None
+                        if ep.pulse_migration_param_ids is None
+                        else [list(row) for row in ep.pulse_migration_param_ids]
+                    ),
                     growth_rates=(ep.growth_rates.copy() if ep.growth_rates is not None else None),
                     growth_rate_param_ids=(
                         None
@@ -4181,6 +4298,14 @@ class DemoParameters:
                 for row_idx in range(mig.shape[0]):
                     off_diag = mig[row_idx, :row_idx].sum() + mig[row_idx, row_idx + 1 :].sum()
                     mig[row_idx, row_idx] = -off_diag
+        for group, val in zip(
+            self.free_pulse_migration_groups,
+            self.pulse_migration_values,
+        ):
+            for e_idx, src_idx, dst_idx in group:
+                pulse = new_epochs[e_idx].pulse_migration
+                if pulse is not None:
+                    pulse[src_idx, dst_idx] = val
         for group, val in zip(self.free_growth_rate_groups, self.growth_rate_values):
             for e_idx, a_idx in group:
                 if new_epochs[e_idx].growth_rates is None:
@@ -4227,7 +4352,7 @@ def _demo_is_valid(demo: DiCal2Demo) -> bool:
     for idx, epoch in enumerate(demo.epochs):
         start = float(boundaries[idx])
         end = float(boundaries[idx + 1])
-        is_pulse = epoch.migration_matrix is None
+        is_pulse = abs(end - start) < EPS
         if is_pulse:
             if not np.isclose(end, start):
                 return False
@@ -4251,6 +4376,16 @@ def _demo_is_valid(demo: DiCal2Demo) -> bool:
             off_diag = mig.copy()
             np.fill_diagonal(off_diag, 0.0)
             if np.any(~np.isfinite(off_diag)) or np.any(off_diag < 0.0):
+                return False
+        if epoch.pulse_migration is not None:
+            pulse = np.asarray(epoch.pulse_migration, dtype=np.float64)
+            if pulse.ndim != 2 or pulse.shape[0] != pulse.shape[1]:
+                return False
+            if np.any(~np.isfinite(pulse)) or np.any(pulse < 0.0) or np.any(pulse > 1.0):
+                return False
+            off_diagonal = pulse.copy()
+            np.fill_diagonal(off_diagonal, 0.0)
+            if np.any(off_diagonal.sum(axis=1) > 1.0 + EPS):
                 return False
     return True
 
@@ -4304,6 +4439,8 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
     pop_values_by_id: dict[int, float] = {}
     migration_groups_by_id: dict[int, list[tuple[int, int, int]]] = {}
     migration_values_by_id: dict[int, float] = {}
+    pulse_groups_by_id: dict[int, list[tuple[int, int, int]]] = {}
+    pulse_values_by_id: dict[int, float] = {}
     growth_groups_by_id: dict[int, list[tuple[int, int]]] = {}
     growth_values_by_id: dict[int, float] = {}
     saw_explicit_ids = False
@@ -4346,6 +4483,19 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
                         param_id,
                         float(ep.migration_matrix[src_idx, dst_idx]),
                     )
+        if ep.pulse_migration is not None and ep.pulse_migration_param_ids is not None:
+            for src_idx, row in enumerate(ep.pulse_migration_param_ids):
+                for dst_idx, param_id in enumerate(row):
+                    if param_id is None:
+                        continue
+                    saw_explicit_ids = True
+                    pulse_groups_by_id.setdefault(param_id, []).append(
+                        (e_idx, src_idx, dst_idx)
+                    )
+                    pulse_values_by_id.setdefault(
+                        param_id,
+                        float(ep.pulse_migration[src_idx, dst_idx]),
+                    )
         if ep.growth_rates is not None and ep.growth_rate_param_ids is not None:
             for a_idx, param_id in enumerate(ep.growth_rate_param_ids):
                 if param_id is None:
@@ -4373,8 +4523,15 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
     boundary_ids = sorted(boundary_groups_by_id)
     pop_ids = sorted(pop_groups_by_id)
     migration_ids = sorted(migration_groups_by_id)
+    pulse_ids = sorted(pulse_groups_by_id)
     growth_ids = sorted(growth_groups_by_id)
-    ordered_ids = sorted(set(boundary_ids) | set(pop_ids) | set(migration_ids) | set(growth_ids))
+    ordered_ids = sorted(
+        set(boundary_ids)
+        | set(pop_ids)
+        | set(migration_ids)
+        | set(pulse_ids)
+        | set(growth_ids)
+    )
     return DemoParameters(
         ordered_param_ids=ordered_ids,
         free_boundary_groups=[boundary_groups_by_id[param_id] for param_id in boundary_ids],
@@ -4391,6 +4548,13 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
             [migration_values_by_id[param_id] for param_id in migration_ids],
             dtype=np.float64,
         ),
+        free_pulse_migration_groups=[
+            pulse_groups_by_id[param_id] for param_id in pulse_ids
+        ],
+        pulse_migration_values=np.array(
+            [pulse_values_by_id[param_id] for param_id in pulse_ids],
+            dtype=np.float64,
+        ),
         free_growth_rate_groups=[growth_groups_by_id[param_id] for param_id in growth_ids],
         growth_rate_values=np.array(
             [growth_values_by_id[param_id] for param_id in growth_ids],
@@ -4399,6 +4563,7 @@ def _build_free_params(demo: DiCal2Demo) -> DemoParameters:
         boundary_param_ids=boundary_ids,
         pop_param_ids=pop_ids,
         migration_param_ids=migration_ids,
+        pulse_migration_param_ids=pulse_ids,
         growth_param_ids=growth_ids,
     )
 
@@ -4585,11 +4750,16 @@ def _clone_demo_parameters(params: DemoParameters) -> DemoParameters:
         pop_size_values=params.pop_size_values.copy(),
         free_migration_groups=[list(group) for group in params.free_migration_groups],
         migration_values=params.migration_values.copy(),
+        free_pulse_migration_groups=[
+            list(group) for group in params.free_pulse_migration_groups
+        ],
+        pulse_migration_values=params.pulse_migration_values.copy(),
         free_growth_rate_groups=[list(group) for group in params.free_growth_rate_groups],
         growth_rate_values=params.growth_rate_values.copy(),
         boundary_param_ids=list(params.boundary_param_ids),
         pop_param_ids=list(params.pop_param_ids),
         migration_param_ids=list(params.migration_param_ids),
+        pulse_migration_param_ids=list(params.pulse_migration_param_ids),
         growth_param_ids=list(params.growth_param_ids),
         ordered_lower_bounds=(
             None if params.ordered_lower_bounds is None else params.ordered_lower_bounds.copy()
@@ -4617,6 +4787,9 @@ def _transformed_bounds_for_optimizer(
         lo, hi = bound_map[param_id]
         transformed_bounds.append((np.log(max(lo, 1e-6)), np.log(max(hi, 1e-6))))
     for param_id in params.migration_param_ids:
+        lo, hi = bound_map[param_id]
+        transformed_bounds.append((np.log(max(lo, 1e-8)), np.log(max(hi, 1e-8))))
+    for param_id in params.pulse_migration_param_ids:
         lo, hi = bound_map[param_id]
         transformed_bounds.append((np.log(max(lo, 1e-8)), np.log(max(hi, 1e-8))))
     for param_id in params.growth_param_ids:
@@ -6222,17 +6395,21 @@ def _dical2_upstream(
         warnings.warn(message, RuntimeWarning, stacklevel=2)
         raise RuntimeError(message)
 
-    def _resolve_path_values(value) -> list[str]:
+    def _resolve_path_values(value) -> list[str] | None:
         values = value if isinstance(value, list) else [value]
+        if all(item is None for item in values):
+            return None
         if any(item is None for item in values):
             raise ValueError("Partially specified per-contig paths cannot be run upstream.")
         return [str(Path(item).resolve()) for item in values]
 
-    resolved_paths = {
-        key: _resolve_path_values(value)
-        for key, value in source_paths.items()
-        if value is not None and key != "vcf_offsets"
-    }
+    resolved_paths: dict[str, list[str]] = {}
+    for key, value in source_paths.items():
+        if value is None or key == "vcf_offsets":
+            continue
+        resolved_value = _resolve_path_values(value)
+        if resolved_value is not None:
+            resolved_paths[key] = resolved_value
     sequence_paths = resolved_paths["sequences"]
     reference_paths = resolved_paths.get("reference_file")
     bed_paths = resolved_paths.get("bed_files")
