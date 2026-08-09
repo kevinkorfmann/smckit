@@ -1,0 +1,60 @@
+{
+  "environment": {
+    "cpu_count": 80,
+    "machine": "x86_64",
+    "numeric_threads": 1,
+    "python": "3.12.3",
+    "release": "6.8.0-111-generic",
+    "system": "Linux"
+  },
+  "implementation": "upstream",
+  "input": "/tmp/smckit-psmcplus-typed-0Rnry4Uf/vendor/PSMCplus/simulations/constpopsize.mhs",
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "measurements": [
+    {
+      "peak_rss_bytes": 595337216,
+      "reported_seconds": 12.747499741613865,
+      "wall_seconds": 12.769685568287969
+    },
+    {
+      "peak_rss_bytes": 595787776,
+      "reported_seconds": 12.763455672189593,
+      "wall_seconds": 12.782463865354657
+    },
+    {
+      "peak_rss_bytes": 597045248,
+      "reported_seconds": 12.755717538297176,
+      "wall_seconds": 12.774062754586339
+    },
+    {
+      "peak_rss_bytes": 596873216,
+      "reported_seconds": 12.769727792590857,
+      "wall_seconds": 12.790387861430645
+    },
+    {
+      "peak_rss_bytes": 596733952,
+      "reported_seconds": 12.70706826262176,
+      "wall_seconds": 12.726154614239931
+    }
+  ],
+  "method": "psmcplus",
+  "mode": "fit",
+  "options": {
+    "bin_size": 100,
+    "cores": 1,
+    "decode_downsample": 1000,
+    "iterations": 1,
+    "number_time_windows": 4
+  },
+  "package_version": "unknown",
+  "schema_version": 1,
+  "summary": {
+    "peak_rss_bytes_max": 597045248,
+    "peak_rss_bytes_median": 596733952,
+    "wall_seconds_max": 12.790387861430645,
+    "wall_seconds_median": 12.774062754586339,
+    "wall_seconds_min": 12.726154614239931
+  },
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae",
+  "warmups": []
+}

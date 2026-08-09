@@ -130,13 +130,13 @@ def test_forward_backward_posterior_and_likelihood_match_upstream() -> None:
     oracle = _oracle()
     initial = psmcplus_stationary_distribution(oracle["baseline_transition"])
     # LAPACK eigenvector normalization varies slightly by platform. This
-    # tolerance covers the observed 6.3e-14 absolute Python 3.13/Linux drift;
+    # tolerance covers the observed 3.8e-13 absolute macOS ARM64 drift;
     # every subsequent HMM array is still checked against the tighter oracle.
     np.testing.assert_allclose(
         initial,
         oracle["initial_distribution"],
-        rtol=5e-12,
-        atol=1e-13,
+        rtol=3e-11,
+        atol=5e-13,
     )
     forward, scales = psmcplus_forward(
         oracle["heterozygotes"],

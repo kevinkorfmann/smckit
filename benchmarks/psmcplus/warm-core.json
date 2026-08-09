@@ -1,0 +1,68 @@
+{
+  "bootstrap_replicates": 20000,
+  "bootstrap_seed": 1729,
+  "decode": {
+    "confidence": 0.95,
+    "faster_with_confidence": true,
+    "native_median_seconds": 0.008346421644091606,
+    "native_seconds": [
+      0.008292729035019875,
+      0.008616190403699875,
+      0.008251214399933815,
+      0.008346421644091606,
+      0.008411604911088943
+    ],
+    "speedup": 1.2481042528695359,
+    "speedup_confidence_interval": [
+      1.2090267115916833,
+      1.26645186287447
+    ],
+    "upstream_median_seconds": 0.010417204350233078,
+    "upstream_seconds": [
+      0.010417204350233078,
+      0.010502342134714127,
+      0.01035119779407978,
+      0.010475417599081993,
+      0.01021004281938076
+    ]
+  },
+  "environment": {
+    "numpy": "2.4.4",
+    "platform": "Linux-6.8.0-111-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "fit": {
+    "confidence": 0.95,
+    "faster_with_confidence": true,
+    "native_median_seconds": 0.02114296890795231,
+    "native_seconds": [
+      0.021579019725322723,
+      0.02137855254113674,
+      0.020950280129909515,
+      0.02114296890795231,
+      0.020803596824407578
+    ],
+    "speedup": 2.2743384419672372,
+    "speedup_confidence_interval": [
+      2.222791456785878,
+      2.3248236334235335
+    ],
+    "upstream_median_seconds": 0.048086266964673996,
+    "upstream_seconds": [
+      0.048518821597099304,
+      0.048705706372857094,
+      0.048086266964673996,
+      0.04796566069126129,
+      0.047228770330548286
+    ]
+  },
+  "input": "vendor/PSMCplus/simulations/constpopsize.mhs",
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "measurement_component": "warmed inference core; upstream preprocessing excluded",
+  "method": "psmcplus",
+  "repetitions": 5,
+  "runtime_gate_passed": true,
+  "schema_version": 1,
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+import time
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -13,12 +14,18 @@ import numpy as np
 
 import smckit.upstream as upstream
 from smckit._core import SmcData
+from smckit._provenance import sha256_file
 from smckit.tl._implementation import (
     annotate_result,
     method_upstream_available,
     normalize_implementation,
     require_upstream_available,
     standard_upstream_metadata,
+)
+from smckit.tl._psmcplus_native import (
+    PSMCPlusNativeDecode,
+    decode_psmcplus_native,
+    fit_psmcplus_native,
 )
 
 PSMCPlusMode = Literal["fit", "decode"]
@@ -243,6 +250,7 @@ def _parse_fit_result(
     *,
     mutation_rate: float | None,
     generation_time: float,
+    backend: str = "upstream",
 ) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     values = np.loadtxt(path, dtype=float)
@@ -274,7 +282,7 @@ def _parse_fit_result(
         ne_units = "individuals"
     result: dict[str, Any] = {
         "mode": "fit",
-        "backend": "upstream",
+        "backend": backend,
         "time": left,
         "left_boundary": left,
         "right_boundary": right,
@@ -330,6 +338,7 @@ def _parse_decode_result(
     mutation_rate: float | None,
     generation_time: float,
     marginal_recombination_path: Path | None,
+    backend: str = "upstream",
 ) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     theta = float(_header_value(text, "theta=4*N_E*mu"))
@@ -357,7 +366,7 @@ def _parse_decode_result(
     state_time = 0.5 * (boundaries[:-1] + boundaries[1:])
     result: dict[str, Any] = {
         "mode": "decode",
-        "backend": "upstream",
+        "backend": backend,
         "position": values[0],
         "posterior": posterior,
         "time": state_time,
@@ -434,6 +443,283 @@ def _copy_artifacts(
     return normalized
 
 
+def _write_native_fit_artifact(
+    path: Path,
+    *,
+    boundaries: np.ndarray,
+    lambda_values: np.ndarray,
+    theta: float,
+    rho: float,
+    log_likelihood: float,
+    likelihood_change: float | None,
+    number_iterations: int,
+    final: bool,
+) -> None:
+    scaled_time = 0.5 * boundaries * theta
+    scaled_inverse_population_size = 4.0 * lambda_values / theta
+    values = np.column_stack((scaled_time[:-1], scaled_time[1:], scaled_inverse_population_size))
+    likelihood_label = "final log likelihood" if final else "log likelihood for this iteration"
+    change_label = (
+        "final change in log likelihood"
+        if final
+        else "change in log likelihood for this iteration"
+    )
+    header = [
+        f"{likelihood_label} = {log_likelihood}",
+    ]
+    if likelihood_change is not None:
+        header.append(f"{change_label} = {likelihood_change}")
+    header.extend(
+        [
+            f"number of iterations taken = {number_iterations}",
+            f"theta=4*N_E*mu = {theta}",
+            f"rho=4*N_E*r = {rho}",
+            "scale time by dividing by mu",
+            "scale lambda by taking its inverse then dividing by mu",
+            "col 0 is left time boundary; col 1 is right time boundary; col 3 is scaled_lambda_A",
+        ]
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savetxt(path, values, comments="# ", header="\n".join(header), footer="")
+
+
+def _write_native_decode_artifact(path: Path, decode: PSMCPlusNativeDecode) -> None:
+    values = np.vstack((decode.positions, decode.posterior.T))
+    header = "\n".join(
+        [
+            f"theta=4*N_E*mu = {decode.theta}",
+            f"rho=4*N_E*r = {decode.rho}",
+            f"bin_size = {decode.sequence.bin_size}",
+            "first row is position",
+            f"log likelihood is {decode.log_likelihood}",
+            ",".join(str(value) for value in decode.boundaries),
+        ]
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savetxt(path, values, comments="# ", header=header)
+
+
+def _write_native_marginal_artifact(path: Path, decode: PSMCPlusNativeDecode) -> None:
+    values = np.vstack(
+        (
+            decode.marginal_positions,
+            decode.marginal_recombination[:, 0],
+            decode.marginal_recombination[:, 1],
+        )
+    )
+    map_given = decode.sequence.recombination_factors.size > 1 or not np.allclose(
+        decode.sequence.recombination_factors,
+        1.0,
+    )
+    header = "\n".join(
+        [
+            f"Recombination map {'' if map_given else 'not '}given",
+            "First row is position, second row is probability of recombining, "
+            "third row is probability of not recombining",
+            "TODO this assumes the recombination changes the state, which ignore "
+            "the self coalescences (the SMCprime model)",
+        ]
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savetxt(path, values, comments="# ", header=header)
+
+
+def _native_artifact(
+    source: Path,
+    *,
+    kind: str,
+    destination: Path | None,
+) -> dict[str, Any]:
+    if destination is not None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+    return {
+        "kind": kind,
+        "path": str(destination) if destination is not None else source.name,
+        "sha256": sha256_file(source),
+        "size": source.stat().st_size,
+        "persisted": destination is not None,
+        "native_path": source.name,
+    }
+
+
+def _run_native_psmcplus(
+    *,
+    options: PSMCPlusOptions,
+    inputs: Sequence[Path],
+    mutation_maps: Sequence[Path],
+    recombination_maps: Sequence[Path],
+    mutation_rate: float | None,
+    generation_time: float,
+    requested_output: Path | None,
+    requested_marginal: Path | None,
+) -> tuple[dict[str, Any], list[dict[str, Any]], float]:
+    started = time.perf_counter()
+    effective_cores = options.cores or len(inputs)
+    with tempfile.TemporaryDirectory(prefix="smckit-psmcplus-native-") as temporary:
+        workdir = Path(temporary)
+        if options.mode == "fit":
+            fit = fit_psmcplus_native(
+                inputs,
+                mutation_map_paths=mutation_maps,
+                recombination_map_paths=recombination_maps,
+                recombination_map_downsamples=options.recombination_map_downsamples,
+                number_states=options.number_time_windows,
+                spread_1=options.spread_1,
+                spread_2=options.spread_2,
+                bin_size=options.bin_size,
+                scaled_mutation_rate=options.scaled_mutation_rate,
+                scaled_recombination_rate=options.scaled_recombination_rate,
+                estimate_rho=not options.rho_fixed,
+                mutation_recombination_ratio=options.mutation_recombination_ratio,
+                lambda_initial=options.lambda_initial,
+                lambda_segments=options.lambda_segments,
+                lambda_lower_bound=options.lambda_lower_bound,
+                lambda_upper_bound=options.lambda_upper_bound,
+                iterations=options.iterations,
+                likelihood_threshold=options.likelihood_threshold,
+                parameter_tolerance=options.parameter_tolerance,
+                objective_tolerance=options.objective_tolerance,
+                optimization_method=options.optimization_method,
+                midpoint_transitions=options.midpoint_transitions,
+                midpoint_emissions=options.midpoint_emissions,
+                final_time_factor=options.final_time_factor,
+                nonexponential_recombination=options.nonexponential_recombination,
+                cores=effective_cores,
+            )
+            final_path = workdir / "psmcplus_final_parameters.txt"
+            _write_native_fit_artifact(
+                final_path,
+                boundaries=fit.boundaries,
+                lambda_values=fit.lambda_values,
+                theta=fit.theta,
+                rho=fit.rho,
+                log_likelihood=fit.final_log_likelihood,
+                likelihood_change=fit.likelihood_change,
+                number_iterations=fit.number_iterations,
+                final=True,
+            )
+            final_destination = (
+                Path(f"{requested_output}final_parameters.txt")
+                if requested_output is not None
+                else None
+            )
+            artifacts = [
+                _native_artifact(
+                    final_path,
+                    kind="final_parameters",
+                    destination=final_destination,
+                )
+            ]
+            if options.save_iteration_files:
+                for index, (lambda_values, rho) in enumerate(
+                    zip(fit.iteration_lambda_values, fit.iteration_rho, strict=True),
+                    start=1,
+                ):
+                    iteration_path = workdir / f"psmcplus_params_iteration{index}.txt"
+                    change = (
+                        None
+                        if index == 1
+                        else float(fit.likelihoods[index - 1] - fit.likelihoods[index - 2])
+                    )
+                    _write_native_fit_artifact(
+                        iteration_path,
+                        boundaries=fit.boundaries,
+                        lambda_values=lambda_values,
+                        theta=fit.theta,
+                        rho=rho * options.bin_size,
+                        log_likelihood=float(fit.likelihoods[index - 1]),
+                        likelihood_change=change,
+                        number_iterations=index,
+                        final=False,
+                    )
+                    destination = (
+                        Path(f"{requested_output}params_iteration{index}.txt")
+                        if requested_output is not None
+                        else None
+                    )
+                    artifacts.append(
+                        _native_artifact(
+                            iteration_path,
+                            kind="iteration_parameters",
+                            destination=destination,
+                        )
+                    )
+            result = _parse_fit_result(
+                final_path,
+                mutation_rate=mutation_rate,
+                generation_time=generation_time,
+                backend="native",
+            )
+            result.update(
+                {
+                    "likelihood_trace": fit.likelihoods,
+                    "optimization_success": np.asarray(fit.optimization_success),
+                    "optimization_messages": list(fit.optimization_messages),
+                    "optimization_evaluations": np.asarray(fit.optimization_evaluations),
+                }
+            )
+        else:
+            decode = decode_psmcplus_native(
+                inputs[0],
+                mutation_map_path=mutation_maps[0] if mutation_maps else None,
+                recombination_map_path=recombination_maps[0] if recombination_maps else None,
+                recombination_map_downsamples=options.recombination_map_downsamples,
+                number_states=options.number_time_windows,
+                spread_1=options.spread_1,
+                spread_2=options.spread_2,
+                bin_size=options.bin_size,
+                scaled_mutation_rate=options.scaled_mutation_rate,
+                scaled_recombination_rate=options.scaled_recombination_rate,
+                mutation_recombination_ratio=options.mutation_recombination_ratio,
+                lambda_initial=options.lambda_initial,
+                lambda_segments=options.lambda_segments,
+                downsample=options.decode_downsample,
+                midpoint_transitions=options.midpoint_transitions,
+                midpoint_emissions=options.midpoint_emissions,
+                final_time_factor=options.final_time_factor,
+                nonexponential_recombination=options.nonexponential_recombination,
+            )
+            posterior_path = workdir / "psmcplus_posterior.txt"
+            _write_native_decode_artifact(posterior_path, decode)
+            artifacts = [
+                _native_artifact(
+                    posterior_path,
+                    kind="posterior_decoding",
+                    destination=requested_output,
+                )
+            ]
+            marginal_path: Path | None = None
+            if requested_marginal is not None:
+                marginal_path = workdir / "psmcplus_marginal_recombination.txt"
+                _write_native_marginal_artifact(marginal_path, decode)
+                artifacts.append(
+                    _native_artifact(
+                        marginal_path,
+                        kind="marginal_recombination",
+                        destination=requested_marginal,
+                    )
+                )
+            result = _parse_decode_result(
+                posterior_path,
+                mutation_rate=mutation_rate,
+                generation_time=generation_time,
+                marginal_recombination_path=marginal_path,
+                backend="native",
+            )
+            if not np.allclose(
+                decode.corrected_marginal_recombination,
+                decode.marginal_recombination,
+            ):
+                result["corrected_marginal_recombination"] = {
+                    "position": decode.marginal_positions,
+                    "recombination_probability": decode.corrected_marginal_recombination[:, 0],
+                    "no_recombination_probability": decode.corrected_marginal_recombination[:, 1],
+                    "semantics": "local mutation factors applied",
+                }
+    return result, artifacts, time.perf_counter() - started
+
+
 def psmcplus(
     data: SmcData,
     *,
@@ -448,21 +734,16 @@ def psmcplus(
     implementation: str = "auto",
     timeout: float | None = None,
 ) -> SmcData:
-    """Run preserved PSMC+ with a typed interface and normalized results.
+    """Run PSMC+ with a typed interface and normalized results.
 
     The complete original CLI remains available through
     ``smckit upstream psmcplus -- ...``. This typed adapter requires original
-    path-backed multihetsep input because exact upstream execution must retain
-    the source file representation. Native execution is intentionally rejected
-    until an independently implemented PSMC+ path passes its parity gates.
+    path-backed multihetsep input so both engines retain the source-file
+    representation. Explicit native execution uses the independent smckit
+    engine; ``auto`` stays upstream pending broader empirical promotion.
     """
     requested = normalize_implementation(implementation)
-    if requested == "native":
-        raise NotImplementedError(
-            "A smckit-native PSMC+ implementation is not available yet; use "
-            "implementation='upstream' or 'auto'."
-        )
-    if not method_upstream_available("psmcplus"):
+    if requested != "native" and not method_upstream_available("psmcplus"):
         require_upstream_available("psmcplus")
 
     resolved_options = options or PSMCPlusOptions()
@@ -498,6 +779,54 @@ def psmcplus(
         else None
     )
     all_inputs = [*inputs, *mutation_maps, *recombination_maps]
+    effective_cores = resolved_options.cores or len(inputs)
+    recorded_options = asdict(resolved_options)
+    if resolved_options.lambda_initial is not None and not isinstance(
+        resolved_options.lambda_initial, str
+    ):
+        recorded_options["lambda_initial"] = [
+            float(value) for value in resolved_options.lambda_initial
+        ]
+    recorded_options.update(
+        {
+            "input_paths": [str(path) for path in inputs],
+            "mutation_map_paths": [str(path) for path in mutation_maps],
+            "recombination_map_paths": [str(path) for path in recombination_maps],
+            "mutation_rate": mutation_rate,
+            "generation_time": generation_time,
+            "output_prefix": None if requested_output is None else str(requested_output),
+            "marginal_recombination_path": (
+                None if requested_marginal is None else str(requested_marginal)
+            ),
+            "effective_cores": effective_cores,
+            "numeric_library_threads_per_worker": 1,
+        }
+    )
+    if requested == "native":
+        result, artifacts, native_runtime = _run_native_psmcplus(
+            options=resolved_options,
+            inputs=inputs,
+            mutation_maps=mutation_maps,
+            recombination_maps=recombination_maps,
+            mutation_rate=mutation_rate,
+            generation_time=generation_time,
+            requested_output=requested_output,
+            requested_marginal=requested_marginal,
+        )
+        result["artifacts"] = artifacts
+        annotate_result(
+            result,
+            method_name="psmcplus",
+            implementation_requested=requested,
+            implementation_used="native",
+            effective_args=recorded_options,
+            input_paths=[str(path) for path in all_inputs],
+            runtime_seconds=native_runtime,
+            artifacts=artifacts,
+        )
+        data.results["psmcplus"] = result
+        return data
+
     with tempfile.TemporaryDirectory(prefix="smckit-psmcplus-typed-") as temporary:
         workdir = Path(temporary)
         internal_output = (
@@ -518,7 +847,6 @@ def psmcplus(
             output_path=internal_output,
             marginal_recombination_path=internal_marginal,
         )
-        effective_cores = resolved_options.cores or len(inputs)
         raw = upstream.run(
             "psmcplus",
             args,
@@ -564,28 +892,6 @@ def psmcplus(
             requested_marginal=requested_marginal,
         )
 
-    recorded_options = asdict(resolved_options)
-    if resolved_options.lambda_initial is not None and not isinstance(
-        resolved_options.lambda_initial, str
-    ):
-        recorded_options["lambda_initial"] = [
-            float(value) for value in resolved_options.lambda_initial
-        ]
-    recorded_options.update(
-        {
-            "input_paths": [str(path) for path in inputs],
-            "mutation_map_paths": [str(path) for path in mutation_maps],
-            "recombination_map_paths": [str(path) for path in recombination_maps],
-            "mutation_rate": mutation_rate,
-            "generation_time": generation_time,
-            "output_prefix": None if requested_output is None else str(requested_output),
-            "marginal_recombination_path": (
-                None if requested_marginal is None else str(requested_marginal)
-            ),
-            "effective_cores": effective_cores,
-            "numeric_library_threads_per_worker": 1,
-        }
-    )
     upstream_metadata = standard_upstream_metadata(
         "psmcplus",
         effective_args=recorded_options,

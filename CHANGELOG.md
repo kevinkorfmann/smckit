@@ -13,13 +13,18 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 - Add a typed PSMC+ upstream adapter covering the complete inference option
   surface, normalized demographic and posterior/recombination results, physical
   scaling, persistent hashed artifacts, common result accessors, and live fit
-  and decoding oracles while keeping native execution explicitly unavailable.
+  and decoding oracles while keeping the exact original path available.
 - Add independently written native PSMC+ preprocessing and Numba HMM kernels:
   memory-efficient multihetsep masks and mutation/recombination maps, time
   discretization, local-rate transitions and emissions, forward/backward and EM
-  evidence, posterior decoding, and marginal recombination. Both layers are
-  locked to frozen content-addressed upstream oracles while public native
-  execution remains gated on full workflow parity.
+  evidence, posterior decoding, and marginal recombination.
+- Complete public native PSMC+ fit/decode workflows with multi-file likelihoods,
+  grouped free/fixed parameters, fixed or estimated recombination, optimizer and
+  approximation controls, original-compatible artifacts, and an explicit
+  local-mutation-corrected marginal result. Frozen homogeneous/mapped final
+  oracles enforce parity, and checksum-locked Linux evidence records warmed-core
+  speedups of 2.27x for fit and 1.25x for decode with bootstrap intervals above
+  parity while retaining conservative upstream `auto` selection.
 - Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
   99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
   sequence decoding unpromoted until its WGS oracle is closed.

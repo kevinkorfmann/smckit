@@ -114,7 +114,7 @@ print(smckit.upstream.install_help("esmc2"))
 | Tool | Vendored source in repo | Runtime | Bootstrap contract | Current public bridge |
 |---|---|---|---|---|
 | PSMC | Yes | `make` + C compiler | build vendored source and cache `psmc` binary | Public |
-| PSMC+ | Yes | pinned Python dependency stack | source is the exact inference/simulation oracle; OCI/Apptainer definition supplied | Public raw CLI; typed normalization in progress |
+| PSMC+ | Yes | pinned Python dependency stack | source is the exact inference/simulation oracle; OCI/Apptainer definition supplied | Public raw CLI plus parity-enforced native fit/decode; conservative upstream `auto` |
 | MSMC2 | Yes | `make` + D toolchain | build vendored source and cache `msmc2` binary | Public |
 | MSMC-IM | Yes | Python | vendored script is the oracle entrypoint | Public |
 | SMC++ | No | controlled Python env | still depends on side environment | Public, but not fully vendored |
