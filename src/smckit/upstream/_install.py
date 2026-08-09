@@ -24,21 +24,25 @@ def install_help(tool: str, *, source_present: bool) -> str:
     sections: list[str] = []
     extra_hint = f'pip install "smckit[{tool}]"'
 
-    if not source_present and tool in {"psmc", "msmc2", "msmc_im", "esmc2", "dical2"}:
+    if not source_present and tool in {
+        "psmc",
+        "psmcplus",
+        "msmc2",
+        "msmc_im",
+        "esmc2",
+        "dical2",
+    }:
         sections.append(
             "This install does not include vendored upstream sources. "
             "Use a source checkout for upstream mode:\n"
             "  git clone https://github.com/kevinkorfmann/smckit.git\n"
             "  cd smckit\n"
-            "  pip install -e \".[dev]\""
+            '  pip install -e ".[dev]"'
         )
 
     if tool == "asmc":
         if os_name in {"macos", "linux"}:
-            sections.append(
-                "Install the packaged ASMC runtime:\n"
-                "  pip install \"smckit[asmc]\""
-            )
+            sections.append('Install the packaged ASMC runtime:\n  pip install "smckit[asmc]"')
         else:
             sections.append(
                 "ASMC wheels are not expected on native Windows. "
@@ -91,6 +95,16 @@ def install_help(tool: str, *, source_present: bool) -> str:
         )
         return _join_lines(sections)
 
+    if tool == "psmcplus":
+        sections.append(
+            "Install the pinned PSMC+ Python dependency stack:\n"
+            '  pip install "smckit[psmcplus]"\n'
+            "No compilation is required. In a source checkout, run the exact CLI with:\n"
+            "  smckit upstream psmcplus -- --help\n"
+            "Set SMCKIT_PSMCPLUS_PYTHON to use a dedicated upstream interpreter."
+        )
+        return _join_lines(sections)
+
     if tool == "msmc2":
         if os_name == "macos":
             cmd = "brew install make llvm ldc"
@@ -119,7 +133,7 @@ def install_help(tool: str, *, source_present: bool) -> str:
         sections.append(
             f"Install the semantic extras first:\n  {extra_hint}\n"
             "The upstream MSMC-IM script runs directly from the vendored source tree. "
-            "Use a source checkout if you need implementation=\"upstream\"."
+            'Use a source checkout if you need implementation="upstream".'
         )
         return _join_lines(sections)
 

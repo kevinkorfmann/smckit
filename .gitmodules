@@ -15,3 +15,6 @@
 [submodule "vendor/msmc2"]
 	path = vendor/msmc2
 	url = https://github.com/stschiff/msmc2.git
+[submodule "vendor/PSMCplus"]
+	path = vendor/PSMCplus
+	url = https://github.com/trevorcousins/PSMCplus.git

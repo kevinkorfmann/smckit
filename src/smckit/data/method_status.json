@@ -145,6 +145,19 @@
     "native_warning": null
   },
   {
+    "method": "psmcplus",
+    "display_name": "PSMC+",
+    "upstream": "✓",
+    "native": "planned",
+    "native_default_eligible": false,
+    "native_trusted_for_docs": false,
+    "native_promoted_capabilities": [],
+    "tracked_agreement": "preserved commit and exact raw CLI; native parity not started",
+    "notes": "Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points, all original arguments, isolated artifacts, stdout/stderr/exit status, and a NumPy 2 compatibility shim that does not modify upstream code. Native implementation remains planned.",
+    "install_extra": "psmcplus",
+    "native_warning": "A native PSMC+ implementation is not available yet. Use the preserved upstream CLI."
+  },
+  {
     "method": "ssm",
     "display_name": "SSM",
     "upstream": "n/a",

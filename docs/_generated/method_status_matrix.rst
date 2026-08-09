@@ -55,6 +55,12 @@
      - ✗
      - `real-package PSMCFA smoke plus normalized posterior contract`
      - Reproducible adapter for the maintained PHLASH 1.0.6 Python package with PSMCFA, VCF/BCF, tree-sequence, posterior, credible-interval, artifact, and plotting support; no independent rewrite is planned for 1.0.
+   * - PSMC+
+     - ✓
+     - planned
+     - ✗
+     - `preserved commit and exact raw CLI; native parity not started`
+     - Pinned MIT-licensed PSMC+ source with exact inference and HMM-simulation entry points, all original arguments, isolated artifacts, stdout/stderr/exit status, and a NumPy 2 compatibility shim that does not modify upstream code. Native implementation remains planned.
    * - SSM
      - n/a
      - ✓

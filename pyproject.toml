@@ -49,12 +49,20 @@ asmc = [
     "asmc-asmc>=1.4.0; platform_system != 'Windows'",
 ]
 dical2 = []
+psmcplus = [
+    "joblib>=1.1",
+    "pandas>=1.4",
+    "psutil>=5.9",
+]
 phlash = [
     "phlash==1.0.6; python_version >= '3.12'",
 ]
 all-models = [
     "asmc-asmc>=1.4.0; platform_system != 'Windows'",
+    "joblib>=1.1",
+    "pandas>=1.4",
     "phlash==1.0.6; python_version >= '3.12'",
+    "psutil>=5.9",
 ]
 jax = [
     "jax>=0.4.20",

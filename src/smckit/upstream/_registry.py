@@ -131,6 +131,14 @@ class UpstreamToolSpec:
             if legacy_python.exists():
                 return str(legacy_python)
             return None
+        if self.name == "psmcplus":
+            override = _runtime_override(self.name, env_var=self.runtime_env_var)
+            if override:
+                return override
+            required = ("joblib", "matplotlib", "numba", "numpy", "pandas", "psutil", "scipy")
+            if all(importlib.util.find_spec(module) is not None for module in required):
+                return sys.executable
+            return None
         if self.runtime_executable is None:
             return None
         return _find_executable(
@@ -169,6 +177,8 @@ class UpstreamToolSpec:
                 text=True,
             )
             return probe.returncode == 0
+        if self.name == "psmcplus":
+            return self.runtime_path() is not None
         if self.runtime_executable is None:
             return True
         return self.runtime_path() is not None
@@ -344,6 +354,25 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
         public_upstream=True,
         adapter_ready=True,
     ),
+    "psmcplus": UpstreamToolSpec(
+        name="psmcplus",
+        method_name="psmcplus",
+        vendor_subpath="vendor/PSMCplus",
+        runtime_name="Python with the PSMC+ dependency stack",
+        runtime_executable="python",
+        runtime_env_var="SMCKIT_PSMCPLUS_PYTHON",
+        bootstrap_summary=(
+            "No compilation is required; install smckit[psmcplus] and execute the "
+            "pinned vendored Python entry points through the compatibility runner."
+        ),
+        notes=(
+            "The source is pinned at the only public branch head. The wrapper restores "
+            "the removed NumPy `np.math` alias at runtime without modifying upstream code."
+        ),
+        version="032168f2ceed3c0e46b7f214f890faf83dff41ae",
+        public_upstream=True,
+        adapter_ready=True,
+    ),
     "phlash": UpstreamToolSpec(
         name="phlash",
         method_name="phlash",
@@ -450,8 +479,7 @@ def bootstrap_tool(name: str) -> dict[str, Any]:
             (
                 candidate
                 for candidate in gsl_candidates
-                if (candidate / "libgsl.a").is_file()
-                and (candidate / "libgslcblas.a").is_file()
+                if (candidate / "libgsl.a").is_file() and (candidate / "libgslcblas.a").is_file()
             ),
             None,
         )
@@ -499,7 +527,7 @@ def bootstrap_tool(name: str) -> dict[str, Any]:
         if built is None:
             raise RuntimeError("Bootstrapping asmc did not produce an ASMC_exe executable.")
         _copy_file(built, cache_path / "bin/ASMC_exe")
-    elif name in {"msmc_im", "dical2"}:
+    elif name in {"msmc_im", "dical2", "psmcplus"}:
         # No build required; presence of vendored script/jar is the bootstrap contract.
         pass
     else:
