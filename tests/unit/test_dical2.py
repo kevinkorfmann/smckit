@@ -31,10 +31,15 @@ from smckit.tl._dical2 import (
     _build_free_params,
     _build_native_core,
     _dical2_upstream,
+    _generate_java_permutations,
     _JavaRandom,
+    _meta_grid_points,
     _old_interval_boundaries,
+    _pac_csd_pairs,
+    _pac_trunk_sizes,
     _parse_dical2_stdout,
     _persist_dical2_outputs,
+    _read_dical2_permutations,
     _resolve_dical2_options,
     _resolve_interval_boundaries,
     backward_log,
@@ -135,6 +140,25 @@ class TestIntervalFactories:
 
 
 class TestResolvedOptions:
+    @staticmethod
+    def resolve(method_options):
+        return _resolve_dical2_options(
+            n_intervals=11,
+            max_t=4.0,
+            alpha=0.1,
+            n_em_iterations=2,
+            composite_mode="pac",
+            loci_per_hmm_step=3,
+            start_point=None,
+            meta_start_file=None,
+            meta_num_iterations=1,
+            meta_keep_best=1,
+            meta_num_points=None,
+            bounds=None,
+            seed=1,
+            method_options=method_options,
+        )
+
     def test_nm_fraction_defaults_to_upstream_value(self):
         resolved = _resolve_dical2_options(
             n_intervals=11,
@@ -154,6 +178,40 @@ class TestResolvedOptions:
         )
         assert resolved.nm_fraction == pytest.approx(0.2)
 
+    def test_generated_grid_controls_are_resolved(self):
+        resolved = self.resolve(
+            {
+                "metaNumStartPoints": 3,
+                "metaGridStart": True,
+                "numPermutations": 5,
+                "numCsdsPerPerm": 2,
+                "diffPermsPerChunk": True,
+            }
+        )
+        assert resolved.meta_num_start_points == 3
+        assert resolved.meta_grid_start is True
+        assert resolved.num_permutations == 5
+        assert resolved.num_csds_per_permutation == 2
+        assert resolved.different_permutations_per_contig is True
+
+    @pytest.mark.parametrize(
+        ("method_options", "message"),
+        [
+            (
+                {"num_permutations": 2, "permutation_files": "perms.txt"},
+                "either num_permutations or permutation_files",
+            ),
+            ({"meta_grid_start": True}, "requires meta_num_start_points"),
+            (
+                {"meta_num_iterations": 2, "meta_num_points": 2},
+                "require multiple start points",
+            ),
+        ],
+    )
+    def test_incompatible_search_controls_fail(self, method_options, message):
+        with pytest.raises(ValueError, match=message):
+            self.resolve(method_options)
+
 
 class TestJavaRandom:
     def test_next_long_matches_java_random(self):
@@ -170,6 +228,63 @@ class TestJavaRandom:
         observed = _JavaRandom(1).permutation(5)
         expected = np.array([2, 3, 1, 4, 0], dtype=np.int64)
         np.testing.assert_array_equal(observed, expected)
+
+
+class TestPacPermutations:
+    def test_repeated_shuffle_reuses_the_mutated_order(self):
+        observed = _generate_java_permutations(3, 5, _JavaRandom(1))
+        assert observed == [
+            [2, 3, 1, 4, 0],
+            [4, 3, 1, 2, 0],
+            [0, 4, 3, 1, 2],
+        ]
+
+    def test_pac_visits_permutation_backwards(self):
+        assert _pac_csd_pairs([0, 1, 2, 3]) == [
+            (2, [3]),
+            (1, [3, 2]),
+            (0, [3, 2, 1]),
+        ]
+        assert _pac_csd_pairs([0, 1, 2, 3], 1) == [(0, [3, 2, 1])]
+        assert _pac_csd_pairs([0, 1, 2, 3], 2) == [
+            (2, [3]),
+            (0, [3, 2, 1]),
+        ]
+
+    def test_num_csds_matches_upstream_interpolation(self):
+        assert _pac_trunk_sizes(8, None) == set(range(8))
+        assert _pac_trunk_sizes(8, 4) == {1, 3, 5, 7}
+
+    def test_permutation_file_is_strict(self, tmp_path):
+        valid = tmp_path / "valid.permutations"
+        valid.write_text("0 1 2 3\n3 1 0 2\n")
+        assert _read_dical2_permutations(valid, 4) == [
+            [0, 1, 2, 3],
+            [3, 1, 0, 2],
+        ]
+
+        invalid = tmp_path / "invalid.permutations"
+        invalid.write_text("0 1 1 3\n")
+        with pytest.raises(ValueError, match="each index"):
+            _read_dical2_permutations(invalid, 4)
+
+
+class TestMetaStartGeneration:
+    def test_grid_is_log_spaced_with_first_dimension_fastest(self):
+        observed = _meta_grid_points([(0.01, 100.0), (0.1, 10.0)], 2)
+        expected = np.array(
+            [
+                [0.01, 0.1],
+                [100.0, 0.1],
+                [0.01, 10.0],
+                [100.0, 10.0],
+            ]
+        )
+        np.testing.assert_allclose(observed, expected)
+
+    def test_grid_rejects_nonpositive_bounds(self):
+        with pytest.raises(ValueError, match="positive, increasing"):
+            _meta_grid_points([(0.0, 1.0)], 2)
 
 
 # ---------------------------------------------------------------------------
@@ -483,6 +598,43 @@ class TestReadDical2:
         assert repeated["n_contigs"] == 2
         assert repeated["log_likelihood"] == pytest.approx(2 * single["log_likelihood"])
 
+    def test_native_pac_mixes_generated_permutations_with_logsumexp(self):
+        root = Path("vendor/diCal2/examples/fromReadme")
+        data = read_dical2(
+            sequences=root / "test.vcf",
+            param_file=root / "test.param",
+            demo_file=root / "exp.demo",
+            rates_file=root / "exp.rates",
+            config_file=root / "exp.config",
+            reference_file=root / "test.fa",
+        )
+        start_point = np.loadtxt(root / "exp.rand", ndmin=2)[0]
+        result = dical2(
+            data,
+            implementation="native",
+            n_em_iterations=0,
+            start_point=start_point,
+            seed=1,
+            native_options={
+                "interval_type": "logUniform",
+                "interval_params": "11,0.01,4",
+                "disableCoordinateWiseMStep": True,
+                "num_permutations": 2,
+            },
+            loci_per_hmm_step=3,
+            composite_mode="pac",
+        ).results["dical2"]
+
+        permutation_lls = np.asarray(
+            result["rounds"][0]["permutation_log_likelihoods"][0]
+        )
+        maximum = float(permutation_lls.max())
+        expected = maximum + np.log(np.exp(permutation_lls - maximum).sum())
+        assert result["log_likelihood"] == pytest.approx(expected)
+        assert sum(result["rounds"][0]["permutation_weights"][0]) == pytest.approx(1.0)
+        assert result["permutations"]["source"] == "generated_java_collections_shuffle"
+        assert len(result["permutations"]["per_contig"][0]) == 2
+
     @pytest.mark.parametrize(
         ("bed_text", "message"),
         [
@@ -523,6 +675,9 @@ class TestReadDical2:
         shifted_vcf.write_text("\n".join(shifted_lines) + "\n")
         bed = tmp_path / "mask.bed"
         bed.write_text("1\t0\t1\n")
+        permutation_files = [tmp_path / "contig-1.perm", tmp_path / "contig-2.perm"]
+        permutation_files[0].write_text("0 1 2 3\n")
+        permutation_files[1].write_text("3 2 1 0\n")
         data = read_dical2(
             sequences=[shifted_vcf, shifted_vcf],
             param_file=root / "test.param",
@@ -547,7 +702,19 @@ class TestReadDical2:
             meta_num_points=None,
             bounds=None,
             seed=7,
-            method_options={"interval_type": "logUniform", "interval_params": "11,0.01,4"},
+            method_options={
+                "interval_type": "logUniform",
+                "interval_params": "11,0.01,4",
+                "bounds": "0.1,10;0.1,10;0.1,10;0.1,10;0.1,10",
+                "meta_num_start_points": 2,
+                "meta_grid_start": True,
+                "meta_num_iterations": 2,
+                "meta_keep_best": 1,
+                "meta_num_points": 2,
+                "permutation_files": permutation_files,
+                "different_permutations_per_contig": True,
+                "num_csds_per_permutation": 2,
+            },
         )
         captured = {"calls": []}
 
@@ -580,8 +747,20 @@ class TestReadDical2:
         assert bed_arg == ",".join([str(bed.resolve())] * 2)
         assert cmd[cmd.index("--vcfFilterPassString") + 1] == "PASS"
         assert cmd[cmd.index("--vcfOffset") + 1] == "100,100"
+        assert cmd[cmd.index("--metaNumStartPoints") + 1] == "2"
+        assert "--metaGridStart" in cmd
+        assert cmd[cmd.index("--metaNumIterations") + 1] == "2"
+        assert cmd[cmd.index("--metaKeepBest") + 1] == "1"
+        assert cmd[cmd.index("--metaNumPoints") + 1] == "2"
+        assert cmd[cmd.index("--permutationsFile") + 1] == ",".join(
+            str(path.resolve()) for path in permutation_files
+        )
+        assert "--diffPermsPerChunk" in cmd
+        assert cmd[cmd.index("--numCsdsPerPerm") + 1] == "2"
         assert run_kwargs["cwd"] == Path("vendor/diCal2").resolve()
         assert result["upstream"]["effective_args"]["vcfOffset"] == [100, 100]
+        assert result["upstream"]["effective_args"]["metaGridStart"] is True
+        assert result["upstream"]["effective_args"]["diffPermsPerChunk"] is True
 
 
 class TestDical2Output:

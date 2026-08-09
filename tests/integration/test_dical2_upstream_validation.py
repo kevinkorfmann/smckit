@@ -157,6 +157,100 @@ def test_dical2_upstream_im_backend_runs_end_to_end() -> None:
 
 
 @pytest.mark.oracle
+def test_dical2_native_pac_permutations_match_upstream_fixed_point() -> None:
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / "exp.rand", ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "pac",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": "simple",
+        "num_permutations": 2,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    expected_permutations = [
+        [2, 6, 7, 0, 3, 1, 4, 5],
+        [7, 4, 6, 2, 5, 3, 0, 1],
+    ]
+    assert native["permutations"]["per_contig"][0] == expected_permutations
+    for permutation in expected_permutations:
+        row = "\t".join(str(value) for value in permutation)
+        assert f"# HAP PERMUTATION:\t{row}\t" in upstream["upstream"]["stdout"]
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=1e-8
+    )
+
+
+@pytest.mark.oracle
+@pytest.mark.slow
+def test_dical2_native_meta_grid_sequence_matches_upstream() -> None:
+    bounds = "300,400;0.011,0.012;0.05,0.06;0.09,0.1;1.1,1.2"
+    common = {
+        "n_em_iterations": 0,
+        "seed": 1,
+        "loci_per_hmm_step": 3,
+        "composite_mode": "lol",
+        "bounds": bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "11,0.01,4",
+        "disableCoordinateWiseMStep": True,
+        "meta_num_start_points": 2,
+        "meta_grid_start": True,
+    }
+    upstream = dical2(
+        _read_exp_data(),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        _read_exp_data(),
+        implementation="native",
+        native_options={**options, "record_meta_trace": True},
+        **common,
+    ).results["dical2"]
+
+    upstream_points = []
+    for line in upstream["upstream"]["stdout"].splitlines():
+        if "[EXPECTATION_0_0_" not in line:
+            continue
+        upstream_points.append(
+            np.fromstring(line.split("\t", 1)[1].strip("[]"), sep=",")
+        )
+    native_points = [run["start_point"] for run in native["meta_trace"][0]["runs"]]
+    np.testing.assert_allclose(native_points, upstream_points, rtol=0.0, atol=1e-14)
+    assert len(native_points) == 32
+    assert native["initialization"] == {
+        "strategy": "log_grid",
+        "points_per_dimension": 2,
+        "n_start_points": 32,
+    }
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=1e-8
+    )
+
+
+@pytest.mark.oracle
 @pytest.mark.slow
 def test_dical2_native_loguniform_exp_runs_independently() -> None:
     upstream = _run_exp_upstream()
@@ -196,7 +290,7 @@ def test_dical2_native_loguniform_exp_runs_independently() -> None:
     )
     assert native["resolved_options"]["nm_fraction"] == pytest.approx(0.2)
     assert native["core_type"] == "ode"
-    assert native["initialization"] is None
+    assert native["initialization"]["strategy"] == "file"
     assert np.isfinite(native["log_likelihood"])
     assert np.isfinite(np.asarray(native["best_params"])).all()
     assert native["n_iterations"] >= 1
@@ -214,8 +308,9 @@ def test_dical2_native_loguniform_exp_records_meta_trace() -> None:
     generation_zero = trace[0]
     generation_one = trace[1]
 
-    assert len(generation_zero["starting_points"]) == EXP_COMMON["meta_num_points"]
-    assert len(generation_zero["runs"]) == EXP_COMMON["meta_num_points"]
+    initial_count = int(np.loadtxt(ROOT / "exp.rand", ndmin=2).shape[0])
+    assert len(generation_zero["starting_points"]) == initial_count
+    assert len(generation_zero["runs"]) == initial_count
     assert len(generation_zero["offspring"]) == (
         EXP_COMMON["meta_num_points"] - EXP_COMMON["meta_keep_best"]
     )
@@ -269,7 +364,7 @@ def test_dical2_native_im_runs_independently() -> None:
         == upstream["resolved_options"]["interval_params"]
     )
     assert native["resolved_options"]["nm_fraction"] == pytest.approx(0.2)
-    assert native["initialization"] is None
+    assert native["initialization"]["strategy"] == "file"
     assert np.isfinite(native["log_likelihood"])
     assert np.isfinite(np.asarray(native["best_params"])).all()
     assert native["n_iterations"] >= 1

@@ -69,13 +69,14 @@
       "manual_surface": ["LOL", "PCL", "PAC"],
       "native_status": "native_unpromoted",
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "PAC permutation selection and repeated-permutation aggregation remain upstream-only."
+      "remaining": "The two-permutation fixed-point Java oracle is frozen; add posterior-weighted one-step EM coverage."
     },
     {
       "id": "pac_permutations",
-      "manual_surface": ["--numPermutations", "--permutations", "--numCsds", "--numPerDeme"],
-      "native_status": "upstream_only",
-      "evidence": ["smckit upstream dical2 -- <original arguments>"]
+      "manual_surface": ["--numPermutations", "--permutationsFile", "--numCsdsPerPerm", "--diffPermsPerChunk"],
+      "native_status": "native_unpromoted",
+      "evidence": ["TestPacPermutations", "TestReadDical2.test_native_pac_mixes_generated_permutations_with_logsumexp", "test_dical2_native_pac_permutations_match_upstream_fixed_point", "TestReadDical2.test_upstream_bridge_preserves_multicontig_vcf_controls"],
+      "remaining": "Generated reduced-CSD fixed-point parity is frozen; add one-step EM, file-backed, and per-contig Java oracles."
     },
     {
       "id": "interval_factories",
@@ -91,22 +92,16 @@
     },
     {
       "id": "explicit_and_meta_start",
-      "manual_surface": ["--startPoint", "--metaStartFile", "--metaNumIterations", "--metaKeepBest", "--metaNumPoints"],
+      "manual_surface": ["--startPoint", "--metaStartFile", "--metaNumStartPoints", "--metaGridStart", "--metaNumIterations", "--metaKeepBest", "--metaNumPoints"],
       "native_status": "native",
-      "evidence": ["tests/integration/test_dical2_upstream_validation.py"]
+      "evidence": ["TestMetaStartGeneration", "TestResolvedOptions", "test_dical2_native_meta_grid_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"]
     },
     {
-      "id": "grid_start",
-      "manual_surface": ["--gridStart", "--numStartPoints"],
-      "native_status": "upstream_only",
-      "evidence": ["smckit upstream dical2 -- <original arguments>"]
-    },
-    {
-      "id": "bounds_and_log_uniform_parameters",
-      "manual_surface": ["--bounds", "--logUniformParameters"],
+      "id": "bounds_and_generated_start_search",
+      "manual_surface": ["--bounds", "--metaNumStartPoints", "--metaGridStart"],
       "native_status": "native_unpromoted",
-      "evidence": ["tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "Bounds are covered; explicit log-uniform search-coordinate parity still needs a frozen oracle."
+      "evidence": ["TestMetaStartGeneration", "test_dical2_native_meta_grid_sequence_matches_upstream", "tests/integration/test_dical2_upstream_validation.py"],
+      "remaining": "The generated log-grid candidate sequence and fixed-point winner are frozen; add an exact Java random-start sequence oracle."
     },
     {
       "id": "trunk_and_hidden_state_controls",
@@ -131,7 +126,7 @@
   ],
   "promotion_blockers": [
     "Independent structured, growth, split, migration-window, three-population, and introgression oracle families",
-    "Native PAC permutation and log-uniform parameter-search semantics",
+    "One-step EM and file/per-contig Java oracles for PAC permutations; random-start Java sequence oracle",
     "Complete original-compatible artifact catalogue",
     "Warmed runtime confidence interval and peak-memory gate"
   ]

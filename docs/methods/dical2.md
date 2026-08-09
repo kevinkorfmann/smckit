@@ -126,6 +126,24 @@ leave the meta-start and bounds machinery alone until you know why you need it.
 | `meta_keep_best` | Number of best start points retained between generations. | Change when tuning the breadth of multi-start search. | Advanced. |
 | `meta_num_points` | Number of points evaluated per meta-start generation. | Change when tuning multi-start breadth. | Advanced. |
 
+Generated starts and PAC-specific controls use `native_options` or
+`upstream_options`. Both snake-case names and the original Java spellings are
+accepted:
+
+- `meta_num_start_points` / `metaNumStartPoints` generates multiple starts;
+  add `meta_grid_start=True` / `metaGridStart=True` for a log-spaced grid,
+  otherwise starts are sampled log-uniformly with the Java-compatible RNG
+- `num_permutations` / `numPermutations` generates PAC permutations, while
+  `permutation_files` / `permutationsFile` reads exact permutation rows
+- `num_csds_per_permutation` / `numCsdsPerPerm` selects how many CSD trunk
+  sizes contribute per permutation
+- `different_permutations_per_contig` / `diffPermsPerChunk` uses independent
+  generated permutations, or one supplied permutation file, for each contig
+
+Native results record the exact resolved permutations and initialization mode
+in `results["dical2"]["permutations"]` and
+`results["dical2"]["initialization"]`.
+
 ### Search constraints and reproducibility
 
 | Argument | What it means | When to change it | Default guidance |
@@ -194,10 +212,11 @@ Native promotion still requires independent simulation families, remaining
 feature-ledger closure, and the performance gate.
 
 The authoritative option-by-option status is recorded in
-[the diCal2 feature ledger](../parity/dical2-feature-ledger.json). In
-particular, PAC permutation controls, grid-start search, and native parallel
-execution remain upstream-only today; use exact upstream execution for those
-workflows.
+[the diCal2 feature ledger](../parity/dical2-feature-ledger.json). PAC
+permutation controls and generated grid/random starts are implemented but
+remain unpromoted until direct Java oracle coverage is frozen. Native parallel
+execution remains upstream-only; use exact upstream execution when those
+workflows are scientifically consequential.
 
 ## Learn more
 
