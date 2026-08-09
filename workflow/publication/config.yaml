@@ -35,8 +35,14 @@ platforms:
   - macos-arm64
   - nvidia-gpu
 empirical:
-  human: "1000 Genomes accession and deterministic sample manifest required"
-  nonhuman: "Arabidopsis 1001 Genomes plus a public goat cohort require accession and sample manifests; VarGoats additionally requires publication/data-use clearance"
+  human:
+    manifest: "empirical/1000genomes-na12878-grch38.json"
+    required_status_for_retained_run: "ready"
+  nonhuman:
+    required_manifests:
+      - "Arabidopsis 1001 Genomes"
+      - "public goat cohort"
+    note: "VarGoats requires steering-committee contact under its current data-sharing agreement before publication use."
 metrics:
   - log_integrated_trajectory_error
   - parameter_error

@@ -49,10 +49,14 @@ jobs:
             src/smckit/_provenance.py \
             src/smckit/cli.py \
             src/smckit/io/_dical2.py \
+            src/smckit/pp/_multihetsep.py \
             src/smckit/tl/_dical2.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
             tests/integration/test_dical2_vcf_semantics_oracle.py \
+            tests/integration/test_multihetsep_preprocessing_oracle.py \
+            tests/unit/test_empirical_manifest.py \
+            tests/unit/test_multihetsep_preprocessing.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
             scripts/aggregate_psmcplus_benchmark.py \
@@ -67,16 +71,21 @@ jobs:
             workflow/publication/scripts/plot_figure1.py \
             workflow/publication/scripts/run_benchmark.py \
             workflow/publication/scripts/run_phlash_accuracy.py \
+            workflow/publication/scripts/validate_empirical_manifest.py \
             workflow/publication/scripts/validate_psmcplus_matrix.py
           uv run ruff check \
             src/smckit/_capabilities.py \
             src/smckit/_provenance.py \
             src/smckit/cli.py \
             src/smckit/io/_dical2.py \
+            src/smckit/pp/_multihetsep.py \
             src/smckit/tl/_dical2.py \
             src/smckit/tl/_phlash.py \
             src/smckit/upstream/_run.py \
             tests/integration/test_dical2_vcf_semantics_oracle.py \
+            tests/integration/test_multihetsep_preprocessing_oracle.py \
+            tests/unit/test_empirical_manifest.py \
+            tests/unit/test_multihetsep_preprocessing.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
             scripts/aggregate_psmcplus_benchmark.py \
@@ -91,6 +100,7 @@ jobs:
             workflow/publication/scripts/plot_figure1.py \
             workflow/publication/scripts/run_benchmark.py \
             workflow/publication/scripts/run_phlash_accuracy.py \
+            workflow/publication/scripts/validate_empirical_manifest.py \
             workflow/publication/scripts/validate_psmcplus_matrix.py
       - name: Validate workflow contracts
         run: |
@@ -101,6 +111,10 @@ jobs:
           uv run python -m json.tool docs/parity/dical2-feature-ledger.json > /dev/null
           uv run python -m json.tool docs/parity/oracle-specifications.json > /dev/null
           uv run python -m json.tool preservation/upstreams.json > /dev/null
+          uv run python scripts/verify_upstreams.py
+          uv run python workflow/publication/scripts/validate_empirical_manifest.py \
+            workflow/publication/empirical/1000genomes-na12878-grch38.json \
+            > /dev/null
       - name: Resolve the frozen PHLASH publication DAG
         run: |
           cd workflow/publication
@@ -115,6 +129,16 @@ jobs:
           uv run python -m json.tool "$repair_dir/metadata.json" > /dev/null
       - name: Run direct immutable-Java diCal2 VCF reader oracle
         run: uv run pytest -q tests/integration/test_dical2_vcf_semantics_oracle.py
+      - name: Run pinned msmc-tools multihetsep oracle
+        run: |
+          oracle_path="$RUNNER_TEMP/generate_multihetsep-4d1f05f.py"
+          curl --fail --location --silent --show-error \
+            --output "$oracle_path" \
+            https://raw.githubusercontent.com/stschiff/msmc-tools/4d1f05f39f7b4f8c205e602c180b44a7c68a7bba/generate_multihetsep.py
+          echo "caaa87a07e0fe2dc7228f30c9aff759cf86e9f61b8332aabd41398399ea6331b  $oracle_path" \
+            | sha256sum --check
+          SMCKIT_MSMC_TOOLS_GENERATE="$oracle_path" \
+            uv run pytest -q tests/integration/test_multihetsep_preprocessing_oracle.py
       - run: uv run python -m build
       - run: uv run pytest -q tests/integration/test_build_install_smoke.py
       - run: uv run sphinx-build -W -b html docs docs/_build/html

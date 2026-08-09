@@ -52,6 +52,7 @@
       "fixtures": [
         "frozen four-state kernel oracle from pinned commit 032168f2",
         "frozen masked multihetsep and local-rate preprocessing oracle",
+        "live checksum-pinned msmc-tools generate_multihetsep VCF/mask/trio oracle",
         "constant-population one-iteration fit",
         "constant-population posterior and marginal-recombination decode",
         "mapped mutation/recombination one-iteration fit",
@@ -88,6 +89,19 @@
       "preprocessing_acceptance": {
         "comparison": "exact arrays",
         "fixture_sha256": "6e0a12847a60fa1ece6307f16325376ffa0ef95f8ac1a72adf7bc0d71cb92de9"
+      },
+      "called_vcf_preprocessing_acceptance": {
+        "comparison": "exact contig, position, callable-count, and normalized phase configurations",
+        "msmc_tools_commit": "4d1f05f39f7b4f8c205e602c180b44a7c68a7bba",
+        "generate_multihetsep_sha256": "caaa87a07e0fe2dc7228f30c9aff759cf86e9f61b8332aabd41398399ea6331b",
+        "workflows": [
+          "gzip single-sample VCF inputs",
+          "streamed multi-individual position join",
+          "intersection of BED and two-column callability masks",
+          "unphased genotype configurations",
+          "trio phasing and child removal"
+        ],
+        "intentional_native_repair": "negative masks do not make every position after their final interval uncallable"
       },
       "fit_acceptance": {
         "theta": "exact",

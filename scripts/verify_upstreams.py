@@ -33,9 +33,10 @@ def main() -> int:
     tracked_snapshots: list[str] = []
     for name, entry in manifest["tools"].items():
         expected = entry.get("commit")
-        if expected is None or "path" not in entry:
+        raw_path = entry.get("path")
+        if expected is None or not isinstance(raw_path, str):
             continue
-        path = ROOT / entry["path"]
+        path = ROOT / raw_path
         if not path.exists():
             failures.append(f"{name}: missing {path.relative_to(ROOT)}")
             continue

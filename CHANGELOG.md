@@ -6,6 +6,11 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 
 ### Added
 
+- Add independent, callability-aware VCF-to-multihetsep preprocessing for
+  PSMC+/MSMC2 with streaming multi-individual joins, positive/negative masks,
+  unphased configurations, trio phasing/removal, immutable provenance, and a
+  live checksum-pinned `msmc-tools` oracle. Variant-only empirical conversion
+  is rejected unless all-site callability is explicitly asserted.
 - Pin the complete MIT-licensed PSMC+ source, expose its original inference and
   HMM-simulation entry points through the shell-free preservation runner, record
   NumPy 2 compatibility provenance, freeze a numeric upstream oracle, and add a

@@ -3,6 +3,36 @@
 This directory contains public workflow code and immutable evidence schemas.
 It does not contain the private manuscript, supplement, or submission files.
 
+## Empirical source manifests
+
+The first human source is pinned in
+`empirical/1000genomes-na12878-grch38.json`. It deterministically selects
+NA12878 from the NYGC 30x 1000 Genomes panel and records the ENA project,
+study, run, experiment, SRA sample, and BioSample accessions; CRAM, CRAI,
+sample-index, pedigree, reference, phased chr22 cross-check, and data-reuse
+URLs; cryptographic checksums; callability thresholds; analysis scopes; and
+remaining blockers.
+
+Validate and content-address it with:
+
+```bash
+python scripts/validate_empirical_manifest.py \
+  empirical/1000genomes-na12878-grch38.json
+```
+
+The manifest is deliberately `source_pinned`, not `ready`. Pairwise SMC runs
+must derive positive callability from sample-level aligned reads; the phased
+cohort VCF can cross-check genotypes but cannot establish confidently callable
+invariant sites. Retained empirical targets stay disabled until the
+consensus/depth-callability stage has a direct oracle and every derived input
+is checksummed.
+
+VarGoats is not silently treated as unrestricted publication input. Its public
+paper lists ENA project PRJEB37507, while the project data-sharing agreement
+still asks users to contact the steering committee about publication plans.
+A VarGoats run therefore requires documented clearance or replacement with an
+unambiguously reusable goat cohort before it can enter retained evidence.
+
 ## PHLASH accuracy and posterior coverage
 
 Install the publication and pinned PHLASH environments together, then run the

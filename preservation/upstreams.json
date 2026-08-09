@@ -16,6 +16,18 @@
       "license": "GPL-3.0",
       "runtime": "D/make"
     },
+    "msmc_tools": {
+      "repository": "https://github.com/stschiff/msmc-tools.git",
+      "commit": "4d1f05f39f7b4f8c205e602c180b44a7c68a7bba",
+      "path": null,
+      "license": "not declared in the pinned repository",
+      "redistributed": false,
+      "generate_multihetsep_sha256": "caaa87a07e0fe2dc7228f30c9aff759cf86e9f61b8332aabd41398399ea6331b",
+      "bam_caller_sha256": "c569607a6c75ed1f4e5e077a9ecda43f553b385107e28a57989b9104a90938cf",
+      "readme_sha256": "b40a3c5f77c26cf210cda8928269071ac2686066d46c65aa38ebb6c651233ba4",
+      "runtime": "Python 3",
+      "audit_status": "pinned helper oracle; source is fetched and checksum-verified for live oracle execution but is not redistributed because the repository declares no license"
+    },
     "asmc": {
       "repository": "https://github.com/PalamaraLab/ASMC.git",
       "commit": "35eeea7ebd28827dd8cb0367ae0530480effdeee",

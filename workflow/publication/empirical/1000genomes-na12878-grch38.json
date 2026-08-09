@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "dataset_id": "1000genomes-30x-na12878-grch38",
+  "status": "source_pinned",
+  "organism": {
+    "scientific_name": "Homo sapiens",
+    "ncbi_taxon_id": 9606
+  },
+  "assembly": {
+    "name": "GRCh38 full analysis set plus decoy and HLA",
+    "accession": "GCA_000001405.15"
+  },
+  "sample_selection": {
+    "policy": "NA12878 is a deterministic, deeply characterized CEU sample in the unrelated 2504-sample 30x panel; no outcome-dependent selection is permitted.",
+    "samples": [
+      {
+        "sample_id": "NA12878",
+        "population": "CEU",
+        "superpopulation": "EUR",
+        "sex": "female",
+        "accessions": {
+          "ena_project": "PRJEB31736",
+          "ena_study": "ERP114329",
+          "ena_run": "ERR3239334",
+          "ena_experiment": "ERX3266709",
+          "sra_sample": "SRS000090",
+          "biosample": "SAME123392"
+        }
+      }
+    ]
+  },
+  "sources": [
+    {
+      "role": "aligned_reads",
+      "url": "https://ftp.sra.ebi.ac.uk/vol1/run/ERR323/ERR3239334/NA12878.final.cram",
+      "md5": "7b60651143aa1b18e807ced767886fd2",
+      "bytes": 15797182294
+    },
+    {
+      "role": "aligned_reads_index",
+      "url": "https://ftp.sra.ebi.ac.uk/vol1/run/ERR323/ERR3239334/NA12878.final.cram.crai",
+      "sha256": "34f4827317b1208c38541d1dccd45d162e565285aef6884b7b16116fe2012d72",
+      "bytes": 1378885
+    },
+    {
+      "role": "sample_index",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index",
+      "sha256": "0ac5fdda0b60b6575b1867827f53e39d723f915b325b10bf023b2dc3d71c08f2"
+    },
+    {
+      "role": "sample_metadata",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt",
+      "sha256": "4e164b717433fc9bfc16e29b20e5b4659b4216185b3275322d421fe3d323c132"
+    },
+    {
+      "role": "reference",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+      "contig_md5": {
+        "chr22": "ac37ec46683600f808cdd41eac1d55cd"
+      }
+    },
+    {
+      "role": "reference_index",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai",
+      "sha256": "f361f004bdae5ca68d632458b01a3848d02834ac7176f378e177344d148a6a6d"
+    },
+    {
+      "role": "reference_readme",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/README.20150309.GRCh38_full_analysis_set_plus_decoy_hla",
+      "sha256": "f8662c7ff1b9abdf986eca668559d38a509d4b65cc553b0fa2ee64fe3d217ea1"
+    },
+    {
+      "role": "data_reuse",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20190405_1000G_2504_high_cov_data_reuse_README.md",
+      "sha256": "d4461bb86630587d41911b18696d831ad7a73dca6a813b4e8d4100539006f3b5"
+    },
+    {
+      "role": "cohort_phased_vcf_chr22",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/1kGP_high_coverage_Illumina.chr22.filtered.SNV_INDEL_SV_phased_panel.vcf.gz",
+      "md5": "a2653cc7a1c8d03a96ca4f14d0fabdd2"
+    },
+    {
+      "role": "cohort_phased_vcf_chr22_index",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/1kGP_high_coverage_Illumina.chr22.filtered.SNV_INDEL_SV_phased_panel.vcf.gz.tbi",
+      "md5": "33a3d517ba4d93fe40fd6db4b78329a7"
+    }
+  ],
+  "analysis": {
+    "methods": [
+      "psmcplus",
+      "psmc",
+      "msmc2",
+      "phlash"
+    ],
+    "smoke_scope": "chr22:20000000-25000000",
+    "publication_scope": "autosomes chr1-chr22 with per-contig preprocessing and matched native/upstream information",
+    "callability": {
+      "positive_mask_required": true,
+      "variant_only_vcf_allowed": false,
+      "source": "sample-level CRAM depth and consensus quality, intersected with reference-valid and mapping-quality filters",
+      "minimum_mapping_quality": 20,
+      "minimum_base_quality": 20,
+      "minimum_consensus_quality": 20,
+      "depth_lower_fraction_of_mean": 0.5,
+      "depth_upper_fraction_of_mean": 2.0
+    },
+    "comparison": "Identical generated multihetsep files, options, seeds, and one-thread limits are used for native and preserved-upstream fits. The cohort phased VCF is a genotype cross-check, never a substitute for callability."
+  },
+  "data_use": {
+    "status": "public_release_with_acknowledgement",
+    "required_acknowledgement": "These data were generated at the New York Genome Center with funds provided by NHGRI Grant 3UM1HG008901-03S1; NA12878 is from the NIGMS Human Genetic Cell Repository."
+  },
+  "blockers": [
+    "Implement and oracle-test the sample-level consensus/depth-callability stage before acquisition_ready.",
+    "Freeze whole-autosome reference and derived-input checksums before retained publication execution.",
+    "Run genotype concordance checks against the independently phased chr22 call set."
+  ]
+}
