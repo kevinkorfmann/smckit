@@ -219,6 +219,17 @@ class TestResolvedOptions:
         assert resolved.different_permutations_per_contig is True
 
     @pytest.mark.parametrize(
+        ("method_options", "expected"),
+        [
+            ({}, "condition_lineage"),
+            ({"condOnTransitionType": True}, "condition_lineage_transition_type"),
+            ({"marginal_kl": True}, "marginal_kl"),
+        ],
+    )
+    def test_objective_mode_is_resolved(self, method_options, expected):
+        assert self.resolve(method_options).objective_mode == expected
+
+    @pytest.mark.parametrize(
         ("method_options", "message"),
         [
             (
@@ -233,6 +244,10 @@ class TestResolvedOptions:
             (
                 {"number_iterations_mstep": 2, "relative_error_m": 1e-5},
                 "exactly one of number_iterations_mstep or relative_error_m",
+            ),
+            (
+                {"condition_on_transition_type": True, "marginalKL": True},
+                "mutually exclusive",
             ),
         ],
     )
@@ -1535,6 +1550,11 @@ class TestForwardBackward:
         self_reco = counts.self_reco_expectations[1]
         assert np.all(self_reco >= 0.0)
         assert np.all(self_reco <= np.diag(step_reco) + 1e-14)
+        np.testing.assert_allclose(
+            counts.average_marginal_expectation(),
+            counts.initial_expect + counts.no_reco_expect + counts.reco_expect.sum(axis=0),
+        )
+        assert counts.average_marginal_expectation().sum() == pytest.approx(L, abs=1e-6)
 
     def test_expected_counts_preserves_transition_distances(self):
         core = self._setup()

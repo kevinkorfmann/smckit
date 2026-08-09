@@ -91,6 +91,13 @@
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py"]
     },
     {
+      "id": "conditional_objectives",
+      "manual_surface": ["default ConditionLineage", "--condOnTransitionType", "--marginalKL"],
+      "native_status": "native_unpromoted",
+      "evidence": ["TestResolvedOptions", "TestForwardBackward.test_expected_counts", "test_native_structured_objective_matches_upstream"],
+      "remaining": "The transition-type-conditioned objective has strict fitted parity. Native marginal-KL implements the intended vendored-source formula and has a frozen deterministic endpoint, but the pinned Java jar crashes in its first E-step because it passes a null mutation-rate vector; establish a repaired-source oracle before promotion, especially for PAC weighting."
+    },
+    {
       "id": "explicit_and_meta_start",
       "manual_surface": ["--startPoint", "--metaStartFile", "--metaNumStartPoints", "--metaGridStart", "--metaNumIterations", "--metaKeepBest", "--metaNumPoints"],
       "native_status": "native",
@@ -126,7 +133,7 @@
   ],
   "promotion_blockers": [
     "Structured and one-step file/per-contig PAC Java oracles plus pinned empty-trunk failure characterization",
-    "Structured trunk-style and conditional-objective oracle families",
+    "Structured trunk-style oracle families and a repaired-source marginal-KL oracle",
     "Complete original-compatible artifact catalogue",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"
   ]

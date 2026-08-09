@@ -417,5 +417,28 @@ parameters as the pinned jar; all three new structured one-step oracles meet
 
 This closes the ordinary LOL fitted-structure family represented by these
 simulations. Structured PAC, alternate trunk styles, explicit
-`--condOnTransitionType` semantics, detailed artifacts, and Linux performance
+conditional-objective validation, detailed artifacts, and Linux performance
 remain promotion blockers.
+
+### 19. Alternate conditional objectives are explicit, and marginal-KL exposes an upstream defect
+
+The public native and typed-upstream paths now accept the original
+`--condOnTransitionType` and `--marginalKL` controls through structured option
+aliases. They are mutually exclusive, and the normalized result records the
+resolved objective mode.
+
+For transition-type conditioning, the M-step keeps no-recombination and
+recombination expectations separate at every physical HMM step distance. An
+independent clean-split one-step fit reproduces the pinned Java parameter
+endpoint within `1e-12` and the final likelihood within `1e-5`.
+
+The vendored marginal-KL source replaces the initial-state expectation with
+the posterior demographic-state occupancy averaged over every decoded HMM
+position, then retains only initial and emission terms in its auxiliary
+objective. Native implements that intended formula. The pinned jar cannot
+serve as a runnable oracle: its first E-step calls the objective with a null
+mutation-rate vector and raises a Java `NullPointerException`. Exact upstream
+execution deliberately preserves that failure. A deterministic native
+endpoint and the upstream error are both frozen, and native emits a specific
+experimental warning. Marginal-KL remains unpromoted until a legally distinct
+repaired-source oracle is available; PAC weighting is not claimed equivalent.

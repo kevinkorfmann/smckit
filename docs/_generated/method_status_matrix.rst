@@ -47,8 +47,8 @@
      - ✓
      - ✓
      - ✗
-     - `README searches match; independent fitted structured endpoints match within 1e-12 parameters and 1e-5 log likelihood.`
-     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README searches and independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth one-step fits reproduce the pinned Java endpoints. Transition-distance statistics and Java's default recombination-to-self conditioning are preserved.
+     - `README searches match; default and transition-conditioned fitted endpoints match within 1e-12 parameters and 1e-5 log likelihood.`
+     - Public upstream Java bridge parses the EM-path stdout into structured results. Native README searches and independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth one-step fits reproduce the pinned Java endpoints. Transition-distance statistics and both Java conditioning modes are preserved. Native marginal-KL repairs the source-intended objective, but the pinned Java jar crashes and cannot yet serve as its oracle.
    * - PHLASH
      - ✓
      - n/a

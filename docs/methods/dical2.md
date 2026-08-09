@@ -144,6 +144,15 @@ Native results record the exact resolved permutations and initialization mode
 in `results["dical2"]["permutations"]` and
 `results["dical2"]["initialization"]`.
 
+Advanced objective controls are passed in `native_options` or
+`upstream_options`: `condOnTransitionType=True` selects the original
+transition-type-conditioned objective, while `marginalKL=True` selects the
+marginal-KL objective. They cannot be combined. The transition-type objective
+has a strict native/Java fitted oracle. In the pinned upstream release,
+`--marginalKL` crashes because Java passes a null mutation-rate vector; exact
+upstream execution preserves that behavior, while native provides an
+experimental repaired implementation of the source-intended formula.
+
 ### Search constraints and reproducibility
 
 | Argument | What it means | When to change it | Default guidance |
@@ -215,6 +224,8 @@ On the tracked README fixtures, parity is materially tighter than before:
 - independent one-step exponential-growth fitting returns exactly the same two
   fitted parameters as Java, with final log-likelihood difference below
   `4e-12`
+- an independent transition-type-conditioned one-step fit reproduces Java's
+  parameter endpoint within `1e-12` and final likelihood within `1e-5`
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
@@ -247,8 +258,9 @@ permutation controls and generated grid/random starts are implemented but
 remain unpromoted. Direct Java checks now cover generated fixed-point and
 one-step PAC EM, two file-backed per-contig permutation sets, and exact grid and
 seeded-random start sequences, four passing independent structured fixed
-points, fitted pulse introgression, and fitted exponential growth. Broader
-fitted structured/empirical coverage and the complete cross-platform
+points, fitted structured models, pulse introgression, exponential growth, and
+transition-type conditioning. Marginal-KL is explicitly experimental because
+the pinned Java oracle crashes. Broader empirical coverage and the complete cross-platform
 performance gate are still missing. Native parallel execution remains
 upstream-only; use exact upstream execution when those workflows are
 scientifically consequential.

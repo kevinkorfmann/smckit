@@ -410,6 +410,102 @@ def test_native_structured_one_step_matches_upstream(
     )
 
 
+@pytest.mark.parametrize(
+    ("objective_options", "objective_mode", "upstream_failure"),
+    [
+        (
+            {"condOnTransitionType": True},
+            "condition_lineage_transition_type",
+            False,
+        ),
+        ({"marginalKL": True}, "marginal_kl", True),
+    ],
+)
+def test_native_structured_objective_matches_upstream(
+    objective_options: dict[str, bool],
+    objective_mode: str,
+    upstream_failure: bool,
+    tmp_path: Path,
+) -> None:
+    scenario = SCENARIOS[0]
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(
+        ts,
+        tmp_path,
+        f"{scenario.name}-{objective_mode}",
+    )
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": scenario.start_point,
+        "seed": scenario.seed,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "lol",
+        "bounds": scenario.bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+        **objective_options,
+    }
+    if upstream_failure:
+        with pytest.raises(RuntimeError, match="mutationRate.*null"):
+            dical2(
+                read_dical2(**data_kwargs),
+                implementation="upstream",
+                upstream_options=options,
+                **common,
+            )
+        upstream = None
+    else:
+        upstream = dical2(
+            read_dical2(**data_kwargs),
+            implementation="upstream",
+            upstream_options=options,
+            **common,
+        ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["resolved_options"]["objective_mode"] == objective_mode
+    assert native["objective_mode"] == objective_mode
+    if upstream is None:
+        np.testing.assert_allclose(
+            np.asarray(native["best_params"]),
+            np.array([0.32, 0.35, 0.2, 0.6]),
+            rtol=0.0,
+            atol=1e-12,
+        )
+        assert native["log_likelihood"] == pytest.approx(
+            -59.781214042356474,
+            abs=1e-10,
+        )
+        return
+    assert upstream["resolved_options"]["objective_mode"] == objective_mode
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=STRUCTURED_LL_ABS_TOL,
+    ), (native["best_params"], upstream["best_params"])
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-12,
+    )
+
+
 def test_native_exponential_growth_one_step_matches_upstream(tmp_path: Path) -> None:
     ts = _simulate_exponential_growth()
     vcf_path, reference_path = _write_vcf_and_reference(

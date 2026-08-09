@@ -126,6 +126,11 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   statistics and matches the default Java objective's treatment of
   recombination back into the same lineage, closing all three one-step
   endpoints at `1e-12` parameter and `1e-5` likelihood tolerances.
+- Add diCal2 transition-type-conditioned and marginal-KL objectives to the
+  native and typed-upstream option surfaces. The transition-conditioned
+  one-step fit has strict Java parity. Exact upstream marginal-KL preserves a
+  pinned null-mutation-rate crash; native implements the intended source
+  formula behind an explicit experimental warning and frozen endpoint.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.
