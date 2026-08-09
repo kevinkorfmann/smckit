@@ -13,6 +13,14 @@ and the remaining work before declaring the oracle complete.
 **Remaining tasks:** Finish GPU backends (`Numba` → `CuPy` → `CUDA`), add bootstrap/composite support, and include multi-chromosome pipelines.
 **References:** :doc:`methods/psmc`, ``tests/integration/test_psmc_validation.py``, ``tests/integration/test_psmc_e2e.py``
 
+## PSMC+
+
+**Progress:** The MIT-licensed source is pinned at commit `032168f2ceed3c0e46b7f214f890faf83dff41ae`, both original Python entry points are exposed through the shell-free raw runner, and a frozen constant-population fixture validates one upstream EM iteration numerically. The runtime compatibility policy records the narrow `numpy.math` alias restored for NumPy 2 without modifying upstream source.
+**Decisions:** Preserve every original argument and artifact before designing the normalized typed interface. Keep `auto` on upstream and reject `native` until an independently implemented method has a complete oracle ledger.
+**Context:** PSMC+ extends pairwise inference to local mutation, recombination, and coalescence-rate heterogeneity, which directly exercises smckit's preservation-first handling of maps, multi-file data, decoding, and original artifacts.
+**Remaining tasks:** Complete typed upstream normalization, exercise all documented inference/simulation branches, build and test the pinned OCI/Apptainer runtime, then implement and optimize the native method feature by feature.
+**References:** :doc:`methods/psmcplus`, ``tests/integration/test_psmcplus_upstream_validation.py``
+
 ## ASMC
 
 **Progress:** The vendored `n300` array fixture clears the strict gate: MAP indices agree at every tested site, median posterior-mean relative error is `9.12e-5`, and the maximum relative error is `2.99e-4`. A separate dense `n300` whole-genome sequence interval with CSFS emissions and 0.5 cM burn-in also clears the `1e-3` maximum posterior-mean error and 99.9% MAP-agreement gates.

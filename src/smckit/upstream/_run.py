@@ -29,6 +29,7 @@ class UpstreamRunResult:
     stderr: str
     runtime_seconds: float
     artifacts: list[dict[str, Any]]
+    compatibility_patches: list[str]
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation."""
@@ -139,6 +140,19 @@ def command_prefix(tool: str, entrypoint: str | None = None) -> list[str]:
         if runtime_path is None or vendor_path is None:
             raise RuntimeError("Java or the vendored diCal2 jar is unavailable.")
         return [str(runtime_path), "-jar", str(vendor_path / "diCal2.jar")]
+    if tool == "psmcplus":
+        entrypoint = entrypoint or "PSMCplus.py"
+        allowed = {"PSMCplus.py", "simulate_HMM.py"}
+        if entrypoint not in allowed:
+            choices = ", ".join(sorted(allowed))
+            raise ValueError(f"Unknown PSMC+ entry point {entrypoint!r}; choose from: {choices}.")
+        if runtime_path is None or vendor_path is None:
+            raise RuntimeError(
+                "The preserved PSMC+ source or Python dependency stack is unavailable. "
+                "Install smckit[psmcplus] or set SMCKIT_PSMCPLUS_PYTHON."
+            )
+        runner = Path(__file__).with_name("_psmcplus_runner.py")
+        return [str(runtime_path), str(runner), str(vendor_path / entrypoint)]
     if tool == "phlash":
         raise RuntimeError(
             "PHLASH 1.0.6 intentionally has no command-line interface. Use "
@@ -159,6 +173,15 @@ def _artifact_manifest(directory: Path) -> list[dict[str, Any]]:
             }
         )
     return artifacts
+
+
+def _compatibility_patches(tool: str) -> list[str]:
+    if tool == "psmcplus":
+        return [
+            "Restore numpy.math from the Python math module when absent; "
+            "vendored source unchanged."
+        ]
+    return []
 
 
 def run(
@@ -226,6 +249,7 @@ def run(
                 stderr=f"{stderr}\nExecution exceeded timeout of {timeout} seconds.".lstrip(),
                 runtime_seconds=runtime_seconds,
                 artifacts=_artifact_manifest(workdir),
+                compatibility_patches=_compatibility_patches(tool),
             )
         runtime_seconds = time.perf_counter() - started
         return UpstreamRunResult(
@@ -237,6 +261,7 @@ def run(
             stderr=completed.stderr,
             runtime_seconds=runtime_seconds,
             artifacts=_artifact_manifest(workdir),
+            compatibility_patches=_compatibility_patches(tool),
         )
     finally:
         if temporary is not None:

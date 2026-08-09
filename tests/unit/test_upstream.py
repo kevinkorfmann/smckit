@@ -13,7 +13,16 @@ from smckit.upstream import _run
 
 def test_upstream_status_reports_known_tools() -> None:
     status = smckit.upstream.status()
-    for tool in ["psmc", "msmc2", "msmc_im", "smcpp", "esmc2", "asmc", "dical2"]:
+    for tool in [
+        "psmc",
+        "psmcplus",
+        "msmc2",
+        "msmc_im",
+        "smcpp",
+        "esmc2",
+        "asmc",
+        "dical2",
+    ]:
         assert tool in status
         assert "ready" in status[tool]
         assert "missing" in status[tool]
@@ -67,6 +76,7 @@ def test_raw_runner_is_shell_free_and_captures_artifacts(tmp_path, monkeypatch) 
     assert result.stdout.strip() == "captured"
     assert not (output / "injected").exists()
     assert result.artifacts[0]["path"] == "artifact.txt"
+    assert result.compatibility_patches == []
 
 
 def test_raw_runner_returns_124_on_timeout(tmp_path, monkeypatch) -> None:
@@ -85,6 +95,37 @@ def test_raw_runner_returns_124_on_timeout(tmp_path, monkeypatch) -> None:
 def test_psmc_raw_runner_rejects_unknown_entrypoint() -> None:
     with pytest.raises(ValueError, match="Unknown PSMC entry point"):
         _run.command_prefix("psmc", "not-a-real-helper")
+
+
+def test_psmcplus_raw_runner_exposes_both_original_entrypoints(monkeypatch) -> None:
+    status = smckit.upstream.status("psmcplus")
+    status["runtime"] = {**status["runtime"], "path": sys.executable}
+
+    class ReadyPSMCPlus:
+        @staticmethod
+        def status():
+            return status
+
+    monkeypatch.setattr(_run, "get_tool", lambda tool: ReadyPSMCPlus())
+    inference = _run.command_prefix("psmcplus")
+    simulation = _run.command_prefix("psmcplus", "simulate_HMM.py")
+
+    assert inference[-1].endswith("vendor/PSMCplus/PSMCplus.py")
+    assert simulation[-1].endswith("vendor/PSMCplus/simulate_HMM.py")
+    assert inference[-2].endswith("_psmcplus_runner.py")
+
+
+def test_psmcplus_raw_runner_rejects_unknown_entrypoint() -> None:
+    with pytest.raises(ValueError, match=r"Unknown PSMC\+ entry point"):
+        _run.command_prefix("psmcplus", "not-a-real-helper")
+
+
+def test_psmcplus_compatibility_policy_is_explicit() -> None:
+    patches = _run._compatibility_patches("psmcplus")
+
+    assert len(patches) == 1
+    assert "numpy.math" in patches[0]
+    assert "vendored source unchanged" in patches[0]
 
 
 def test_raw_esmc2_runner_exposes_bootstrapped_r_library(

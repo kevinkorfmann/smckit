@@ -9,7 +9,17 @@ from smckit.tl._implementation import NativeTrustWarning, warn_if_native_not_tru
 
 def test_method_status_manifest_covers_public_methods() -> None:
     methods = {entry["method"] for entry in method_statuses()}
-    assert {"psmc", "asmc", "msmc2", "msmc_im", "esmc2", "smcpp", "dical2", "ssm"} <= methods
+    assert {
+        "psmc",
+        "psmcplus",
+        "asmc",
+        "msmc2",
+        "msmc_im",
+        "esmc2",
+        "smcpp",
+        "dical2",
+        "ssm",
+    } <= methods
 
 
 def test_untrusted_native_method_emits_warning() -> None:

@@ -6,6 +6,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
 
 ### Added
 
+- Pin the complete MIT-licensed PSMC+ source, expose its original inference and
+  HMM-simulation entry points through the shell-free preservation runner, record
+  NumPy 2 compatibility provenance, freeze a numeric upstream oracle, and add a
+  hash-locked OCI/Apptainer runtime definition.
 - Tighten the ASMC published-array oracle to the 0.1% scalar threshold and
   99.9% MAP agreement, record the observed 100% MAP agreement, and keep native
   sequence decoding unpromoted until its WGS oracle is closed.

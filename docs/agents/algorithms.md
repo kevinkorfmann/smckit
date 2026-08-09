@@ -8,6 +8,18 @@
 - Native status: working and validated against tracked reference output.
 - Main outputs: `time`, `lambda_k`, `ne`, `theta`, `rho`.
 
+## PSMC+
+
+- Purpose: pairwise demographic inference with genomic-rate heterogeneity.
+- Input: one or more multihetsep files plus optional matched mutation and
+  recombination maps.
+- Upstream status: immutable MIT-licensed Python source, exact inference and HMM
+  simulation entry points, shell-free raw runner, frozen numeric oracle, and a
+  pinned OCI/Apptainer runtime definition.
+- Native status: planned; no native or default-eligibility claim exists.
+- Main outputs: time boundaries, inverse coalescence rates, theta, rho,
+  likelihood history, posterior TMRCA decoding, and marginal recombination.
+
 ## MSMC2
 
 - Purpose: infer piecewise coalescence rates from multiple haplotypes.

@@ -31,12 +31,14 @@ Optional extras:
 ```bash
 pip install "smckit[all-models]"
 pip install "smckit[asmc]"
-pip install "smckit[psmc,msmc2,msmc_im,smcpp,esmc2,dical2]"
+pip install "smckit[psmc,psmcplus,msmc2,msmc_im,smcpp,esmc2,dical2]"
 ```
 
 Current meaning of extras:
 
 - `asmc` installs the published `asmc-asmc` Python runtime on macOS/Linux.
+- `psmcplus` installs the Python dependencies for the exact preserved PSMC+
+  inference and simulation entry points.
 - `psmc`, `msmc2`, `msmc_im`, `smcpp`, `esmc2`, and `dical2` are semantic
   extras for reproducible install commands and documentation, but they still
   rely on non-Python toolchains or vendored upstream source.
@@ -112,6 +114,7 @@ print(smckit.upstream.install_help("esmc2"))
 | Tool | Vendored source in repo | Runtime | Bootstrap contract | Current public bridge |
 |---|---|---|---|---|
 | PSMC | Yes | `make` + C compiler | build vendored source and cache `psmc` binary | Public |
+| PSMC+ | Yes | pinned Python dependency stack | source is the exact inference/simulation oracle; OCI/Apptainer definition supplied | Public raw CLI; typed normalization in progress |
 | MSMC2 | Yes | `make` + D toolchain | build vendored source and cache `msmc2` binary | Public |
 | MSMC-IM | Yes | Python | vendored script is the oracle entrypoint | Public |
 | SMC++ | No | controlled Python env | still depends on side environment | Public, but not fully vendored |
