@@ -114,6 +114,10 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   `1.1343-1.1433x`) with a `0.4909` peak-memory ratio across ten warmed
   repetitions. This is capability-specific evidence, not whole-method
   promotion.
+- Add an independent fitted exponential-growth Java oracle and persistent
+  benchmark worker. Finite constant-rate ODE epochs now use exact matrix
+  exponentials while genuine growth retains high-accuracy integration, and
+  explicit native diCal2 calls no longer probe the Java runtime.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

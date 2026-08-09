@@ -11,8 +11,22 @@ from smckit._core import SmcData
 from smckit.tl import dical2, esmc2, psmc, smcpp
 from smckit.tl._implementation import (
     choose_implementation,
+    choose_method_implementation,
     normalize_implementation,
 )
+
+
+def test_explicit_method_selection_does_not_probe_upstream(monkeypatch) -> None:
+    def fail_if_called(method_name: str) -> bool:
+        raise AssertionError(f"unexpected upstream readiness probe for {method_name}")
+
+    monkeypatch.setattr(
+        "smckit.tl._implementation.method_upstream_available",
+        fail_if_called,
+    )
+
+    assert choose_method_implementation("native", method_name="dical2") == "native"
+    assert choose_method_implementation("upstream", method_name="dical2") == "upstream"
 
 
 def _tiny_psmc_data() -> SmcData:

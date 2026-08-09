@@ -34,8 +34,7 @@ def normalize_implementation(
                 "implementation or use matching values."
             )
         warnings.warn(
-            "'backend' is deprecated for algorithm selection; use "
-            "'implementation' instead.",
+            "'backend' is deprecated for algorithm selection; use 'implementation' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -62,6 +61,23 @@ def choose_implementation(
             return "native"
         return "upstream" if upstream_available else "native"
     return implementation
+
+
+def choose_method_implementation(
+    implementation: str,
+    *,
+    method_name: str,
+    requested_capabilities: set[str] | None = None,
+) -> str:
+    """Resolve a method selector without probing upstream for explicit modes."""
+    if implementation != "auto":
+        return implementation
+    return choose_implementation(
+        implementation,
+        upstream_available=method_upstream_available(method_name),
+        method_name=method_name,
+        requested_capabilities=requested_capabilities,
+    )
 
 
 def require_upstream_available(method_name: str) -> None:
@@ -135,12 +151,6 @@ def warn_if_native_not_trusted(method_name: str, implementation_used: str) -> No
         return
 
     message = str(status.get("native_warning", "")).strip()
-    tool_status = upstream.method_status(method_name)
-    if tool_status is not None:
-        install_text = str(tool_status.get("install_help", "")).strip()
-        if install_text:
-            message = f"{message}\n{install_text}" if message else install_text
-
     if message:
         warnings.warn(message, NativeTrustWarning, stacklevel=3)
 

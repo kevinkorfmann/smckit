@@ -361,3 +361,24 @@ memory ratio was `0.4909223672`. The record is tied to source commit `7e01824`
 and the frozen publication protocol. These measurements satisfy the speed and
 memory rules for this capability on macOS only; they are not evidence for
 whole-method promotion or Linux performance.
+
+### 17. Fitted growth uses exact constant-epoch transitions and lazy selection
+
+An independent msprime exponential-growth fixture now exercises the vendored
+`expGrowth` model with five diploid samples and one Java-compatible EM/M-step.
+The native ODE endpoint reproduces Java's fitted parameters exactly and its
+final log likelihood to better than `1e-8`.
+
+Profiling showed that the growth path still sent every refined epoch through
+the high-accuracy adaptive solver, even though only the recent epoch had a
+time-varying absorption rate. Finite constant-rate epochs now use exact SciPy
+matrix exponentials for marginal, mutation, recombination, and no-recombination
+transition systems. Genuine growth intervals and the Java-compatible infinity
+sentinel retain the oracle-matched ODE behavior.
+
+Explicit native selection also no longer probes the upstream Java runtime.
+Live readiness is relevant to `auto` and explicit `upstream`, not to the
+contract of `implementation="native"`. Native trust warnings are now generated
+from the static method manifest and do not perform subprocess probes. The
+persistent growth worker separately records startup, fixture preparation,
+cold inference, warmed inference, and process-tree memory.

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from scipy.linalg import expm
 
 from smckit._core import SmcData
 from smckit.io._dical2 import (
@@ -34,8 +35,10 @@ from smckit.tl._dical2 import (
     _generate_java_permutations,
     _JavaRandom,
     _meta_grid_points,
+    _ode_compute_marginal_transition_matrix,
     _ode_compute_mutation_events,
     _ode_compute_r_epoch,
+    _ode_reco_rate_matrix_at_time,
     _old_interval_boundaries,
     _pac_csd_pairs,
     _pac_trunk_sizes,
@@ -43,6 +46,7 @@ from smckit.tl._dical2 import (
     _persist_dical2_outputs,
     _pulse_extended_transition,
     _read_dical2_permutations,
+    _RecoStateSpace,
     _refined_interval_epoch,
     _resolve_csd_groups,
     _resolve_dical2_options,
@@ -1026,6 +1030,109 @@ def _make_simple_demo(n_intervals: int = 4) -> DiCal2Demo:
 
 
 class TestEigenCore:
+    def test_constant_finite_ode_helpers_use_exact_matrix_exponentials(self):
+        epoch = DiCal2Epoch(
+            start=0.0,
+            end=0.4,
+            partition=[[0]],
+            pop_sizes=np.array([1.0]),
+            migration_matrix=np.array([[0.0]]),
+            pulse_migration=None,
+            growth_rates=np.array([0.0]),
+        )
+        absorption = np.array([2.0])
+        mutation_rate = 0.3
+        duration = epoch.end - epoch.start
+
+        marginal = _ode_compute_marginal_transition_matrix(
+            epoch=epoch,
+            base_absorption_rates=absorption,
+            interval_start=epoch.start,
+            interval_end=epoch.end,
+        )
+        survival = np.exp(-absorption[0] * duration)
+        np.testing.assert_allclose(
+            marginal,
+            np.array([[survival, 1.0 - survival], [0.0, 1.0]]),
+            rtol=1e-14,
+            atol=1e-14,
+        )
+
+        mutation = _ode_compute_mutation_events(
+            epoch=epoch,
+            base_absorption_rates=absorption,
+            mutation_rate=mutation_rate,
+            interval_start=epoch.start,
+            interval_end=epoch.end,
+        )
+        no_mut_unabsorbed = np.exp(-(absorption[0] + mutation_rate) * duration)
+        one_mut_unabsorbed = survival * (1.0 - np.exp(-mutation_rate * duration))
+        no_mut_absorbed = (
+            absorption[0] / (absorption[0] + mutation_rate) * (1.0 - no_mut_unabsorbed)
+        )
+        np.testing.assert_allclose(
+            mutation[0],
+            np.array(
+                [
+                    [no_mut_unabsorbed, no_mut_absorbed],
+                    [one_mut_unabsorbed, 1.0 - survival - no_mut_absorbed],
+                ]
+            ),
+            rtol=1e-14,
+            atol=1e-14,
+        )
+
+        start_no_reco = np.array([1.0])
+        start_reco = np.array([[0.0]])
+        no_reco, reco = _ode_compute_r_epoch(
+            epoch=epoch,
+            base_absorption_rates=absorption,
+            recombination_rate=0.2,
+            start_no_reco=start_no_reco,
+            start_reco=start_reco,
+            interval_start=epoch.start,
+            interval_end=epoch.end,
+            init_pop_sizes=np.ones(1),
+        )
+        state_space = _RecoStateSpace(1)
+        initial = np.zeros(state_space.size)
+        initial[state_space.idx_together(0)] = 1.0
+        rate_matrix = _ode_reco_rate_matrix_at_time(
+            epoch=epoch,
+            base_absorption_rates=absorption,
+            recombination_rate=0.2,
+            state_space=state_space,
+            init_pop_sizes=np.ones(1),
+            time_point=epoch.start,
+        )
+        expected = initial @ expm(duration * rate_matrix)
+        np.testing.assert_allclose(
+            no_reco,
+            [
+                expected[state_space.idx_together(0)],
+                expected[state_space.idx_together(1)],
+            ],
+            rtol=1e-14,
+            atol=1e-14,
+        )
+        np.testing.assert_allclose(
+            reco,
+            np.array(
+                [
+                    [
+                        expected[state_space.idx_apart(0, 0)],
+                        expected[state_space.idx_apart(0, 1)],
+                    ],
+                    [
+                        expected[state_space.idx_apart(1, 0)],
+                        expected[state_space.idx_apart(1, 1)],
+                    ],
+                ]
+            ),
+            rtol=1e-14,
+            atol=1e-14,
+        )
+
     def test_pulse_transition_updates_all_lineage_state_surfaces(self):
         pulse = np.array([[0.8, 0.2], [0.1, 0.9]], dtype=np.float64)
         np.testing.assert_allclose(
