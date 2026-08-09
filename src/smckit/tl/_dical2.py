@@ -32,6 +32,7 @@ import json
 import logging
 import math
 import subprocess
+import time
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,7 +54,6 @@ from smckit.io._dical2 import (
     write_dical2_output,
 )
 from smckit.tl._implementation import (
-    NativeTrustWarning,
     annotate_result,
     choose_method_implementation,
     method_upstream_available,
@@ -6121,6 +6121,7 @@ def _run_dical2_em(
     physical_pair_count_cache: dict[tuple[int, int, int], np.ndarray] = {}
 
     for em_iter in range(number_iterations_em + 1):
+        expectation_started = time.perf_counter()
         current_demo = params.to_demo(demo)
         objective_demo = (
             _halve_demo_migration_rates(current_demo) if half_migration_rate else current_demo
@@ -6291,6 +6292,7 @@ def _run_dical2_em(
         rounds.append(
             {
                 "iteration": em_iter,
+                "elapsed_ms": int(round((time.perf_counter() - expectation_started) * 1000.0)),
                 "log_likelihood": total_ll,
                 "epoch_boundaries": params.boundary_values.copy(),
                 "pop_sizes": params.pop_size_values.copy(),
@@ -6450,6 +6452,30 @@ class DiCal2Result:
     log_likelihood: float
     n_iterations: int
     rounds: list[dict] = field(default_factory=list)
+
+
+def _dical2_em_path_records(
+    rounds: list[dict],
+    *,
+    meta_iteration: int,
+    particle: int,
+) -> list[dict[str, object]]:
+    """Normalize native E-step records to the original stdout row contract."""
+    records: list[dict[str, object]] = []
+    for round_result in rounds:
+        step = int(round_result["iteration"])
+        records.append(
+            {
+                "log_likelihood": float(round_result["log_likelihood"]),
+                "elapsed_ms": int(round_result.get("elapsed_ms", 0)),
+                "params": np.asarray(
+                    round_result["ordered_params"],
+                    dtype=np.float64,
+                ).copy(),
+                "id": f"[{meta_iteration}_{step}_{particle}]",
+            }
+        )
+    return records
 
 
 def _dical2_json_default(value):
@@ -6728,17 +6754,7 @@ def dical2(
         seed=seed,
         method_options=upstream_method_options,
     )
-    if implementation_used == "native" and resolved_native.objective_mode == "marginal_kl":
-        warnings.warn(
-            "Native diCal2 marginal-KL implements the objective intended by the "
-            "vendored source, but the pinned upstream Java implementation crashes "
-            "because it passes a null mutation-rate vector. This capability remains "
-            "experimental until a repaired-source oracle is established.",
-            NativeTrustWarning,
-            stacklevel=2,
-        )
-    else:
-        warn_if_native_not_trusted("dical2", implementation_used)
+    warn_if_native_not_trusted("dical2", implementation_used)
     if implementation_used == "upstream":
         result_data = _dical2_upstream(
             data,
@@ -6827,6 +6843,7 @@ def dical2(
     best_rounds: list[dict] = []
     best_ll = -np.inf
     best_core_type = "eigen"
+    native_em_path: list[dict[str, object]] = []
     meta_trace: list[dict[str, object]] | None = [] if record_meta_trace else None
 
     candidate_points: np.ndarray | None = None
@@ -6904,6 +6921,14 @@ def dical2(
                 local_params = _clone_demo_parameters(params)
                 local_params.set_ordered_param_values(np.asarray(row, dtype=np.float64))
                 if _demo_from_params_or_none(local_params, demo) is None:
+                    native_em_path.append(
+                        {
+                            "log_likelihood": float(-np.inf),
+                            "elapsed_ms": 0,
+                            "params": np.asarray(row, dtype=np.float64).copy(),
+                            "id": f"[{meta_iter}_0_{start_idx}]",
+                        }
+                    )
                     if generation_trace is not None:
                         cast_runs = cast(list[dict[str, object]], generation_trace["runs"])
                         cast_runs.append(
@@ -6947,6 +6972,13 @@ def dical2(
                     nm_fraction=resolved_native.nm_fraction,
                     rng=local_rng,
                     record_mstep_trace=record_mstep_trace,
+                )
+                native_em_path.extend(
+                    _dical2_em_path_records(
+                        rounds,
+                        meta_iteration=meta_iter,
+                        particle=start_idx,
+                    )
                 )
                 ordered = local_params.ordered_param_values().copy()
                 generation_results.append((ll, ordered))
@@ -7057,6 +7089,13 @@ def dical2(
             rng=local_rng,
             record_mstep_trace=record_mstep_trace,
         )
+        native_em_path.extend(
+            _dical2_em_path_records(
+                best_rounds,
+                meta_iteration=0,
+                particle=0,
+            )
+        )
         best_params = params
 
     assert best_params is not None
@@ -7078,6 +7117,7 @@ def dical2(
             "log_likelihood": float(prev_ll),
             "n_iterations": len(rounds),
             "rounds": rounds,
+            "em_path": native_em_path,
             "composite_mode": resolved_native.composite_mode,
             "loci_per_hmm_step": resolved_native.loci_per_hmm_step,
             "objective_mode": resolved_native.objective_mode,
@@ -7171,6 +7211,8 @@ def _dical2_upstream(
     resolved: DiCal2ResolvedOptions,
     cli_args: list[str],
     implementation_requested: str,
+    jar_override: str | Path | None = None,
+    oracle_repair: dict[str, object] | None = None,
 ) -> SmcData:
     import smckit.upstream as upstream_api
 
@@ -7183,7 +7225,15 @@ def _dical2_upstream(
             + ", ".join(missing)
         )
 
-    jar = Path(__file__).resolve().parents[3] / "vendor/diCal2/diCal2.jar"
+    jar = (
+        Path(jar_override).expanduser().resolve()
+        if jar_override is not None
+        else Path(__file__).resolve().parents[3] / "vendor/diCal2/diCal2.jar"
+    )
+    if oracle_repair is not None and jar_override is None:
+        raise ValueError("diCal2 oracle_repair metadata requires an explicit repaired jar.")
+    if jar_override is not None and not jar.is_file():
+        raise FileNotFoundError(f"Repaired diCal2 oracle jar does not exist: {jar}")
     if not jar.exists():
         require_upstream_available("dical2")
     if not method_upstream_available("dical2"):
@@ -7336,7 +7386,7 @@ def _dical2_upstream(
                 )
     data.results["dical2"] = annotate_result(
         {
-            "backend": "upstream",
+            "backend": "upstream_repaired_oracle" if oracle_repair else "upstream",
             "log_likelihood": np.nan if best is None else float(best["log_likelihood"]),
             "best_params": None if best is None else np.asarray(best["params"], dtype=np.float64),
             "em_path": em_path,
@@ -7385,6 +7435,7 @@ def _dical2_upstream(
                     "jar": str(jar),
                     "stdout": proc.stdout,
                     "stderr": proc.stderr,
+                    **({"oracle_repair": oracle_repair} if oracle_repair else {}),
                 },
             ),
         },

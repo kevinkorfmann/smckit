@@ -150,8 +150,10 @@ transition-type-conditioned objective, while `marginalKL=True` selects the
 marginal-KL objective. They cannot be combined. The transition-type objective
 has a strict native/Java fitted oracle. In the pinned upstream release,
 `--marginalKL` crashes because Java passes a null mutation-rate vector; exact
-upstream execution preserves that behavior, while native provides an
-experimental repaired implementation of the source-intended formula.
+upstream execution preserves that behavior. Native implements the
+source-intended formula and now matches a separately built, checksum-pinned GPL
+repair for both LOL and posterior-weighted PAC. The repaired jar is scientific
+oracle material only and is never substituted for `implementation="upstream"`.
 
 ### Search constraints and reproducibility
 
@@ -176,10 +178,15 @@ Common fields to inspect:
 With diCal2, the fitted named parameters are often more important than any one
 plotted summary curve.
 
-The text artifact uses the original parser-compatible layout: log-likelihood,
-elapsed seconds, ordered parameter values, and run identifier. Preserved
-upstream runs retain the exact captured Java stdout; the JSON artifact records
-the normalized result and provenance.
+The text artifact uses the original parser-compatible layout for every E-step:
+log-likelihood, elapsed milliseconds, ordered parameter values, and the
+`[GENERATION_STEP_PARTICLE]` run identifier. Preserved upstream runs retain the
+exact captured Java stdout; native runs retain the complete EM path rather than
+only the selected optimum. The JSON artifact records the normalized result and
+provenance. The original normal inference CLI creates no separate result files;
+its redirected stdout is the artifact. See the
+[output catalogue](../parity/dical2-output-catalogue.md) for the audited
+contract.
 
 ## How to tell if the run behaved sensibly
 
@@ -229,9 +236,8 @@ On the tracked README fixtures, parity is materially tighter than before:
 
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
-Native promotion still requires empirical PAC validation, remaining
-artifact closure, a repaired marginal-KL oracle, and cross-platform
-performance gates.
+Native promotion still requires empirical PAC validation on biological data
+and cross-platform performance gates.
 
 Parameterized instantaneous migration is preserved by the native demo reader
 and refined into a stochastic pulse epoch. Pulse transitions are applied to

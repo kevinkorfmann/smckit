@@ -46,6 +46,7 @@ def test_standard_upstream_metadata_includes_registry_fields() -> None:
 def test_public_registry_entries_report_boolean_readiness() -> None:
     assert isinstance(method_upstream_available("psmc"), bool)
     assert smckit.upstream.status("dical2")["public_upstream"] is True
+    assert smckit.upstream.status("dical2")["version"] == "2.0.5"
 
 
 def test_install_help_is_available_for_known_tools() -> None:

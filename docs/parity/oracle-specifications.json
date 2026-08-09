@@ -238,6 +238,7 @@
         "independent fitted three-population one-step EM",
         "independent clean-split transition-type-conditioned one-step EM",
         "independent clean-split native repaired marginal-KL one-step EM",
+        "independent clean-split GPL repaired-source marginal-KL LOL and PAC one-step EM",
         "independent clean-split, migration-window, and three-population PAC one-step EM",
         "independent clean-split two-contig file-backed PAC one-step EM",
         "README exponential pinned empty-trunk failure",
@@ -246,7 +247,8 @@
         "README exponential pinned recursive null-trunk failure",
         "README exponential and isolation-migration ancient-deme-state fixed points and one-step fits",
         "README exponential and isolation-migration per-CSD additional-trunk-interval fixed points and one-step fits",
-        "independent pulse-introgression ancient-state plus additional-trunk-interval fixed point"
+        "independent pulse-introgression ancient-state plus additional-trunk-interval fixed point",
+        "normal inference stdout and multi-particle native artifact round trip"
       ],
       "workflows": [
         "external and VCF-header references",
@@ -260,13 +262,13 @@
         "fitted clean-split, migration-window, and three-population one-step EM",
         "fitted pulse-introgression one-step EM",
         "fitted exponential-growth one-step EM",
-        "default, transition-type-conditioned, and marginal-KL objectives",
+        "default and transition-type-conditioned objectives against pinned Java; marginal-KL against deterministic GPL repaired source for LOL and PAC",
         "simple, cake, updating-cake, migrating-cake, exact-cake, and Ethan trunk families",
         "interval-present and epoch-ancient-present hidden-state aggregation",
         "per-CSD mean-rate additional trunk refinement, alone and with ancient-deme states",
         "generated log-grid and seeded log-uniform starts",
         "explicit and iterative meta-start searches",
-        "parser-compatible objective and normalized JSON artifacts"
+        "complete parser-compatible EM-path stdout and normalized JSON artifacts"
       ],
       "intermediates": [
         "refined demographic intervals",
@@ -298,11 +300,12 @@
         "fitted_growth_log_likelihood_atol": 1e-8,
         "transition_type_objective_parameter_atol": 1e-12,
         "transition_type_objective_log_likelihood_atol": 1e-5,
-        "marginal_kl_acceptance": "pinned Java failure is frozen; native repaired-source endpoint must remain [0.32, 0.35, 0.2, 0.6] with log likelihood -59.781214042356474 until a repaired-source oracle is established",
+        "marginal_kl_acceptance": "pinned Java null-mutation-rate failure is frozen; deterministic Java-8-bytecode repaired jar SHA-256 is ef3327b6ee681302e06879abaf4b4bfb88b10042e28033fa7a73b89604306ff0; native and repaired-source LOL/PAC fitted parameters agree within 1e-12 and log likelihood within 1e-5; LOL native endpoint remains [0.32, 0.35, 0.2, 0.6] at -59.781214042356474",
         "fitted_growth_performance": "ten warmed paired repetitions with bootstrap speedup interval above 1 and native peak memory no more than 1.25 times upstream",
         "repeated_identical_contig_log_likelihood": "exactly additive within floating-point pytest approximation",
         "offset_preprocessing": "exact arrays",
-        "bed_mask_preprocessing": "exact positions and reference states"
+        "bed_mask_preprocessing": "exact positions and reference states",
+        "output_artifact_acceptance": "exact captured Java stdout upstream; native has one parser-compatible likelihood/time/parameter/id row for every E-step and meta-start particle"
       },
       "status": "enforced_partial"
     },

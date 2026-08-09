@@ -766,6 +766,13 @@ def test_dical2_native_random_start_sequence_matches_upstream() -> None:
     upstream_points = _expectation_points(upstream["upstream"]["stdout"])
     native_points = [run["start_point"] for run in native["meta_trace"][0]["runs"]]
     np.testing.assert_allclose(native_points, upstream_points, rtol=0.0, atol=1e-13)
+    assert [row["id"] for row in native["em_path"]] == [
+        "[0_0_0]",
+        "[0_0_1]",
+        "[0_0_2]",
+    ]
+    assert all(row["elapsed_ms"] >= 0 for row in native["em_path"])
+    assert [row["id"] for row in native["em_path"]] == [row["id"] for row in upstream["em_path"]]
     np.testing.assert_allclose(
         np.asarray(native["best_params"]),
         np.asarray(upstream["best_params"]),

@@ -44,10 +44,20 @@
       "audit_status": "tracked snapshot; immutable origin metadata still required"
     },
     "dical2": {
+      "repository": "https://github.com/popgenmethods/diCal2.git",
+      "commit": "25cccaa370d1c890ee8060ab9c67f235e97fd36a",
+      "version": "2.0.5",
+      "release_url": "https://sourceforge.net/projects/dical2/files/release/diCal2_2_0_5.tar.gz/download",
+      "source_archive_sha256": "410da9f1996d6292ef518fa34e8895f16dbd2955a3c70bc7e2d5d8f5e73f2bf0",
       "path": "vendor/diCal2",
       "license": "GPL-3.0",
+      "license_sha256": "c53a65c2fd561c87eaabf1072ef5dcab8653042bc15308465f52413585eb6271",
+      "jar_sha256": "edd72b7eaee65e8b2e12fdcc3200217a81983c50a1bded828395915dc77acfaf",
+      "marginal_kl_source_sha256": "cc1b972e13f71ba8e25fce61e44afe6acdf89f81249d3592bdde768559e21a2b",
+      "marginal_kl_repair_patch_sha256": "bfed5d6d0141ee4db160d378a80bcbaa5a83d7d97eb137a719cf59a79cc7fc71",
+      "marginal_kl_repaired_jar_sha256": "ef3327b6ee681302e06879abaf4b4bfb88b10042e28033fa7a73b89604306ff0",
       "runtime": "Java",
-      "audit_status": "tracked snapshot; immutable origin metadata still required"
+      "audit_status": "immutable GitHub commit and SourceForge 2.0.5 archive recorded; jar and repaired-oracle inputs checksummed"
     },
     "psmcplus": {
       "repository": "https://github.com/trevorcousins/PSMCplus.git",

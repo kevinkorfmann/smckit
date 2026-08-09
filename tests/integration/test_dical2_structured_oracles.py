@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,6 +14,7 @@ import pytest
 import smckit
 from smckit.io import read_dical2
 from smckit.tl import dical2
+from smckit.tl._dical2 import _dical2_upstream, _resolve_dical2_options
 
 msprime = pytest.importorskip("msprime")
 
@@ -694,6 +698,110 @@ def test_native_structured_objective_matches_upstream(
         np.asarray(upstream["best_params"]),
         rtol=0.0,
         atol=1e-12,
+    )
+
+
+@pytest.mark.parametrize(
+    ("composite_mode", "composite_options"),
+    [
+        ("lol", {}),
+        ("pac", {"num_permutations": 2, "num_csds_per_permutation": 2}),
+    ],
+)
+def test_native_marginal_kl_matches_repaired_source_oracle(
+    tmp_path: Path,
+    composite_mode: str,
+    composite_options: dict[str, int],
+) -> None:
+    scenario = SCENARIOS[0]
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(
+        ts,
+        tmp_path,
+        f"{scenario.name}-marginal-kl-repaired-{composite_mode}",
+    )
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+        "marginalKL": True,
+        **composite_options,
+    }
+    resolved = _resolve_dical2_options(
+        n_intervals=11,
+        max_t=4.0,
+        alpha=0.1,
+        n_em_iterations=1,
+        composite_mode=composite_mode,
+        loci_per_hmm_step=50,
+        start_point=scenario.start_point,
+        meta_start_file=None,
+        meta_num_iterations=1,
+        meta_keep_best=1,
+        meta_num_points=None,
+        bounds=scenario.bounds,
+        seed=scenario.seed,
+        method_options=options,
+    )
+    repaired_jar = tmp_path / "dical2-marginal-kl-repaired.jar"
+    build_process = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_dical2_repaired_oracle.py",
+            "--output",
+            str(repaired_jar),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if build_process.returncode != 0:
+        if "Could not locate the JDK" in build_process.stderr:
+            pytest.skip(build_process.stderr)
+        pytest.fail(build_process.stderr)
+    repair_metadata = json.loads(build_process.stdout)
+
+    repaired = _dical2_upstream(
+        read_dical2(**data_kwargs),
+        resolved=resolved,
+        cli_args=[],
+        implementation_requested="upstream",
+        jar_override=repaired_jar,
+        oracle_repair=repair_metadata,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        n_em_iterations=1,
+        start_point=scenario.start_point,
+        seed=scenario.seed,
+        loci_per_hmm_step=50,
+        composite_mode=composite_mode,
+        bounds=scenario.bounds,
+        native_options=options,
+    ).results["dical2"]
+
+    assert repaired["backend"] == "upstream_repaired_oracle"
+    assert (
+        repaired["upstream"]["oracle_repair"]["output_sha256"] == repair_metadata["output_sha256"]
+    )
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(repaired["best_params"]),
+        rtol=0.0,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(
+        repaired["log_likelihood"],
+        abs=STRUCTURED_LL_ABS_TOL,
     )
 
 

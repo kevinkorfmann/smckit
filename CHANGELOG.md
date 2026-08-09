@@ -148,6 +148,15 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   state aggregation, and the combined controls. Moving demographic boundaries
   are now recomputed during each EM objective evaluation rather than frozen
   from the template model.
+- Complete the normal diCal2 output catalogue. Native results now retain and
+  persist every E-step row with original generation/step/particle identifiers
+  and measured E-step milliseconds; preserved upstream output remains exact
+  captured Java stdout. The original CLI creates no separate result files.
+- Add a deterministic, GPL-separated repaired-source diCal2 marginal-KL oracle.
+  Its one-method patch is applied only to a temporary, checksum-verified source
+  copy; exact upstream still runs the immutable jar and preserves its crash.
+  Native fitted endpoints match the repaired oracle for both LOL and
+  posterior-weighted PAC.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

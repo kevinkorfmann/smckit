@@ -25,7 +25,7 @@
       "manual_surface": ["piecewise size", "growth", "migration", "split", "pulse migration"],
       "native_status": "native_unpromoted",
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py", "workflow/publication/evidence/dical2-introgression/sha256-c339dbb6", "workflow/publication/evidence/dical2-growth/sha256-c339dbb6"],
-      "remaining": "Independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth oracles now cover both fixed-point likelihoods and fitted one-step endpoints. Structured PAC and all runnable original trunk families have strict coverage. Pulse introgression and growth also clear capability-specific macOS performance gates. Add empirical PAC, remaining ancient-state/additional-interval breadth, and cross-platform performance evidence."
+      "remaining": "Independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth oracles now cover both fixed-point likelihoods and fitted one-step endpoints. Structured PAC, all runnable original trunk families, ancient-deme states, and additional trunk intervals have strict coverage. Pulse introgression and growth also clear capability-specific macOS performance gates. Add empirical PAC and cross-platform performance evidence."
     },
     {
       "id": "vcf_external_reference",
@@ -93,9 +93,9 @@
     {
       "id": "conditional_objectives",
       "manual_surface": ["default ConditionLineage", "--condOnTransitionType", "--marginalKL"],
-      "native_status": "native_unpromoted",
-      "evidence": ["TestResolvedOptions", "TestForwardBackward.test_expected_counts", "test_native_structured_objective_matches_upstream"],
-      "remaining": "The transition-type-conditioned objective has strict fitted parity. Native marginal-KL implements the intended vendored-source formula and has a frozen deterministic endpoint, but the pinned Java jar crashes in its first E-step because it passes a null mutation-rate vector; establish a repaired-source oracle before promotion, especially for PAC weighting."
+      "native_status": "native",
+      "evidence": ["TestResolvedOptions", "TestForwardBackward.test_expected_counts", "test_native_structured_objective_matches_upstream", "test_native_marginal_kl_matches_repaired_source_oracle", "preservation/patches/dical2/marginal-kl-get-likelihood.patch"],
+      "remaining": "Default and transition-type-conditioned objectives have strict pinned-Java fitted parity. Marginal-KL matches a deterministic, checksum-pinned GPL repaired-source oracle for both LOL and posterior-weighted PAC. Exact upstream continues to preserve the immutable jar's null-mutation-rate crash; the repaired jar is oracle-only and is never substituted for implementation='upstream'."
     },
     {
       "id": "explicit_and_meta_start",
@@ -120,9 +120,9 @@
     {
       "id": "original_compatible_outputs",
       "manual_surface": ["objective rows", "stdout", "generated files"],
-      "native_status": "native_unpromoted",
-      "evidence": ["TestDical2Output"],
-      "remaining": "Catalogue and reproduce the remaining detailed upstream artifacts."
+      "native_status": "native",
+      "evidence": ["docs/parity/dical2-output-catalogue.md", "TestDical2Output", "TestReadDical2.test_multiple_contigs_reset_the_native_hmm", "test_dical2_native_random_start_sequence_matches_upstream"],
+      "remaining": "The normal inference CLI generates no result files: redirected stdout is the original artifact. Exact upstream persists captured Java stdout; native persists every EM row with likelihood, E-step milliseconds, ordered parameters, and generation/step/particle ID, plus normalized provenance-rich JSON. Raw CLI execution remains authoritative for undocumented diagnostic comment text and other Java entry points."
     },
     {
       "id": "parallel_execution",
@@ -132,9 +132,7 @@
     }
   ],
   "promotion_blockers": [
-    "Empirical PAC validation, including the native repaired all-CSD default",
-    "A repaired-source marginal-KL oracle and empirical PAC validation",
-    "Complete original-compatible artifact catalogue",
+    "Empirical PAC validation on biological data, including the native repaired all-CSD default and marginal-KL",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"
   ]
 }

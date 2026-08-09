@@ -351,6 +351,7 @@ REGISTRY: dict[str, UpstreamToolSpec] = {
             "smckit runs the vendored diCal2.jar and parses the EM-path stdout into "
             "structured results."
         ),
+        version="2.0.5",
         public_upstream=True,
         adapter_ready=True,
     ),
