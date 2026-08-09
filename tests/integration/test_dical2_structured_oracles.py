@@ -155,6 +155,42 @@ def _simulate(scenario: StructuredScenario):
     )
 
 
+def _simulate_exponential_growth():
+    demography = msprime.Demography()
+    demography.add_population(
+        name="p0",
+        initial_size=9_771,
+        growth_rate=1e-4,
+    )
+    demography.add_population_parameters_change(
+        time=2_000,
+        initial_size=8_000,
+        growth_rate=0.0,
+        population="p0",
+    )
+    demography.add_population_parameters_change(
+        time=8_000,
+        initial_size=10_000,
+        growth_rate=0.0,
+        population="p0",
+    )
+    demography.sort_events()
+    ancestry = msprime.sim_ancestry(
+        samples={"p0": 5},
+        demography=demography,
+        sequence_length=SEQUENCE_LENGTH,
+        recombination_rate=1.25e-8,
+        random_seed=211,
+    )
+    return msprime.sim_mutations(
+        ancestry,
+        rate=2e-7,
+        model=msprime.BinaryMutationModel(),
+        discrete_genome=True,
+        random_seed=212,
+    )
+
+
 def _write_vcf_and_reference(ts, directory: Path, stem: str) -> tuple[Path, Path]:
     reference_path = directory / f"{stem}.fa"
     reference_path.write_text("A" * SEQUENCE_LENGTH + "\n", encoding="utf-8")
@@ -300,6 +336,61 @@ def test_native_introgression_one_step_matches_upstream(tmp_path: Path) -> None:
     assert native["log_likelihood"] == pytest.approx(
         upstream["log_likelihood"],
         abs=STRUCTURED_LL_ABS_TOL,
+    )
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-14,
+    )
+
+
+def test_native_exponential_growth_one_step_matches_upstream(tmp_path: Path) -> None:
+    ts = _simulate_exponential_growth()
+    vcf_path, reference_path = _write_vcf_and_reference(
+        ts,
+        tmp_path,
+        "exponential_growth",
+    )
+    root = EXAMPLES / "expGrowth"
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / "exp_growth.demo",
+        "rates_file": root / "exp_growth.rates",
+        "config_file": root / "exp_growth.config",
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": (0.8, 2.0),
+        "seed": 211,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "pcl",
+        "bounds": "0.01,20;0.05,50",
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["core_type"] == "ode"
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=1e-8,
     )
     np.testing.assert_allclose(
         np.asarray(native["best_params"]),
