@@ -70,6 +70,12 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   coordinate offsets, zero-based half-open BED exclusions, VCF-header
   references, and lossless typed forwarding of those controls to the original
   Java CLI.
+- Native diCal2 PAC permutation mixtures with Java-compatible generated or
+  file-backed orders, selectable CSD counts, per-contig controls,
+  posterior-weighted EM statistics, and generated log-grid/log-uniform
+  multi-start search. The typed upstream bridge preserves the corresponding
+  original CLI options, and live Java oracles freeze PAC likelihood and grid
+  sequence parity.
 - Lossless one/two-population SMC++ I/O, contig-level regularization
   cross-validation, reloadable model initialization, upstream-readable model
   JSON, hashed result artifacts, and publication-ready demography/CV plots.

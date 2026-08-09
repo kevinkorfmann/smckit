@@ -38,8 +38,8 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-from scipy.linalg import eig
 from scipy.integrate import solve_ivp
+from scipy.linalg import eig
 from scipy.optimize import minimize
 from scipy.special import logsumexp
 
@@ -101,6 +101,12 @@ class DiCal2ResolvedOptions:
     meta_num_iterations: int
     meta_keep_best: int
     meta_num_points: int | None
+    meta_grid_start: bool
+    meta_num_start_points: int | None
+    num_permutations: int | None
+    permutation_files: tuple[str, ...] | None
+    num_csds_per_permutation: int | None
+    different_permutations_per_contig: bool
     bounds: str | list[tuple[float, float]] | None
     number_iterations_em: int
     number_iterations_mstep: int | None
@@ -180,6 +186,22 @@ def _coerce_coordinate_order(value: object | None) -> tuple[int, ...] | None:
     raise TypeError("coordinate_order must be a comma-separated string or sequence of ints.")
 
 
+def _coerce_path_tuple(value: object | None, *, name: str) -> tuple[str, ...] | None:
+    if value is None:
+        return None
+    if isinstance(value, (str, Path)):
+        items = [chunk.strip() for chunk in str(value).split(",") if chunk.strip()]
+    elif isinstance(value, np.ndarray):
+        items = [str(item) for item in value.tolist()]
+    elif isinstance(value, (list, tuple)):
+        items = [str(item) for item in value]
+    else:
+        raise TypeError(f"{name} must be a path, comma-separated paths, or a path sequence.")
+    if not items:
+        raise ValueError(f"{name} cannot be empty.")
+    return tuple(items)
+
+
 def _resolve_dical2_options(
     *,
     n_intervals: int,
@@ -226,8 +248,93 @@ def _resolve_dical2_options(
         "metaStartFile",
         default=meta_start_file,
     )
-    if resolved_start_point is not None and resolved_meta_start is not None:
-        raise ValueError("Specify either start_point or meta_start_file for diCal2, not both.")
+    meta_grid_start = _coerce_bool(
+        _lookup_option(method_options, "meta_grid_start", "metaGridStart"),
+        default=False,
+    )
+    raw_meta_num_start_points = _lookup_option(
+        method_options,
+        "meta_num_start_points",
+        "metaNumStartPoints",
+    )
+    meta_num_start_points = (
+        None if raw_meta_num_start_points is None else int(raw_meta_num_start_points)
+    )
+    initialization_modes = sum(
+        value is not None
+        for value in (resolved_start_point, resolved_meta_start, meta_num_start_points)
+    )
+    if initialization_modes > 1:
+        raise ValueError(
+            "Specify exactly one of start_point, meta_start_file, or meta_num_start_points."
+        )
+    if meta_grid_start and meta_num_start_points is None:
+        raise ValueError("meta_grid_start requires meta_num_start_points.")
+    if meta_num_start_points is not None and meta_num_start_points < 2:
+        raise ValueError("meta_num_start_points must be at least 2.")
+    num_permutations_raw = _lookup_option(
+        method_options,
+        "num_permutations",
+        "numPermutations",
+    )
+    num_permutations = None if num_permutations_raw is None else int(num_permutations_raw)
+    permutation_files = _coerce_path_tuple(
+        _lookup_option(
+            method_options,
+            "permutation_files",
+            "permutations_file",
+            "permutationsFile",
+        ),
+        name="permutation_files",
+    )
+    if num_permutations is not None and permutation_files is not None:
+        raise ValueError("Specify either num_permutations or permutation_files, not both.")
+    if num_permutations is not None and num_permutations < 1:
+        raise ValueError("num_permutations must be at least 1.")
+    num_csds_raw = _lookup_option(
+        method_options,
+        "num_csds_per_permutation",
+        "numCsdsPerPerm",
+    )
+    num_csds_per_permutation = None if num_csds_raw is None else int(num_csds_raw)
+    if num_csds_per_permutation is not None and num_csds_per_permutation < 1:
+        raise ValueError("num_csds_per_permutation must be at least 1.")
+    resolved_meta_num_iterations = int(
+        _lookup_option(
+            method_options,
+            "meta_num_iterations",
+            "metaNumIterations",
+            default=meta_num_iterations,
+        )
+    )
+    resolved_meta_keep_best = int(
+        _lookup_option(
+            method_options,
+            "meta_keep_best",
+            "metaKeepBest",
+            default=meta_keep_best,
+        )
+    )
+    raw_meta_num_points = _lookup_option(
+        method_options,
+        "meta_num_points",
+        "metaNumPoints",
+        default=meta_num_points,
+    )
+    resolved_meta_num_points = (
+        None if raw_meta_num_points is None else int(raw_meta_num_points)
+    )
+    if resolved_meta_num_iterations < 1:
+        raise ValueError("meta_num_iterations must be at least 1.")
+    if resolved_meta_num_iterations > 1:
+        if resolved_meta_start is None and meta_num_start_points is None:
+            raise ValueError("Multiple meta iterations require multiple start points.")
+        if resolved_meta_num_points is None:
+            raise ValueError("Multiple meta iterations require meta_num_points.")
+        if resolved_meta_keep_best < 1:
+            raise ValueError("meta_keep_best must be at least 1.")
+        if resolved_meta_keep_best > resolved_meta_num_points:
+            raise ValueError("meta_keep_best cannot exceed meta_num_points.")
     coordinatewise = _lookup_option(
         method_options,
         "coordinatewise_mstep",
@@ -274,39 +381,22 @@ def _resolve_dical2_options(
         ),
         start_point=resolved_start_point,
         meta_start_file=(None if resolved_meta_start is None else str(resolved_meta_start)),
-        meta_num_iterations=int(
+        meta_num_iterations=resolved_meta_num_iterations,
+        meta_keep_best=resolved_meta_keep_best,
+        meta_num_points=resolved_meta_num_points,
+        meta_grid_start=meta_grid_start,
+        meta_num_start_points=meta_num_start_points,
+        num_permutations=num_permutations,
+        permutation_files=permutation_files,
+        num_csds_per_permutation=num_csds_per_permutation,
+        different_permutations_per_contig=_coerce_bool(
             _lookup_option(
                 method_options,
-                "meta_num_iterations",
-                "metaNumIterations",
-                default=meta_num_iterations,
-            )
-        ),
-        meta_keep_best=int(
-            _lookup_option(
-                method_options,
-                "meta_keep_best",
-                "metaKeepBest",
-                default=meta_keep_best,
-            )
-        ),
-        meta_num_points=(
-            None
-            if _lookup_option(
-                method_options,
-                "meta_num_points",
-                "metaNumPoints",
-                default=meta_num_points,
-            )
-            is None
-            else int(
-                _lookup_option(
-                    method_options,
-                    "meta_num_points",
-                    "metaNumPoints",
-                    default=meta_num_points,
-                )
-            )
+                "different_permutations_per_contig",
+                "diff_perms_per_chunk",
+                "diffPermsPerChunk",
+            ),
+            default=False,
         ),
         bounds=_lookup_option(method_options, "bounds", default=bounds),
         number_iterations_em=int(
@@ -451,6 +541,14 @@ def _resolved_options_metadata(resolved: DiCal2ResolvedOptions) -> dict[str, obj
         "meta_num_iterations": resolved.meta_num_iterations,
         "meta_keep_best": resolved.meta_keep_best,
         "meta_num_points": resolved.meta_num_points,
+        "meta_grid_start": resolved.meta_grid_start,
+        "meta_num_start_points": resolved.meta_num_start_points,
+        "num_permutations": resolved.num_permutations,
+        "permutation_files": (
+            None if resolved.permutation_files is None else list(resolved.permutation_files)
+        ),
+        "num_csds_per_permutation": resolved.num_csds_per_permutation,
+        "different_permutations_per_contig": resolved.different_permutations_per_contig,
         "bounds": resolved.bounds,
         "number_iterations_em": resolved.number_iterations_em,
         "number_iterations_mstep": resolved.number_iterations_mstep,
@@ -653,7 +751,7 @@ def compute_time_intervals(
 def refine_demography(
     demo: DiCal2Demo,
     interval_boundaries: np.ndarray,
-) -> "RefinedDemography":
+) -> RefinedDemography:
     """Refine a demographic model by inserting extra interval boundaries.
 
     The HMM operates on a *refined* set of intervals: the union of the
@@ -710,7 +808,7 @@ def refine_demography(
     )
 
 
-def _refined_interval_epoch(refined: "RefinedDemography", interval: int) -> DiCal2Epoch:
+def _refined_interval_epoch(refined: RefinedDemography, interval: int) -> DiCal2Epoch:
     base_epoch = refined.demo.epochs[int(refined.epoch_map[interval])]
     interval_start = float(refined.refined_boundaries[interval])
     interval_end = float(refined.refined_boundaries[interval + 1])
@@ -1748,7 +1846,7 @@ class EigDecomp:
     VW: np.ndarray  # (n, n, n) complex — VW[k] = v_k ⊗ w_k^T
 
     @classmethod
-    def from_matrix(cls, Z: np.ndarray) -> "EigDecomp":
+    def from_matrix(cls, Z: np.ndarray) -> EigDecomp:
         if Z.shape[0] == 0:
             return cls(
                 eigvals=np.zeros(0, dtype=complex),
@@ -1845,7 +1943,7 @@ class CoreMatrices:
     log_reco: np.ndarray  # (n_states, n_states) log P(reco src→dst)
     log_emission: np.ndarray  # (n_states, n_alleles, n_alleles) [trunk][obs]
     state_present: np.ndarray | None = None  # (n_states,) → present deme index
-    transition_provider: "EigenCore | ODECore | None" = None
+    transition_provider: EigenCore | ODECore | None = None
     transition_cache: dict[int, tuple[np.ndarray, np.ndarray]] | None = None
 
 
@@ -3439,7 +3537,8 @@ def expected_counts(
         no_reco_expect += xi_no
 
         # Recombination: src → dst
-        # xi_reco[src, dst] = exp(logF[l, src] + log_reco[src, dst] + em_next[dst] + logB[l+1, dst] - ll)
+        # xi_reco[src, dst] combines forward, recombination, emission,
+        # backward, and total-likelihood terms in log space.
         xi_re = np.exp(
             logF[ll_i][:, None] + log_reco_step + em_next[None, :] + logB[ll_i + 1][None, :] - ll
         )
@@ -3742,6 +3841,159 @@ def _group_observations(
     return np.array(blocks, dtype=np.int64), np.array(step_sizes, dtype=np.int64)
 
 
+def _pac_trunk_sizes(n_hap: int, num_csds_per_permutation: int | None) -> set[int]:
+    """Match diCal2's CSD-size selection for one PAC permutation."""
+    if num_csds_per_permutation is None or num_csds_per_permutation >= n_hap:
+        return set(range(n_hap))
+    if num_csds_per_permutation == 1:
+        return {n_hap - 1}
+    if num_csds_per_permutation == 2:
+        return {1, n_hap - 1}
+    highest_idx = num_csds_per_permutation - 1
+    return {
+        int(1 + idx * ((n_hap - 2) / float(highest_idx)))
+        for idx in range(highest_idx + 1)
+    }
+
+
+def _pac_csd_pairs(
+    permutation: list[int] | tuple[int, ...] | np.ndarray,
+    num_csds_per_permutation: int | None = None,
+) -> list[tuple[int, list[int]]]:
+    """Build PAC CSDs in the reverse visitation order used by upstream."""
+    order = [int(value) for value in permutation]
+    n_hap = len(order)
+    if sorted(order) != list(range(n_hap)):
+        raise ValueError(
+            "Each diCal2 permutation must contain every haplotype index exactly once."
+        )
+    trunk_sizes = _pac_trunk_sizes(n_hap, num_csds_per_permutation)
+    working_trunk: list[int] = []
+    pairs: list[tuple[int, list[int]]] = []
+    for additional_idx in reversed(order):
+        if working_trunk and len(working_trunk) in trunk_sizes:
+            pairs.append((additional_idx, list(working_trunk)))
+        working_trunk.append(additional_idx)
+    return pairs
+
+
+def _generate_java_permutations(
+    num_permutations: int,
+    n_hap: int,
+    rng: _JavaRandom,
+) -> list[list[int]]:
+    """Generate consecutive ``Collections.shuffle`` results from one mutable list."""
+    mutable_order = list(range(n_hap))
+    permutations: list[list[int]] = []
+    for _ in range(num_permutations):
+        for idx in range(n_hap - 1, 0, -1):
+            swap_idx = rng.next_int(idx + 1)
+            mutable_order[idx], mutable_order[swap_idx] = (
+                mutable_order[swap_idx],
+                mutable_order[idx],
+            )
+        permutations.append(list(mutable_order))
+    return permutations
+
+
+def _read_dical2_permutations(path: str | Path, n_hap: int) -> list[list[int]]:
+    permutations: list[list[int]] = []
+    for line_number, line in enumerate(Path(path).read_text().splitlines(), start=1):
+        tokens = line.split()
+        if not tokens:
+            raise ValueError(f"Empty permutation row {line_number} in {path}.")
+        permutation = [int(token) for token in tokens]
+        if len(permutation) != n_hap or sorted(permutation) != list(range(n_hap)):
+            raise ValueError(
+                f"Permutation row {line_number} in {path} must contain each index "
+                f"from 0 through {n_hap - 1} exactly once."
+            )
+        permutations.append(permutation)
+    if not permutations:
+        raise ValueError(f"Permutation file {path} contains no permutations.")
+    return permutations
+
+
+def _resolve_csd_groups(
+    *,
+    n_hap: int,
+    n_contigs: int,
+    resolved: DiCal2ResolvedOptions,
+    rng: _JavaRandom,
+) -> tuple[list[list[list[tuple[int, list[int]]]]], dict[str, object]]:
+    """Resolve per-contig, per-permutation CSD groups and provenance."""
+    mode = resolved.composite_mode
+    has_permutation_control = (
+        resolved.num_permutations is not None or resolved.permutation_files is not None
+    )
+    if mode != "pac":
+        if has_permutation_control:
+            raise ValueError("Permutation controls are only valid with composite_mode='pac'.")
+        if resolved.num_csds_per_permutation is not None:
+            raise ValueError("num_csds_per_permutation is only valid with composite_mode='pac'.")
+        pairs = _enumerate_csd_pairs(n_hap, mode)
+        return [[pairs] for _ in range(n_contigs)], {
+            "source": "not_applicable",
+            "per_contig": None,
+        }
+
+    source = "identity_compatibility_default"
+    file_records: list[dict[str, str]] = []
+    if resolved.permutation_files is not None:
+        paths = list(resolved.permutation_files)
+        if len(paths) == 1:
+            if n_contigs > 1 and resolved.different_permutations_per_contig:
+                raise ValueError(
+                    "different_permutations_per_contig requires one permutation file per contig."
+                )
+            loaded = _read_dical2_permutations(paths[0], n_hap)
+            per_contig_permutations = [[list(order) for order in loaded] for _ in range(n_contigs)]
+        else:
+            if len(paths) != n_contigs:
+                raise ValueError("Provide one permutation file or one file per contig.")
+            per_contig_permutations = [
+                _read_dical2_permutations(path, n_hap) for path in paths
+            ]
+        file_records = [
+            {"path": str(Path(path).expanduser().resolve()), "sha256": sha256_file(path)}
+            for path in paths
+        ]
+        source = "file"
+    elif resolved.num_permutations is not None:
+        if resolved.seed is None:
+            raise ValueError("Generated diCal2 PAC permutations require seed for reproducibility.")
+        if resolved.different_permutations_per_contig:
+            per_contig_permutations = [
+                _generate_java_permutations(resolved.num_permutations, n_hap, rng)
+                for _ in range(n_contigs)
+            ]
+        else:
+            generated = _generate_java_permutations(resolved.num_permutations, n_hap, rng)
+            per_contig_permutations = [
+                [list(order) for order in generated] for _ in range(n_contigs)
+            ]
+        source = "generated_java_collections_shuffle"
+    else:
+        per_contig_permutations = [[list(range(n_hap))] for _ in range(n_contigs)]
+
+    groups = [
+        [
+            _pac_csd_pairs(order, resolved.num_csds_per_permutation)
+            for order in contig_permutations
+        ]
+        for contig_permutations in per_contig_permutations
+    ]
+    metadata: dict[str, object] = {
+        "source": source,
+        "num_csds_per_permutation": resolved.num_csds_per_permutation,
+        "different_permutations_per_contig": resolved.different_permutations_per_contig,
+        "per_contig": per_contig_permutations,
+    }
+    if file_records:
+        metadata["files"] = file_records
+    return groups, metadata
+
+
 def _enumerate_csd_pairs(n_hap: int, mode: str) -> list[tuple[int, list[int]]]:
     """Return list of (additional_idx, trunk_indices) for one CSD pass.
 
@@ -3759,10 +4011,7 @@ def _enumerate_csd_pairs(n_hap: int, mode: str) -> list[tuple[int, list[int]]]:
         # Leave-one-out
         return [(i, [j for j in range(n_hap) if j != i]) for i in range(n_hap)]
     if mode == "pac":
-        # PAC: single random permutation, each haplotype conditional on
-        # the previous ones (skip the first which has no trunk)
-        order = list(range(n_hap))
-        return [(order[i], order[:i]) for i in range(1, n_hap)]
+        return _pac_csd_pairs(list(range(n_hap)))
     raise ValueError(f"Unknown composite likelihood mode: {mode}")
 
 
@@ -4542,7 +4791,7 @@ class _JavaRandom:
             values[idx], values[swap_idx] = values[swap_idx], values[idx]
         return np.asarray(values, dtype=np.int64)
 
-    def spawn_offspring(self) -> "_JavaRandom":
+    def spawn_offspring(self) -> _JavaRandom:
         return _JavaRandom(self.next_long())
 
 
@@ -4872,17 +5121,86 @@ def _meta_next_generation(
     return np.array(next_generation, dtype=np.float64)
 
 
+def _meta_grid_points(
+    bounds: list[tuple[float, float]],
+    num_start_points: int,
+) -> np.ndarray:
+    """Build upstream-order log-spaced grid points from parameter bounds."""
+    if num_start_points < 2:
+        raise ValueError("meta_num_start_points must be at least 2 for a grid.")
+    if any(lower <= 0.0 or upper <= lower for lower, upper in bounds):
+        raise ValueError("diCal2 meta-start grids require positive, increasing bounds.")
+    dimension = len(bounds)
+    counters = [0] * dimension
+    points: list[list[float]] = []
+    finished = False
+    while not finished:
+        points.append(
+            [
+                _meta_logify(
+                    counters[idx] / float(num_start_points - 1),
+                    bounds[idx][0],
+                    bounds[idx][1],
+                )
+                for idx in range(dimension)
+            ]
+        )
+        for idx in range(dimension):
+            counters[idx] += 1
+            if counters[idx] >= num_start_points:
+                counters[idx] = 0
+                if idx == dimension - 1:
+                    finished = True
+            else:
+                break
+    return np.asarray(points, dtype=np.float64)
+
+
+def _meta_random_points(
+    *,
+    demo: DiCal2Demo,
+    params: DemoParameters,
+    bounds: list[tuple[float, float]],
+    num_start_points: int,
+    rng: _JavaRandom,
+) -> np.ndarray:
+    """Draw Java-RNG log-uniform valid starts from the supplied bounds."""
+    if any(lower <= 0.0 or upper <= lower for lower, upper in bounds):
+        raise ValueError("Random diCal2 meta starts require positive, increasing bounds.")
+    points: list[np.ndarray] = []
+    for _ in range(num_start_points):
+        for tries in range(1, _META_MAX_NEW_POINT_TRIES + 1):
+            point = np.asarray(
+                [
+                    _meta_logify(rng.random(), lower, upper)
+                    for lower, upper in bounds
+                ],
+                dtype=np.float64,
+            )
+            candidate = _clone_demo_parameters(params)
+            candidate.set_ordered_param_values(point)
+            if _demo_from_params_or_none(candidate, demo) is not None:
+                points.append(point)
+                break
+        else:
+            raise RuntimeError(
+                "Could not draw a valid diCal2 random meta-start point in "
+                f"{_META_MAX_NEW_POINT_TRIES} attempts."
+            )
+    return np.asarray(points, dtype=np.float64)
+
+
 def _run_dical2_em(
     *,
     demo: DiCal2Demo,
     params: DemoParameters,
     contigs: list[DiCal2Contig],
+    csd_groups_by_contig: list[list[list[tuple[int, list[int]]]]],
     config: DiCal2Config,
     interval_boundaries: np.ndarray,
     mutation_matrix: np.ndarray,
     theta: float,
     rho: float,
-    composite_mode: str,
     n_alleles: int,
     loci_per_hmm_step: int,
     trunk_style: str,
@@ -4902,8 +5220,9 @@ def _run_dical2_em(
 ) -> tuple[DemoParameters, list[dict], float, str]:
     if not contigs:
         raise ValueError("diCal2 requires at least one contig.")
+    if len(csd_groups_by_contig) != len(contigs):
+        raise ValueError("diCal2 CSD groups must be provided for every contig.")
     n_hap = contigs[0].sequences.shape[0]
-    csd_pairs = _enumerate_csd_pairs(n_hap, composite_mode)
     rounds: list[dict] = []
     prev_ll = -np.inf
     prev_point: np.ndarray | None = None
@@ -4919,84 +5238,119 @@ def _run_dical2_em(
         counts_list: list[ExpectedCounts] = []
         csd_setups: list[tuple[int, list[int], int]] = []
         total_ll = 0.0
+        contig_permutation_log_likelihoods: list[list[float]] = []
+        contig_permutation_weights: list[list[float]] = []
 
-        for contig in contigs:
+        for contig, csd_groups in zip(contigs, csd_groups_by_contig, strict=True):
             sequences = np.asarray(contig.sequences, dtype=np.int8)
             if sequences.shape[0] != n_hap:
                 raise ValueError("All diCal2 contigs must contain the same haplotypes.")
-            for additional_idx, trunk_idxs in csd_pairs:
-                if not trunk_idxs:
-                    continue
-                present_deme = config.haplotype_populations[additional_idx]
-                trunk = SimpleTrunk(
-                    config=config,
-                    additional_hap_idx=additional_idx,
-                    trunk_hap_indices=trunk_idxs,
-                    refined=refined,
-                    trunk_style=trunk_style,
-                    cake_style=cake_style,
-                )
-                core_obj, selected_core_type = _build_native_core(
-                    refined=refined,
-                    trunk=trunk,
-                    observed_present_deme=present_deme,
-                    mutation_matrix=mutation_matrix,
-                    theta=theta,
-                    rho=rho,
-                )
-                core = core_obj.core_matrices()
-                grouped_trunks = {
-                    h: _group_observations(sequences[h], loci_per_hmm_step)[0] for h in trunk_idxs
-                }
-                expanded = _build_expanded_core(
-                    core_obj,
-                    core,
-                    trunk,
-                    trunk_idxs,
-                    grouped_trunks,
-                )
-                pair_counts = None
-                if (
-                    loci_per_hmm_step > 1
-                    and contig.seg_positions is not None
-                    and contig.reference_length is not None
-                    and contig.reference_alleles is not None
-                ):
-                    pair_counts = np.array(
-                        [
-                            _physical_block_pair_counts(
-                                sequences[additional_idx],
-                                sequences[int(h)],
-                                seg_positions=contig.seg_positions,
-                                reference_length=int(contig.reference_length),
-                                reference_alleles=contig.reference_alleles,
-                                loci_per_hmm_step=loci_per_hmm_step,
-                                n_alleles=n_alleles,
-                            )
-                            for h in expanded.trunk_hap_indices
-                        ],
-                        dtype=np.int64,
+            permutation_records: list[
+                list[tuple[ExpectedCounts, tuple[int, list[int], int]]]
+            ] = []
+            permutation_lls: list[float] = []
+            for csd_pairs in csd_groups:
+                current_records: list[
+                    tuple[ExpectedCounts, tuple[int, list[int], int]]
+                ] = []
+                permutation_ll = 0.0
+                for additional_idx, trunk_idxs in csd_pairs:
+                    if not trunk_idxs:
+                        continue
+                    present_deme = config.haplotype_populations[additional_idx]
+                    trunk = SimpleTrunk(
+                        config=config,
+                        additional_hap_idx=additional_idx,
+                        trunk_hap_indices=trunk_idxs,
+                        refined=refined,
+                        trunk_style=trunk_style,
+                        cake_style=cake_style,
                     )
-                    step_sizes = np.full(pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64)
-                    obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
-                else:
-                    obs_add, step_sizes = _group_observations(
-                        sequences[additional_idx],
-                        loci_per_hmm_step,
+                    core_obj, selected_core_type = _build_native_core(
+                        refined=refined,
+                        trunk=trunk,
+                        observed_present_deme=present_deme,
+                        mutation_matrix=mutation_matrix,
+                        theta=theta,
+                        rho=rho,
                     )
+                    core = core_obj.core_matrices()
+                    grouped_trunks = {
+                        h: _group_observations(sequences[h], loci_per_hmm_step)[0]
+                        for h in trunk_idxs
+                    }
+                    expanded = _build_expanded_core(
+                        core_obj,
+                        core,
+                        trunk,
+                        trunk_idxs,
+                        grouped_trunks,
+                    )
+                    pair_counts = None
+                    if (
+                        loci_per_hmm_step > 1
+                        and contig.seg_positions is not None
+                        and contig.reference_length is not None
+                        and contig.reference_alleles is not None
+                    ):
+                        pair_counts = np.array(
+                            [
+                                _physical_block_pair_counts(
+                                    sequences[additional_idx],
+                                    sequences[int(h)],
+                                    seg_positions=contig.seg_positions,
+                                    reference_length=int(contig.reference_length),
+                                    reference_alleles=contig.reference_alleles,
+                                    loci_per_hmm_step=loci_per_hmm_step,
+                                    n_alleles=n_alleles,
+                                )
+                                for h in expanded.trunk_hap_indices
+                            ],
+                            dtype=np.int64,
+                        )
+                        step_sizes = np.full(
+                            pair_counts.shape[1], loci_per_hmm_step, dtype=np.int64
+                        )
+                        obs_add = np.empty(pair_counts.shape[1], dtype=np.int64)
+                    else:
+                        obs_add, step_sizes = _group_observations(
+                            sequences[additional_idx],
+                            loci_per_hmm_step,
+                        )
 
-                counts = _expanded_expected_counts(
-                    core,
-                    expanded,
-                    obs_add,
-                    n_alleles,
-                    step_sizes=step_sizes,
-                    pair_counts=pair_counts,
-                )
-                counts.n_states = core.n_states  # type: ignore[attr-defined]
-                counts_list.append(counts)
-                csd_setups.append((additional_idx, list(trunk_idxs), present_deme))
-                total_ll += counts.log_likelihood
+                    counts = _expanded_expected_counts(
+                        core,
+                        expanded,
+                        obs_add,
+                        n_alleles,
+                        step_sizes=step_sizes,
+                        pair_counts=pair_counts,
+                    )
+                    counts.n_states = core.n_states  # type: ignore[attr-defined]
+                    current_records.append(
+                        (counts, (additional_idx, list(trunk_idxs), present_deme))
+                    )
+                    permutation_ll += counts.log_likelihood
+                permutation_records.append(current_records)
+                permutation_lls.append(float(permutation_ll))
+
+            chunk_log_likelihood = float(logsumexp(permutation_lls))
+            permutation_weights = np.exp(
+                np.asarray(permutation_lls, dtype=np.float64) - chunk_log_likelihood
+            )
+            total_ll += chunk_log_likelihood
+            contig_permutation_log_likelihoods.append(permutation_lls)
+            contig_permutation_weights.append(permutation_weights.tolist())
+            for weight, current_records in zip(
+                permutation_weights, permutation_records, strict=True
+            ):
+                for counts, setup in current_records:
+                    counts.initial_expect *= weight
+                    counts.no_reco_expect *= weight
+                    counts.reco_expect *= weight
+                    counts.emission_expect *= weight
+                    counts_list.append(counts)
+                    csd_setups.append(setup)
 
         rounds.append(
             {
@@ -5006,6 +5360,8 @@ def _run_dical2_em(
                 "pop_sizes": params.pop_size_values.copy(),
                 "growth_rates": params.growth_rate_values.copy(),
                 "ordered_params": params.ordered_param_values().copy(),
+                "permutation_log_likelihoods": contig_permutation_log_likelihoods,
+                "permutation_weights": contig_permutation_weights,
             }
         )
 
@@ -5023,21 +5379,23 @@ def _run_dical2_em(
             break
 
         objective_params = _clone_demo_parameters(params)
-        objective = lambda point: _q_function_ordered(
-            np.asarray(point, dtype=np.float64),
-            objective_params,
-            demo,
-            interval_boundaries,
-            counts_list,
-            csd_setups,
-            config,
-            mutation_matrix,
-            theta,
-            rho,
-            trunk_style,
-            cake_style,
-            half_migration_rate,
-        )
+
+        def objective(point):
+            return _q_function_ordered(
+                np.asarray(point, dtype=np.float64),
+                objective_params,
+                demo,
+                interval_boundaries,
+                counts_list,
+                csd_setups,
+                config,
+                mutation_matrix,
+                theta,
+                rho,
+                trunk_style,
+                cake_style,
+                half_migration_rate,
+            )
         mstep_trace: dict[str, object] | None = {} if record_mstep_trace else None
         try:
             if coordinatewise_mstep:
@@ -5243,17 +5601,17 @@ def dical2(
     meta_start_file : str, optional
         Tab-separated file of candidate starting points in diCal2 ``?N`` order.
     meta_num_iterations : int
-        Number of meta-start generations to run when ``meta_start_file`` is
-        provided. ``1`` means evaluate only the supplied points.
+        Number of meta-start generations to run with file-backed or generated
+        starts. ``1`` means evaluate only the initial candidate set.
     meta_keep_best : int
         Number of best points to retain between meta-start generations.
     meta_num_points : int, optional
-        Number of points per meta-start generation. Defaults to the number of
-        rows in ``meta_start_file``.
+        Number of points in each generated meta-start generation after the
+        initial candidate set.
     bounds : str or list of pairs, optional
         Parameter bounds in diCal2 placeholder order, e.g. ``'0.1,1;0.2,2'``.
     seed : int, optional
-        RNG seed (currently unused — kept for API symmetry).
+        RNG seed for generated permutations, generated starts, and optimization.
     implementation : {"auto", "native", "upstream"}
         Algorithm provenance selector. ``"native"`` runs the in-repo diCal2
         port. ``"upstream"`` runs the vendored ``diCal2.jar`` through the
@@ -5313,10 +5671,14 @@ def dical2(
         "metaDisperseFactor",
         "meta_keep_best",
         "metaKeepBest",
+        "meta_grid_start",
+        "metaGridStart",
         "meta_num_iterations",
         "metaNumIterations",
         "meta_num_points",
         "metaNumPoints",
+        "meta_num_start_points",
+        "metaNumStartPoints",
         "meta_sd_percentage_if_zero",
         "metaSDPercentageIfZero",
         "meta_start_file",
@@ -5329,6 +5691,16 @@ def dical2(
         "numberIterationsEM",
         "number_iterations_mstep",
         "numberIterationsMstep",
+        "num_permutations",
+        "numPermutations",
+        "permutation_files",
+        "permutations_file",
+        "permutationsFile",
+        "num_csds_per_permutation",
+        "numCsdsPerPerm",
+        "different_permutations_per_contig",
+        "diff_perms_per_chunk",
+        "diffPermsPerChunk",
         "relative_error_e",
         "relativeErrorE",
         "relative_error_m",
@@ -5482,6 +5854,12 @@ def dical2(
     theta = float(data.params.get("theta", 0.0005))
     rho = float(data.params.get("rho", 0.0005))
     rng = _JavaRandom(resolved_native.seed)
+    csd_groups_by_contig, permutation_metadata = _resolve_csd_groups(
+        n_hap=n_hap,
+        n_contigs=len(contigs),
+        resolved=resolved_native,
+        rng=rng,
+    )
 
     best_params: DemoParameters | None = None
     best_rounds: list[dict] = []
@@ -5489,16 +5867,67 @@ def dical2(
     best_core_type = "eigen"
     meta_trace: list[dict[str, object]] | None = [] if record_meta_trace else None
 
+    candidate_points: np.ndarray | None = None
     if resolved_native.meta_start_file is not None:
         candidate_points = np.loadtxt(
             resolved_native.meta_start_file,
             dtype=np.float64,
             ndmin=2,
         )
+        initialization_metadata = {
+            "strategy": "file",
+            "path": str(Path(resolved_native.meta_start_file).expanduser().resolve()),
+            "sha256": sha256_file(resolved_native.meta_start_file),
+            "n_start_points": int(candidate_points.shape[0]),
+        }
+    elif resolved_native.meta_num_start_points is not None:
+        if parsed_bounds is None:
+            raise ValueError("meta_num_start_points requires explicit diCal2 bounds.")
+        if resolved_native.meta_grid_start:
+            candidate_points = _meta_grid_points(
+                parsed_bounds,
+                resolved_native.meta_num_start_points,
+            )
+            initialization_metadata = {
+                "strategy": "log_grid",
+                "points_per_dimension": resolved_native.meta_num_start_points,
+                "n_start_points": int(candidate_points.shape[0]),
+            }
+        else:
+            if resolved_native.seed is None:
+                raise ValueError("Random diCal2 meta starts require seed for reproducibility.")
+            candidate_points = _meta_random_points(
+                demo=demo,
+                params=params,
+                bounds=parsed_bounds,
+                num_start_points=resolved_native.meta_num_start_points,
+                rng=rng,
+            )
+            initialization_metadata = {
+                "strategy": "log_uniform_random",
+                "n_start_points": int(candidate_points.shape[0]),
+                "seed": resolved_native.seed,
+            }
+    elif resolved_native.start_point is not None:
+        initialization_metadata = {
+            "strategy": "explicit",
+            "n_start_points": 1,
+        }
+    else:
+        initialization_metadata = {
+            "strategy": "demo_defaults",
+            "n_start_points": 1,
+        }
+
+    if candidate_points is not None:
+        if candidate_points.shape[1] != params.n_params():
+            raise ValueError(
+                "diCal2 meta-start points must have one column per demographic parameter."
+            )
         effective_meta_num_points = resolved_native.meta_num_points
         if effective_meta_num_points is None:
             effective_meta_num_points = candidate_points.shape[0]
-        candidate_points = candidate_points[:effective_meta_num_points].copy()
+        candidate_points = candidate_points.copy()
         for meta_iter in range(max(resolved_native.meta_num_iterations, 1)):
             generation_results: list[tuple[float, np.ndarray]] = []
             generation_run_records: list[dict[str, object]] = []
@@ -5529,12 +5958,12 @@ def dical2(
                     demo=demo,
                     params=local_params,
                     contigs=contigs,
+                    csd_groups_by_contig=csd_groups_by_contig,
                     config=config,
                     interval_boundaries=interval_boundaries,
                     mutation_matrix=mutation_matrix,
                     theta=theta,
                     rho=rho,
-                    composite_mode=resolved_native.composite_mode,
                     n_alleles=n_alleles,
                     loci_per_hmm_step=resolved_native.loci_per_hmm_step,
                     trunk_style=resolved_native.trunk_style,
@@ -5637,12 +6066,12 @@ def dical2(
             demo=demo,
             params=params,
             contigs=contigs,
+            csd_groups_by_contig=csd_groups_by_contig,
             config=config,
             interval_boundaries=interval_boundaries,
             mutation_matrix=mutation_matrix,
             theta=theta,
             rho=rho,
-            composite_mode=resolved_native.composite_mode,
             n_alleles=n_alleles,
             loci_per_hmm_step=resolved_native.loci_per_hmm_step,
             trunk_style=resolved_native.trunk_style,
@@ -5688,6 +6117,7 @@ def dical2(
             "resolved_options": _resolved_options_metadata(resolved_native),
             "initialization": initialization_metadata,
             "meta_trace": meta_trace,
+            "permutations": permutation_metadata,
             "best_params": params.ordered_param_values().copy(),
         },
         method_name="dical2",
@@ -5854,10 +6284,27 @@ def _dical2_upstream(
         cmd.extend(["--startPoint", ",".join(str(float(x)) for x in resolved.start_point)])
     if resolved.meta_start_file is not None:
         cmd.extend(["--metaStartFile", str(Path(resolved.meta_start_file).resolve())])
+    if resolved.meta_num_start_points is not None:
+        cmd.extend(["--metaNumStartPoints", str(int(resolved.meta_num_start_points))])
+    if resolved.meta_grid_start:
+        cmd.append("--metaGridStart")
+    if resolved.meta_start_file is not None or resolved.meta_num_start_points is not None:
         cmd.extend(["--metaNumIterations", str(int(resolved.meta_num_iterations))])
-        cmd.extend(["--metaKeepBest", str(int(resolved.meta_keep_best))])
-        if resolved.meta_num_points is not None:
-            cmd.extend(["--metaNumPoints", str(int(resolved.meta_num_points))])
+        if resolved.meta_num_iterations > 1:
+            cmd.extend(["--metaKeepBest", str(int(resolved.meta_keep_best))])
+            if resolved.meta_num_points is not None:
+                cmd.extend(["--metaNumPoints", str(int(resolved.meta_num_points))])
+    if resolved.num_permutations is not None:
+        cmd.extend(["--numPermutations", str(int(resolved.num_permutations))])
+    if resolved.permutation_files is not None:
+        permutation_paths = [
+            str(Path(path).expanduser().resolve()) for path in resolved.permutation_files
+        ]
+        cmd.extend(["--permutationsFile", ",".join(permutation_paths)])
+    if resolved.different_permutations_per_contig:
+        cmd.append("--diffPermsPerChunk")
+    if resolved.num_csds_per_permutation is not None:
+        cmd.extend(["--numCsdsPerPerm", str(int(resolved.num_csds_per_permutation))])
     interval_type = _interval_type_cli_name(resolved.interval_type)
     if interval_type is not None and resolved.interval_params is not None:
         cmd.extend(["--intervalType", interval_type, "--intervalParams", resolved.interval_params])
@@ -5924,6 +6371,33 @@ def _dical2_upstream(
                     "compositeLikelihood": resolved.composite_mode,
                     "lociPerHmmStep": int(resolved.loci_per_hmm_step),
                     "seed": 0 if resolved.seed is None else int(resolved.seed),
+                    "metaStartFile": resolved.meta_start_file,
+                    "metaNumStartPoints": resolved.meta_num_start_points,
+                    "metaGridStart": bool(resolved.meta_grid_start),
+                    "metaNumIterations": int(resolved.meta_num_iterations),
+                    "metaKeepBest": (
+                        int(resolved.meta_keep_best)
+                        if resolved.meta_num_iterations > 1
+                        else None
+                    ),
+                    "metaNumPoints": (
+                        resolved.meta_num_points
+                        if resolved.meta_num_iterations > 1
+                        else None
+                    ),
+                    "numPermutations": resolved.num_permutations,
+                    "permutationsFile": (
+                        None
+                        if resolved.permutation_files is None
+                        else [
+                            str(Path(path).expanduser().resolve())
+                            for path in resolved.permutation_files
+                        ]
+                    ),
+                    "diffPermsPerChunk": bool(
+                        resolved.different_permutations_per_contig
+                    ),
+                    "numCsdsPerPerm": resolved.num_csds_per_permutation,
                     "trunkStyle": resolved.trunk_style,
                     "cakeStyle": resolved.cake_style,
                     "addTrunkIntervals": int(resolved.add_trunk_intervals),

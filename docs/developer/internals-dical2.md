@@ -249,3 +249,29 @@ The tracked README exponential-growth and isolation-migration workflows now:
 Native promotion still requires independent structured/growth simulations,
 remaining feature-ledger closure, original-compatible output artifacts, and the
 performance gate.
+
+### 14. PAC permutations and generated starts now follow the pinned Java control flow
+
+The native PAC evaluator now treats each contig as a mixture over permutations.
+For each permutation it visits haplotypes in reverse order, evaluates the
+selected CSD trunk sizes, sums CSD log likelihoods, and combines permutation
+likelihoods with `logsumexp`. Expected-count arrays used by the M-step are
+weighted by the corresponding posterior permutation probability.
+
+Generated permutations reuse one mutable ordering across consecutive
+Java-compatible `Collections.shuffle` operations. File-backed permutations,
+reduced CSD counts, and independent per-contig permutations are supported and
+recorded with hashes and the resolved orders in result provenance. The typed
+upstream bridge forwards the matching original CLI options.
+
+Generated meta starts now cover both the upstream log-spaced grid and seeded
+log-uniform random modes. Grid enumeration preserves the upstream odometer
+order in which the first parameter changes fastest. The complete initial
+candidate file is evaluated before `metaNumPoints` controls later generations.
+
+The frozen live Java checks cover a two-permutation, reduced-CSD PAC
+fixed-point likelihood and all 32 points of a five-parameter generated grid.
+Both agree within `1e-8`. These features remain unpromoted until one-step EM,
+file/per-contig permutations, random-start sequences, and broader independent
+fixtures are covered. This slice closes the known implementation gap without
+claiming full native equivalence.
