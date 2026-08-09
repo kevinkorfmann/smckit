@@ -1526,3 +1526,35 @@ class TestForwardBackward:
         # Transition counts (no_reco + reco) = L - 1
         total_trans = counts.no_reco_expect.sum() + counts.reco_expect.sum()
         assert total_trans == pytest.approx(L - 1, abs=1e-6)
+        assert counts.transition_expectations is not None
+        assert set(counts.transition_expectations) == {1}
+        step_no_reco, step_reco = counts.transition_expectations[1]
+        np.testing.assert_allclose(step_no_reco, counts.no_reco_expect)
+        np.testing.assert_allclose(step_reco, counts.reco_expect)
+        assert counts.self_reco_expectations is not None
+        self_reco = counts.self_reco_expectations[1]
+        assert np.all(self_reco >= 0.0)
+        assert np.all(self_reco <= np.diag(step_reco) + 1e-14)
+
+    def test_expected_counts_preserves_transition_distances(self):
+        core = self._setup()
+        L = 12
+        rng = np.random.default_rng(13)
+        obs_a = rng.integers(0, 2, size=L)
+        obs_t = rng.integers(0, 2, size=L)
+        step_sizes = np.resize(np.array([1, 3], dtype=np.int64), L)
+        counts = expected_counts(
+            core,
+            obs_a,
+            obs_t,
+            n_alleles=2,
+            step_sizes=step_sizes,
+        )
+
+        assert counts.transition_expectations is not None
+        assert set(counts.transition_expectations) == {1, 3}
+        no_reco = sum(item[0] for item in counts.transition_expectations.values())
+        reco = sum(item[1] for item in counts.transition_expectations.values())
+        np.testing.assert_allclose(no_reco, counts.no_reco_expect)
+        np.testing.assert_allclose(reco, counts.reco_expect)
+        assert no_reco.sum() + reco.sum() == pytest.approx(L - 1, abs=1e-6)

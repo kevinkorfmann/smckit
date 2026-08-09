@@ -121,6 +121,11 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   ARM64 evidence records a `1.3052x` warmed speedup (95% CI
   `1.2835-1.3544x`), a `0.5959` peak-memory ratio, identical fitted
   parameters, and a maximum final-likelihood difference below `4e-12`.
+- Add independent fitted clean-split, migration-window, and three-population
+  Java oracles. Native diCal2 now retains transition-distance-specific EM
+  statistics and matches the default Java objective's treatment of
+  recombination back into the same lineage, closing all three one-step
+  endpoints at `1e-12` parameter and `1e-5` likelihood tolerances.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

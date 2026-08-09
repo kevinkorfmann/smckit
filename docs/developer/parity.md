@@ -55,10 +55,10 @@ and the remaining work before declaring the oracle complete.
 
 ## diCal2
 
-**Progress:** The vendored README fixtures share upstream/native result normalization, and the native search path runs independently with Java-style RNG handling, exact Java `nextLong` spawning, and Java-style coordinatewise shuffle semantics. The native optimizer reaches the same best-fit parameter vector as upstream on both README `exp` and README `IM`. Matching the Java ODE tolerance and Ethan-trunk infinite-tail stopping rule closes the fixed-point likelihood differences to at most `5.38e-11`.
+**Progress:** The vendored README fixtures share upstream/native result normalization, and the native search path runs independently with Java-style RNG handling, exact Java `nextLong` spawning, and Java-style coordinatewise shuffle semantics. The native optimizer reaches the same best-fit parameter vector as upstream on both README `exp` and README `IM`. Matching the Java ODE tolerance and Ethan-trunk infinite-tail stopping rule closes the fixed-point likelihood differences to at most `5.38e-11`. Independent fitted clean-split, migration-window, three-population, pulse-introgression, and exponential-growth one-step simulations now reproduce the Java endpoint. Transition sufficient statistics remain grouped by physical HMM distance, and the default M-step matches Java's conditioning that merges no-recombination with recombination back into the same lineage.
 **Decisions:** Keep the `diCal2.jar` bundle as the reference, normalize upstream results into the same plot-ready `time`/`ne` fields as native, and preserve upstream numerical quirks when they affect results. The former full-search expected failure is now a strict scheduled oracle.
 **Context:** diCal2 is the most experimental method shipped, so parity ensures we understand the limits of our tokenizer, stochastic optimizer replay, and Java-bridge validation path.
-**Remaining tasks:** Add independent structured/growth simulations, original-compatible native output artifacts, broader feature-ledger coverage, and performance evidence before reconsidering the native trust warning.
+**Remaining tasks:** Add structured PAC and trunk/conditional-objective simulations, complete the original-compatible artifact catalogue, and gather Linux plus broader-workflow performance evidence before reconsidering the native trust warning.
 **References:** :doc:`methods/dical2`, :doc:`internals-dical2`, ``tests/integration/test_dical2_upstream_validation.py``
 
 ## SMC++
