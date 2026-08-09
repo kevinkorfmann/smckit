@@ -1005,6 +1005,8 @@ _HALF_MIGRATION_TRUNK_STYLES = {
     "migratingethan",
 }
 
+_DICAL2_CAKE_STYLES = {"beginning", "middle", "end", "average"}
+
 
 def _trunk_style_halves_migration_rates(trunk_style: str) -> bool:
     return trunk_style.lower() in _HALF_MIGRATION_TRUNK_STYLES
@@ -1072,7 +1074,7 @@ def _halve_demo_migration_rates(demo: DiCal2Demo) -> DiCal2Demo:
 
 @dataclass
 class SimpleTrunk:
-    """Native approximation of the upstream diCal2 trunk process."""
+    """Native implementations of the upstream diCal2 trunk-process families."""
 
     config: DiCal2Config
     additional_hap_idx: int  # the haplotype currently being conditioned on
@@ -1084,6 +1086,12 @@ class SimpleTrunk:
     def __post_init__(self) -> None:
         self.trunk_style = self.trunk_style.lower()
         self.cake_style = self.cake_style.lower()
+        if self.cake_style not in _DICAL2_CAKE_STYLES:
+            raise ValueError(f"Unsupported diCal2 cake_style: {self.cake_style}")
+        if self.trunk_style in {"migratingethan", "recursive"} and self.cake_style == "middle":
+            raise ValueError(
+                f"diCal2 trunk_style={self.trunk_style!r} does not support cake_style='middle'."
+            )
         self.sample_sizes = np.zeros(self.config.n_populations, dtype=np.float64)
         for hap_idx in self._iter_trunk_haps():
             present = int(self.config.haplotype_populations[hap_idx])
@@ -1159,6 +1167,298 @@ class SimpleTrunk:
             self._fraction_by_interval.append(fractions)
             self._absorb_rates_by_interval.append(absorb_rates)
 
+    def _representative_time(self, interval: int, cake_style: str | None = None) -> float:
+        assert self.refined is not None
+        style = self.cake_style if cake_style is None else cake_style
+        start = float(self.refined.refined_boundaries[interval])
+        end = float(self.refined.refined_boundaries[interval + 1])
+        if style == "beginning":
+            return start
+        if style == "end":
+            return math.inf if end >= DICAL2_T_INF - EPS else end
+        if style == "middle":
+            return start + 1.0 if end >= DICAL2_T_INF - EPS else 0.5 * (start + end)
+        raise ValueError(f"Cake style {style!r} has no representative time.")
+
+    @staticmethod
+    def _expected_lineage_count(n_lineages: int, time: float) -> float:
+        """Expected Kingman lineage count used by the original cake trunks."""
+        if n_lineages == 0:
+            return 0.0
+        if time == 0.0:
+            return float(n_lineages)
+        if math.isinf(time):
+            return 1.0
+        fractions = np.empty(n_lineages + 1, dtype=np.float64)
+        fractions[0] = 1.0
+        for idx in range(1, n_lineages + 1):
+            fractions[idx] = (
+                (n_lineages - idx + 1) / float(n_lineages + idx - 1) * fractions[idx - 1]
+            )
+        total = 0.0
+        for idx in range(1, n_lineages + 1):
+            total += math.exp(-idx * (idx - 1) * time / 2.0) * (2 * idx - 1) * fractions[idx]
+        return total
+
+    def _rescaled_time(self, ancestral_time: float, pop_sizes: np.ndarray) -> float:
+        assert self.refined is not None
+        if math.isinf(ancestral_time):
+            return math.inf
+        elapsed = 0.0
+        for interval in range(self.refined.n_refined):
+            if self.refined.is_pulse(interval):
+                continue
+            start = float(self.refined.refined_boundaries[interval])
+            end = float(self.refined.refined_boundaries[interval + 1])
+            if ancestral_time <= start:
+                break
+            duration = min(ancestral_time, end) - start
+            if duration > 0.0:
+                elapsed += duration / max(float(pop_sizes[interval]), EPS)
+            if ancestral_time <= end:
+                break
+        return elapsed
+
+    def _cake_factors(self, n_lineages: int, pop_sizes: np.ndarray) -> np.ndarray:
+        assert self.refined is not None
+
+        def factors(style: str) -> np.ndarray:
+            result = np.ones(self.refined.n_refined, dtype=np.float64)
+            if n_lineages == 0:
+                return result
+            for interval in range(self.refined.n_refined):
+                if self.refined.is_pulse(interval):
+                    continue
+                time = self._representative_time(interval, style)
+                rescaled = self._rescaled_time(time, pop_sizes)
+                result[interval] = self._expected_lineage_count(n_lineages, rescaled) / n_lineages
+            return result
+
+        if self.cake_style == "average":
+            return 0.5 * (factors("beginning") + factors("end"))
+        return factors(self.cake_style)
+
+    def _build_cake_interval_data(self, *, mean_population_size: bool, per_deme: bool) -> None:
+        assert self.refined is not None
+        self._build_simple_interval_data()
+        assert self._fraction_by_interval is not None
+        effective_sizes = np.ones(self.refined.n_refined, dtype=np.float64)
+        if mean_population_size:
+            for interval in range(self.refined.n_refined):
+                epoch = _refined_interval_epoch(self.refined, interval)
+                if not self.refined.is_pulse(interval) and epoch.pop_sizes is not None:
+                    effective_sizes[interval] = float(np.mean(epoch.pop_sizes))
+
+        if not per_deme:
+            factors = self._cake_factors(
+                int(round(float(np.sum(self.sample_sizes)))), effective_sizes
+            )
+            assert self._absorb_rates_by_interval is not None
+            for interval in range(self.refined.n_refined):
+                self._absorb_rates_by_interval[interval] *= factors[interval]
+            return
+
+        factors_by_present = np.ones(
+            (self.config.n_populations, self.refined.n_refined), dtype=np.float64
+        )
+        for present in range(self.config.n_populations):
+            present_sizes = np.ones(self.refined.n_refined, dtype=np.float64)
+            for interval in range(self.refined.n_refined):
+                epoch = _refined_interval_epoch(self.refined, interval)
+                if self.refined.is_pulse(interval) or epoch.pop_sizes is None:
+                    continue
+                for ancient, group in enumerate(epoch.partition):
+                    if present in group:
+                        present_sizes[interval] = float(epoch.pop_sizes[ancient])
+                        break
+            factors_by_present[present] = self._cake_factors(
+                int(round(float(self.sample_sizes[present]))), present_sizes
+            )
+
+        self._absorb_rates_by_interval = []
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            if self.refined.is_pulse(interval) or epoch.pop_sizes is None:
+                self._absorb_rates_by_interval.append(
+                    np.zeros(len(epoch.partition), dtype=np.float64)
+                )
+                continue
+            rates = np.zeros(len(epoch.partition), dtype=np.float64)
+            for ancient, group in enumerate(epoch.partition):
+                mass = sum(
+                    factors_by_present[present, interval] * self.sample_sizes[present]
+                    for present in group
+                )
+                rates[ancient] = mass / float(epoch.pop_sizes[ancient])
+            self._absorb_rates_by_interval.append(rates)
+
+    def _time_zero_for_expected_count(self, n_lineages: int, target: float) -> float:
+        lower = 0.0
+        upper = 1000.0
+        while True:
+            pivot = 0.5 * (upper + lower)
+            if self._expected_lineage_count(n_lineages, pivot) < target:
+                upper = pivot
+            else:
+                lower = pivot
+            if (upper - lower) / upper < 0.0001 or upper < EPS:
+                return 0.5 * (lower + upper)
+
+    def _build_updating_cake_interval_data(self) -> None:
+        assert self.refined is not None
+        self._build_simple_interval_data()
+        last_ending_sizes: np.ndarray | None = None
+        rates: list[np.ndarray] = []
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            n_anc = len(epoch.partition)
+            starting_sizes = np.zeros(n_anc, dtype=np.float64)
+            if interval == 0:
+                starting_sizes[:] = self.sample_sizes[:n_anc]
+            else:
+                assert last_ending_sizes is not None
+                prev_partition = _refined_interval_epoch(self.refined, interval - 1).partition
+                for ancient in range(n_anc):
+                    for member in self._member_demes(prev_partition, epoch.partition, ancient):
+                        starting_sizes[ancient] += last_ending_sizes[member]
+
+            if self.refined.is_pulse(interval):
+                last_ending_sizes = starting_sizes.copy()
+                rates.append(np.zeros(n_anc, dtype=np.float64))
+                continue
+
+            assert epoch.pop_sizes is not None
+            pop_sizes = np.asarray(epoch.pop_sizes, dtype=np.float64)
+            start = float(self.refined.refined_boundaries[interval])
+            end = float(self.refined.refined_boundaries[interval + 1])
+            upstream_end = math.inf if end >= DICAL2_T_INF - EPS else end
+            ending_sizes = np.zeros(n_anc, dtype=np.float64)
+            trunk_sizes = np.zeros(n_anc, dtype=np.float64)
+            for ancient in range(n_anc):
+                initial_n = int(math.ceil(float(starting_sizes[ancient])))
+                time_zero = self._time_zero_for_expected_count(
+                    initial_n, float(starting_sizes[ancient])
+                )
+                scaled_end = time_zero + (upstream_end - start) / float(pop_sizes[ancient])
+                ending_sizes[ancient] = self._expected_lineage_count(initial_n, scaled_end)
+                if self.cake_style == "beginning":
+                    trunk_sizes[ancient] = starting_sizes[ancient]
+                elif self.cake_style == "end":
+                    trunk_sizes[ancient] = ending_sizes[ancient]
+                elif self.cake_style == "middle":
+                    middle = self._representative_time(interval, "middle")
+                    adjusted = time_zero + (middle - start) / float(pop_sizes[ancient])
+                    trunk_sizes[ancient] = self._expected_lineage_count(initial_n, adjusted)
+                else:
+                    trunk_sizes[ancient] = 0.5 * (starting_sizes[ancient] + ending_sizes[ancient])
+            last_ending_sizes = ending_sizes
+            rates.append(
+                np.divide(
+                    trunk_sizes,
+                    pop_sizes,
+                    out=np.zeros_like(trunk_sizes),
+                    where=pop_sizes > 0.0,
+                )
+            )
+        self._absorb_rates_by_interval = rates
+
+    @staticmethod
+    def _ancestral_count_probability(initial: int, remaining: int, time: float) -> float:
+        """Kingman pure-death probability, evaluated independently by a matrix exponential."""
+        if not 1 <= remaining <= initial:
+            return 0.0
+        if time == 0.0:
+            return 1.0 if remaining == initial else 0.0
+        if math.isinf(time):
+            return 1.0 if remaining == 1 else 0.0
+        generator = np.zeros((initial, initial), dtype=np.float64)
+        for count in range(2, initial + 1):
+            rate = count * (count - 1) / 2.0
+            generator[count - 1, count - 1] = -rate
+            generator[count - 1, count - 2] = rate
+        return float(expm(generator * time)[initial - 1, remaining - 1])
+
+    @staticmethod
+    def _conditional_lineage_survival(n_trunk: int, n_coalescences: int) -> float:
+        probability = 1.0
+        for sample_size in range(n_trunk + 1, n_trunk + 1 - n_coalescences, -1):
+            probability *= (sample_size - 2) / sample_size
+        return probability
+
+    def _exact_absorption_probability(self, n_trunk: int, time: float) -> float:
+        probability = 0.0
+        for n_coalescences in range(n_trunk + 1):
+            remaining = n_trunk + 1 - n_coalescences
+            count_probability = self._ancestral_count_probability(n_trunk + 1, remaining, time)
+            probability += count_probability * (
+                1.0 - self._conditional_lineage_survival(n_trunk, n_coalescences)
+            )
+        return min(1.0, max(0.0, probability))
+
+    def _build_exact_cake_interval_data(self) -> None:
+        assert self.refined is not None
+        if self.config.n_populations != 1:
+            raise ValueError("diCal2 trunk_style='exactCake' requires one population.")
+        self._build_simple_interval_data()
+        n_trunk = int(round(float(np.sum(self.sample_sizes))))
+        if n_trunk <= 0:
+            raise ValueError("diCal2 trunk_style='exactCake' requires a non-empty trunk.")
+        pop_sizes = np.ones(self.refined.n_refined, dtype=np.float64)
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            if epoch.pop_sizes is not None:
+                pop_sizes[interval] = float(np.mean(epoch.pop_sizes))
+
+        end_times = np.asarray(
+            [
+                self._representative_time(interval, "end")
+                for interval in range(self.refined.n_refined)
+            ],
+            dtype=np.float64,
+        )
+        rescaled_ends = np.asarray(
+            [self._rescaled_time(time, pop_sizes) for time in end_times], dtype=np.float64
+        )
+        factors = np.zeros(self.refined.n_refined, dtype=np.float64)
+        previous_absorption = 0.0
+        previous_rescaled_time = 0.0
+        for interval in range(self.refined.n_refined - 1):
+            current_absorption = self._exact_absorption_probability(
+                n_trunk, float(rescaled_ends[interval])
+            )
+            conditional = (current_absorption - previous_absorption) / (1.0 - previous_absorption)
+            total_rate = -math.log1p(-conditional)
+            duration = float(
+                self.refined.refined_boundaries[interval + 1]
+                - self.refined.refined_boundaries[interval]
+            )
+            if duration > 0.0:
+                factors[interval] = min(
+                    1.0,
+                    max(0.0, total_rate * pop_sizes[interval] / (n_trunk * duration)),
+                )
+            else:
+                factors[interval] = 1.0
+            previous_absorption = current_absorption
+            previous_rescaled_time = float(rescaled_ends[interval])
+
+        expected_remaining_time = 0.0
+        conditional_expectation = 0.0
+        for k_trunk in range(1, n_trunk + 1):
+            conditional_expectation = 2.0 / ((k_trunk + 1) * k_trunk) + (
+                (k_trunk - 1) / (k_trunk + 1) * conditional_expectation
+            )
+            joint_probability = self._conditional_lineage_survival(
+                n_trunk, n_trunk - k_trunk
+            ) * self._ancestral_count_probability(n_trunk + 1, k_trunk + 1, previous_rescaled_time)
+            expected_remaining_time += conditional_expectation * joint_probability
+        expected_remaining_time /= 1.0 - previous_absorption
+        factors[-1] = 1.0 / (expected_remaining_time * n_trunk)
+
+        assert self._absorb_rates_by_interval is not None
+        for interval in range(self.refined.n_refined):
+            self._absorb_rates_by_interval[interval] *= factors[interval]
+
     def _build_migrating_transition_probs(self) -> list[np.ndarray | None]:
         assert self.refined is not None
         transitions: list[np.ndarray | None] = []
@@ -1192,9 +1492,53 @@ class SimpleTrunk:
                 transitions.append(start)
             elif self.cake_style == "end":
                 transitions.append(end)
+            elif self.cake_style == "middle":
+                midpoint = self._representative_time(interval, "middle")
+                update = self._transition_update(
+                    epoch.migration_matrix,
+                    midpoint - float(self.refined.refined_boundaries[interval]),
+                    n_anc,
+                )
+                transitions.append(start @ update)
             else:
                 transitions.append(0.5 * (start + end))
         return transitions
+
+    def _apply_migrating_wrapper(self) -> None:
+        assert self.refined is not None
+        assert self._fraction_by_interval is not None
+        assert self._absorb_rates_by_interval is not None
+        nonmigrating_fractions = self._fraction_by_interval
+        nonmigrating_rates = self._absorb_rates_by_interval
+        transitions = self._build_migrating_transition_probs()
+        wrapped_rates: list[np.ndarray] = []
+        wrapped_fractions: list[np.ndarray] = []
+        for interval in range(self.refined.n_refined):
+            epoch = _refined_interval_epoch(self.refined, interval)
+            n_anc = len(epoch.partition)
+            transition = transitions[interval]
+            if transition is None:
+                wrapped_rates.append(np.zeros(n_anc, dtype=np.float64))
+                wrapped_fractions.append(
+                    np.zeros((self.config.n_populations, n_anc), dtype=np.float64)
+                )
+                continue
+            present_mass = np.zeros(self.config.n_populations, dtype=np.float64)
+            for other_ancient in range(n_anc):
+                present_mass += (
+                    nonmigrating_rates[interval][other_ancient]
+                    * nonmigrating_fractions[interval][:, other_ancient]
+                )
+            wrapped_rates.append(present_mass @ transition)
+            fractions = np.zeros((self.config.n_populations, n_anc), dtype=np.float64)
+            for ancient in range(n_anc):
+                column = self.sample_sizes * transition[:, ancient]
+                total = float(np.sum(column))
+                if total > 0.0:
+                    fractions[:, ancient] = column / total
+            wrapped_fractions.append(fractions)
+        self._absorb_rates_by_interval = wrapped_rates
+        self._fraction_by_interval = wrapped_fractions
 
     def _solve_ethan_epoch(
         self,
@@ -1343,6 +1687,29 @@ class SimpleTrunk:
     def _build_interval_data(self) -> None:
         if self.trunk_style == "simple":
             self._build_simple_interval_data()
+            return
+        if self.trunk_style == "oldcake":
+            self._build_cake_interval_data(mean_population_size=False, per_deme=False)
+            return
+        if self.trunk_style == "meancake":
+            self._build_cake_interval_data(mean_population_size=True, per_deme=False)
+            return
+        if self.trunk_style == "multicake":
+            self._build_cake_interval_data(mean_population_size=False, per_deme=True)
+            return
+        if self.trunk_style == "migratingmulticake":
+            self._build_cake_interval_data(mean_population_size=False, per_deme=True)
+            self._apply_migrating_wrapper()
+            return
+        if self.trunk_style == "multicakeupdating":
+            self._build_updating_cake_interval_data()
+            return
+        if self.trunk_style == "migmulticakeupdating":
+            self._build_updating_cake_interval_data()
+            self._apply_migrating_wrapper()
+            return
+        if self.trunk_style == "exactcake":
+            self._build_exact_cake_interval_data()
             return
         if self.trunk_style == "migratingethan":
             self._build_migrating_ethan_data()

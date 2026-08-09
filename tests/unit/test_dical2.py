@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -464,6 +465,33 @@ class TestRefineDemography:
 
 
 class TestSimpleTrunk:
+    def test_expected_lineage_count_matches_boundary_cases(self):
+        config = read_dical2_config(f"{VENDOR_EXAMPLES}/fromReadme/exp.config")
+        trunk = SimpleTrunk(config=config, additional_hap_idx=0)
+        assert trunk._expected_lineage_count(8, 0.0) == 8.0
+        assert trunk._expected_lineage_count(8, math.inf) == 1.0
+        assert trunk._expected_lineage_count(0, 2.0) == 0.0
+
+    def test_ancestral_count_probabilities_are_normalized(self):
+        probabilities = [
+            SimpleTrunk._ancestral_count_probability(9, remaining, 0.37)
+            for remaining in range(1, 10)
+        ]
+        assert sum(probabilities) == pytest.approx(1.0, abs=1e-12)
+        assert all(probability >= 0.0 for probability in probabilities)
+
+    def test_rejects_invalid_cake_style_and_middle_ethan(self):
+        config = read_dical2_config(f"{VENDOR_EXAMPLES}/fromReadme/exp.config")
+        with pytest.raises(ValueError, match="cake_style"):
+            SimpleTrunk(config=config, additional_hap_idx=0, cake_style="invalid")
+        with pytest.raises(ValueError, match="does not support"):
+            SimpleTrunk(
+                config=config,
+                additional_hap_idx=0,
+                trunk_style="migratingEthan",
+                cake_style="middle",
+            )
+
     def test_zero_migration_constant_epoch_uses_exact_lineage_solution(self):
         config = read_dical2_config(f"{VENDOR_EXAMPLES}/fromReadme/exp.config")
         trunk = SimpleTrunk(config=config, additional_hap_idx=0)

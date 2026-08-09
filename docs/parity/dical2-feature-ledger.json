@@ -25,7 +25,7 @@
       "manual_surface": ["piecewise size", "growth", "migration", "split", "pulse migration"],
       "native_status": "native_unpromoted",
       "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "tests/integration/test_dical2_structured_oracles.py", "workflow/publication/evidence/dical2-introgression/sha256-c339dbb6", "workflow/publication/evidence/dical2-growth/sha256-c339dbb6"],
-      "remaining": "Independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth oracles now cover both fixed-point likelihoods and fitted one-step endpoints. Pulse introgression and growth also clear capability-specific macOS performance gates. Add structured PAC/trunk-control families and cross-platform performance evidence."
+      "remaining": "Independent clean-split, migration-window, three-population, pulse-introgression, and exponential-growth oracles now cover both fixed-point likelihoods and fitted one-step endpoints. Structured PAC and all runnable original trunk families have strict coverage. Pulse introgression and growth also clear capability-specific macOS performance gates. Add empirical PAC, remaining ancient-state/additional-interval breadth, and cross-platform performance evidence."
     },
     {
       "id": "vcf_external_reference",
@@ -114,8 +114,8 @@
       "id": "trunk_and_hidden_state_controls",
       "manual_surface": ["--trunkStyle", "--cakeStyle", "--ancientDemeStates", "--addTrunkIntervals"],
       "native_status": "native_unpromoted",
-      "evidence": ["tests/unit/test_dical2.py"],
-      "remaining": "Freeze an oracle for each scientifically meaningful trunk style."
+      "evidence": ["TestSimpleTrunk", "test_dical2_native_trunk_style_fixed_points_match_upstream", "test_dical2_native_trunk_style_one_step_matches_upstream", "test_dical2_native_structured_trunk_fixed_points_match_upstream", "test_dical2_recursive_trunk_characterizes_upstream_null_trunk_failure"],
+      "remaining": "Simple, oldCake, meanCake, multiCake, multiCakeUpdating, migratingMultiCake, migMultiCakeUpdating, exactCake, and migratingEthan are implemented. All four valid cake sampling modes have fixed-point Java oracles, all newly implemented families have fitted one-step oracles, and structured average-cake oracles cover every non-exact family. The pinned recursive factory returns a null trunk in the normal CLI and its failure is frozen. Ancient-deme-state and additional-trunk-interval breadth remains unpromoted."
     },
     {
       "id": "original_compatible_outputs",
@@ -133,7 +133,7 @@
   ],
   "promotion_blockers": [
     "Empirical PAC validation, including the native repaired all-CSD default",
-    "Structured trunk-style oracle families and a repaired-source marginal-KL oracle",
+    "Ancient-deme-state/additional-trunk-interval breadth and a repaired-source marginal-KL oracle",
     "Complete original-compatible artifact catalogue",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"
   ]

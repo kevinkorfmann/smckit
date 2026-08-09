@@ -80,8 +80,11 @@
   migration-window, three-population, pulse-introgression, and growth oracles
   reproduce the Java endpoints; transition-type conditioning also has a strict
   fitted oracle. Generated and file-backed structured PAC one-step fits also
-  agree. Native marginal-KL and the all-CSD PAC default repair distinct pinned
-  Java null-reference crashes and remain experimental. Alternate trunk
-  controls, detailed artifacts, and broader cross-platform performance remain
-  unpromoted.
+  agree. All runnable original trunk families now have native fixed-point
+  coverage; cake and exact families also have fitted one-step coverage. The
+  pinned recursive CLI path returns a null trunk and is preserved as a failure.
+  Native marginal-KL and the all-CSD PAC default repair distinct pinned Java
+  null-reference crashes and remain experimental. Ancient-state/additional-
+  interval controls, detailed artifacts, and broader cross-platform
+  performance remain unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.
