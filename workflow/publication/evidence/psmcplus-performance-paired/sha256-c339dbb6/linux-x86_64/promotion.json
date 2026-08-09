@@ -1,0 +1,87 @@
+{
+  "comparisons": [
+    {
+      "mode": "fit",
+      "paired_warm_core": {
+        "bootstrap_design": "paired median speedup",
+        "confidence": 0.95,
+        "repetitions": 5,
+        "speed_gate_passed": true,
+        "speedup": 2.1613194236527997,
+        "speedup_confidence_interval": [
+          2.0676297794753373,
+          2.1880922933960343
+        ]
+      },
+      "promotion_gate_passed": true,
+      "typed_end_to_end": {
+        "memory_gate_passed": true,
+        "memory_ratio": 0.38675313923002624,
+        "native_cold_wall_seconds": 0.21735222823917866,
+        "native_peak_memory_median_bytes": 229605376,
+        "runtime_claim_eligible": false,
+        "upstream_peak_memory_median_bytes": 593674240
+      }
+    },
+    {
+      "mode": "decode",
+      "paired_warm_core": {
+        "bootstrap_design": "paired median speedup",
+        "confidence": 0.95,
+        "repetitions": 5,
+        "speed_gate_passed": true,
+        "speedup": 1.0960382228322492,
+        "speedup_confidence_interval": [
+          1.058645203847136,
+          1.1367770172016636
+        ]
+      },
+      "promotion_gate_passed": true,
+      "typed_end_to_end": {
+        "memory_gate_passed": true,
+        "memory_ratio": 0.3854708003674807,
+        "native_cold_wall_seconds": 0.23233524151146412,
+        "native_peak_memory_median_bytes": 230293504,
+        "runtime_claim_eligible": false,
+        "upstream_peak_memory_median_bytes": 597434368
+      }
+    }
+  ],
+  "environment": {
+    "core": {
+      "numpy": "2.4.4",
+      "platform": "Linux-6.8.0-111-generic-x86_64-with-glibc2.39",
+      "python": "3.12.3"
+    },
+    "typed_end_to_end": {
+      "cpu_count": 80,
+      "machine": "x86_64",
+      "numeric_threads": 1,
+      "python": "3.12.3",
+      "release": "6.8.0-111-generic",
+      "system": "Linux"
+    }
+  },
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "method": "psmcplus",
+  "performance_gate_passed": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "schema_version": 1,
+  "source": {
+    "clean": true,
+    "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+    "status": []
+  },
+  "source_records": {
+    "end_to_end": {
+      "path": "/tmp/smckit-psmcplus-paired-f0088c7/results-c9df632/end-to-end.json",
+      "sha256": "de88122efa192fbb151839450fb19997672e32aadb9df611c47382c70fb16c8d"
+    },
+    "warm_core": {
+      "path": "/tmp/smckit-psmcplus-paired-f0088c7/results-c9df632/warm-core.json",
+      "sha256": "c7bd60e664996c15924af8a8ee7de020f4414765390675eb8ac89463309de7c8"
+    }
+  },
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

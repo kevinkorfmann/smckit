@@ -41,8 +41,9 @@ The retained clean-commit Linux x86-64 record is under
 record is under `evidence/psmcplus-macos-arm64/sha256-73ea05e5/`. Both pass all
 twelve fit/decode cases. This closes the cross-platform deterministic
 simulation surface, but does not by itself authorize native `auto`;
-accession-recorded human/nonhuman empirical validation and a paired macOS
-performance run remain open gates.
+accession-recorded human/nonhuman empirical validation remains an open gate.
+The paired cross-platform speed and memory records are under
+`evidence/psmcplus-performance-paired/sha256-c339dbb6/`.
 
 The conceptual preservation/promotion schematic is code-generated and can be
 rendered independently of benchmark evidence:

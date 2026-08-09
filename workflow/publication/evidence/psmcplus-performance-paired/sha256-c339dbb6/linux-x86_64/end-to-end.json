@@ -1,0 +1,78 @@
+{
+  "bootstrap_replicates": 20000,
+  "bootstrap_seed": 1729,
+  "comparisons": [
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_gate_passed": true,
+      "memory_ratio": 0.38675313923002624,
+      "memory_within_25_percent": true,
+      "mode": "fit",
+      "native_cold_wall_seconds": 0.21735222823917866,
+      "native_peak_memory_median_bytes": 229605376,
+      "native_warm_median_seconds": 0.026907311752438545,
+      "runtime_promotion_eligible": false,
+      "speedup": 485.2961195584612,
+      "speedup_confidence_interval": [
+        471.05904105902596,
+        491.0842838246633
+      ],
+      "upstream_median_seconds": 13.058013981208205,
+      "upstream_peak_memory_median_bytes": 593674240,
+      "warm_repetitions": 5
+    },
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_gate_passed": true,
+      "memory_ratio": 0.3854708003674807,
+      "memory_within_25_percent": true,
+      "mode": "decode",
+      "native_cold_wall_seconds": 0.23233524151146412,
+      "native_peak_memory_median_bytes": 230293504,
+      "native_warm_median_seconds": 0.0426994152367115,
+      "runtime_promotion_eligible": false,
+      "speedup": 318.62404601381064,
+      "speedup_confidence_interval": [
+        315.07445904964464,
+        323.3427886952341
+      ],
+      "upstream_median_seconds": 13.605060445144773,
+      "upstream_peak_memory_median_bytes": 597434368,
+      "warm_repetitions": 5
+    }
+  ],
+  "dataset": "pinned-upstream-constant-population",
+  "environment": {
+    "cpu_count": 80,
+    "machine": "x86_64",
+    "numeric_threads": 1,
+    "python": "3.12.3",
+    "release": "6.8.0-111-generic",
+    "system": "Linux"
+  },
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "memory_gate_passed": true,
+  "method": "psmcplus",
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "runtime_design": "separate implementation processes; diagnostic only",
+  "schema_version": 2,
+  "source": {
+    "clean": true,
+    "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+    "status": []
+  },
+  "source_sha256": {
+    "decode": {
+      "native": "098b0ac8e55ea47b533223ee65db5637f82c8120e1474d868f491277ce95a0ae",
+      "upstream": "99aa50102e267b335bfedb83e83098d3371954e881485323f1178869e2d0f73b"
+    },
+    "fit": {
+      "native": "b1638a3faf03a40ab3b26d7fa715e0597b58f09ee2d7afc5dc20a564023a68e6",
+      "upstream": "b350b23688068807438f5b348f3d35750dac2e3d5a6584ea016351ff865cd379"
+    }
+  },
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

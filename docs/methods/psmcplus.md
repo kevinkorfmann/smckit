@@ -175,11 +175,16 @@ was `2.01e-12`, and decoded positions were exact. The checksum-addressed record
 is under
 `workflow/publication/evidence/psmcplus-macos-arm64/sha256-73ea05e5/`.
 
-The frozen one-thread Linux x86-64 benchmark uses five repetitions and 20,000
-bootstrap resamples. With both engines warmed in the same Python process, native
-fit is 2.27x faster (95% CI 2.22--2.32) and decoding is 1.25x faster (95% CI
-1.21--1.27). The separate end-to-end measurement reports native peak memory at
-0.394x upstream or lower and records cold JIT cost independently. The immutable
-records, raw timings, checksums, and reproduction scripts are under
-`benchmarks/psmcplus/`. Human/nonhuman empirical validation and a paired macOS
-performance run remain required before changing `auto`.
+The current cross-platform benchmark uses five counterbalanced warmed pairs
+and 20,000 paired-bootstrap samples per capability. On Linux x86-64, native fit
+is 2.16x faster (95% CI 2.07--2.19) and decoding is 1.10x faster (1.06--1.14).
+On macOS ARM64, fit is 2.32x faster (2.29--2.35) and decoding is 1.11x faster
+(1.11--1.12). Separate typed end-to-end measurements put native median peak
+memory between 0.363x and 0.387x upstream across both capabilities and record
+cold native cost independently. Subprocess-heavy end-to-end runtimes are
+diagnostic and are not used for the speed claim. The immutable paired records
+and raw measurements are under
+`workflow/publication/evidence/psmcplus-performance-paired/sha256-c339dbb6/`;
+the earlier Linux records remain under `benchmarks/psmcplus/` for audit
+history. Human/nonhuman empirical validation remains required before changing
+`auto`.

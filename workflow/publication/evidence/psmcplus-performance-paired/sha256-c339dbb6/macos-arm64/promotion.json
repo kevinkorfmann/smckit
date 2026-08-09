@@ -1,0 +1,87 @@
+{
+  "comparisons": [
+    {
+      "mode": "fit",
+      "paired_warm_core": {
+        "bootstrap_design": "paired median speedup",
+        "confidence": 0.95,
+        "repetitions": 5,
+        "speed_gate_passed": true,
+        "speedup": 2.320573179014153,
+        "speedup_confidence_interval": [
+          2.287929505914492,
+          2.345880053765763
+        ]
+      },
+      "promotion_gate_passed": true,
+      "typed_end_to_end": {
+        "memory_gate_passed": true,
+        "memory_ratio": 0.3634876492720432,
+        "native_cold_wall_seconds": 0.10781999997561797,
+        "native_peak_memory_median_bytes": 182026240,
+        "runtime_claim_eligible": false,
+        "upstream_peak_memory_median_bytes": 500776960
+      }
+    },
+    {
+      "mode": "decode",
+      "paired_warm_core": {
+        "bootstrap_design": "paired median speedup",
+        "confidence": 0.95,
+        "repetitions": 5,
+        "speed_gate_passed": true,
+        "speedup": 1.1115802899037979,
+        "speedup_confidence_interval": [
+          1.1079134556379635,
+          1.1228617279333826
+        ]
+      },
+      "promotion_gate_passed": true,
+      "typed_end_to_end": {
+        "memory_gate_passed": true,
+        "memory_ratio": 0.36636880584890336,
+        "native_cold_wall_seconds": 0.12131758301984519,
+        "native_peak_memory_median_bytes": 184729600,
+        "runtime_claim_eligible": false,
+        "upstream_peak_memory_median_bytes": 504217600
+      }
+    }
+  ],
+  "environment": {
+    "core": {
+      "numpy": "2.4.4",
+      "platform": "macOS-26.2-arm64-arm-64bit",
+      "python": "3.12.11"
+    },
+    "typed_end_to_end": {
+      "cpu_count": 11,
+      "machine": "arm64",
+      "numeric_threads": 1,
+      "python": "3.12.11",
+      "release": "25.2.0",
+      "system": "Darwin"
+    }
+  },
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "method": "psmcplus",
+  "performance_gate_passed": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "schema_version": 1,
+  "source": {
+    "clean": true,
+    "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+    "status": []
+  },
+  "source_records": {
+    "end_to_end": {
+      "path": "/private/tmp/smckit-psmcplus-arm64.s7eyRo/results-c9df632/end-to-end.json",
+      "sha256": "c4977e0ccc7bb5d26673c71a98c0bbc8eecc25ebd4eb2133b354f0968daa46a4"
+    },
+    "warm_core": {
+      "path": "/private/tmp/smckit-psmcplus-arm64.s7eyRo/results-c9df632/warm-core.json",
+      "sha256": "a95f255f467f2b0a147bc83b58cc82b5afa0fe3b550c1934c1949691311f8487"
+    }
+  },
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

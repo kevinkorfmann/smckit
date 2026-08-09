@@ -1,0 +1,93 @@
+{
+  "bootstrap_replicates": 20000,
+  "bootstrap_seed": 1729,
+  "decode": {
+    "bootstrap_design": "paired median speedup",
+    "confidence": 0.95,
+    "faster_with_confidence": true,
+    "native_median_seconds": 0.00401262502418831,
+    "native_seconds": [
+      0.0040379579877480865,
+      0.004030333016999066,
+      0.0040021250024437904,
+      0.0040083330241031945,
+      0.00401262502418831
+    ],
+    "pairwise_speedups": [
+      1.1079134556379635,
+      1.1085002101512877,
+      1.1228617279333826,
+      1.1115802899037979,
+      1.1141085853182324
+    ],
+    "speedup": 1.1115802899037979,
+    "speedup_confidence_interval": [
+      1.1079134556379635,
+      1.1228617279333826
+    ],
+    "upstream_median_seconds": 0.0044704999891109765,
+    "upstream_seconds": [
+      0.0044737079879269,
+      0.0044676249963231385,
+      0.004493832995649427,
+      0.004455583984963596,
+      0.0044704999891109765
+    ]
+  },
+  "environment": {
+    "numpy": "2.4.4",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "python": "3.12.11"
+  },
+  "fit": {
+    "bootstrap_design": "paired median speedup",
+    "confidence": 0.95,
+    "faster_with_confidence": true,
+    "native_median_seconds": 0.008034957980271429,
+    "native_seconds": [
+      0.008240874973125756,
+      0.008034957980271429,
+      0.00795458402717486,
+      0.008058625040575862,
+      0.00796504196478054
+    ],
+    "pairwise_speedups": [
+      2.287929505914492,
+      2.320573179014153,
+      2.345880053765763,
+      2.30291047368,
+      2.3346706847499266
+    ],
+    "speedup": 2.320573179014153,
+    "speedup_confidence_interval": [
+      2.287929505914492,
+      2.345880053765763
+    ],
+    "upstream_median_seconds": 0.018645707983523607,
+    "upstream_seconds": [
+      0.018854541005566716,
+      0.018645707983523607,
+      0.018660500005353242,
+      0.018558292009402066,
+      0.018595749977976084
+    ]
+  },
+  "input": "vendor/PSMCplus/simulations/constpopsize.mhs",
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "measurement_component": "warmed inference core; upstream preprocessing excluded",
+  "method": "psmcplus",
+  "pair_order": [
+    "native_then_upstream",
+    "upstream_then_native"
+  ],
+  "repetitions": 5,
+  "runtime_gate_passed": true,
+  "schema_version": 2,
+  "source": {
+    "clean": true,
+    "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+    "status": []
+  },
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

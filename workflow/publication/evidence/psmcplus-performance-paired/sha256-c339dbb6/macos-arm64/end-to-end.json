@@ -1,0 +1,78 @@
+{
+  "bootstrap_replicates": 20000,
+  "bootstrap_seed": 1729,
+  "comparisons": [
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_gate_passed": true,
+      "memory_ratio": 0.3634876492720432,
+      "memory_within_25_percent": true,
+      "mode": "fit",
+      "native_cold_wall_seconds": 0.10781999997561797,
+      "native_peak_memory_median_bytes": 182026240,
+      "native_warm_median_seconds": 0.015332166978623718,
+      "runtime_promotion_eligible": false,
+      "speedup": 271.2630607170475,
+      "speedup_confidence_interval": [
+        255.10756612207294,
+        273.6074898527315
+      ],
+      "upstream_median_seconds": 4.159050542046316,
+      "upstream_peak_memory_median_bytes": 500776960,
+      "warm_repetitions": 5
+    },
+    {
+      "confidence": 0.95,
+      "faster_with_confidence": true,
+      "memory_gate_passed": true,
+      "memory_ratio": 0.36636880584890336,
+      "memory_within_25_percent": true,
+      "mode": "decode",
+      "native_cold_wall_seconds": 0.12131758301984519,
+      "native_peak_memory_median_bytes": 184729600,
+      "native_warm_median_seconds": 0.030532667005900294,
+      "runtime_promotion_eligible": false,
+      "speedup": 142.7260731976992,
+      "speedup_confidence_interval": [
+        138.30041377442953,
+        143.7939193460678
+      ],
+      "upstream_median_seconds": 4.357807666005101,
+      "upstream_peak_memory_median_bytes": 504217600,
+      "warm_repetitions": 5
+    }
+  ],
+  "dataset": "pinned-upstream-constant-population",
+  "environment": {
+    "cpu_count": 11,
+    "machine": "arm64",
+    "numeric_threads": 1,
+    "python": "3.12.11",
+    "release": "25.2.0",
+    "system": "Darwin"
+  },
+  "input_sha256": "92771a71b6447b63762c7910ee3c49b1cd329ba9cb69768954e58a4c286cc712",
+  "memory_gate_passed": true,
+  "method": "psmcplus",
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "runtime_design": "separate implementation processes; diagnostic only",
+  "schema_version": 2,
+  "source": {
+    "clean": true,
+    "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+    "status": []
+  },
+  "source_sha256": {
+    "decode": {
+      "native": "145cf0cd485cbf90b7f2483b008e28a21a495612030ea69bdfe521cac9713729",
+      "upstream": "4b7e525f24132236d642f183106363056e259f000422881ed85c8d84212641f1"
+    },
+    "fit": {
+      "native": "f68b09ebef86e67887333dca6245f940585c6d4f752995fb30db7618b151ea73",
+      "upstream": "2167f56cc38716c9353e479ca28b5db0d9788d618eca8dcd8f37d256df8bdeb9"
+    }
+  },
+  "threads": 1,
+  "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+}

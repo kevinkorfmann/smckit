@@ -5,11 +5,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from smckit._provenance import sha256_file
 
 ROOT = Path(__file__).resolve().parents[2]
 MACOS_EVIDENCE = (
     ROOT / "workflow" / "publication" / "evidence" / "psmcplus-macos-arm64" / "sha256-73ea05e5"
+)
+PERFORMANCE_EVIDENCE = (
+    ROOT
+    / "workflow"
+    / "publication"
+    / "evidence"
+    / "psmcplus-performance-paired"
+    / "sha256-c339dbb6"
 )
 
 
@@ -101,3 +111,39 @@ def test_psmcplus_macos_arm64_matrix_checksum() -> None:
     for line in lines:
         expected, filename = line.split(maxsplit=1)
         assert sha256_file(MACOS_EVIDENCE / filename) == expected
+
+
+@pytest.mark.parametrize(
+    ("platform", "machine"),
+    [("linux-x86_64", "x86_64"), ("macos-arm64", "arm64")],
+)
+def test_psmcplus_paired_performance_evidence_passes(platform: str, machine: str) -> None:
+    record = json.loads((PERFORMANCE_EVIDENCE / platform / "promotion.json").read_text())
+
+    assert record["source"] == {
+        "clean": True,
+        "commit": "c9df632ee0220a1a55e0fb58d0211dc3d5284917",
+        "status": [],
+    }
+    assert record["upstream_commit"] == "032168f2ceed3c0e46b7f214f890faf83dff41ae"
+    assert record["threads"] == 1
+    assert record["environment"]["typed_end_to_end"]["machine"] == machine
+    assert record["performance_gate_passed"] is True
+    assert {item["mode"] for item in record["comparisons"]} == {"fit", "decode"}
+    for item in record["comparisons"]:
+        speed = item["paired_warm_core"]
+        memory = item["typed_end_to_end"]
+        assert speed["repetitions"] == 5
+        assert speed["bootstrap_design"] == "paired median speedup"
+        assert speed["speedup_confidence_interval"][0] > 1
+        assert memory["memory_ratio"] <= 1.25
+        assert memory["runtime_claim_eligible"] is False
+        assert item["promotion_gate_passed"] is True
+
+
+def test_psmcplus_paired_performance_checksums() -> None:
+    lines = (PERFORMANCE_EVIDENCE / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 14
+    for line in lines:
+        expected, filename = line.split(maxsplit=1)
+        assert sha256_file(PERFORMANCE_EVIDENCE / filename) == expected

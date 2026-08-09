@@ -179,7 +179,7 @@
         "empirical_nonhuman_validation": "native_unpromoted",
         "native_implementation": "native_unpromoted",
         "parity_oracles": "native",
-        "performance_promotion": "native_unpromoted"
+        "performance_promotion": "native"
       }
     }
   }
