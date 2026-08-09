@@ -353,3 +353,11 @@ sampling process-tree memory. This closes the fitted introgression slice, but
 does not promote all diCal2 capabilities: growth inference, broader fitted
 structured families, artifacts, parallelism, and cross-platform evidence
 remain open.
+
+The content-addressed macOS ARM64 record contains ten warmed repetitions per
+implementation. Native achieved a `1.1380959525x` speedup with a 95% paired
+bootstrap interval of `1.1342672616-1.1433334966x`; its peak process-tree
+memory ratio was `0.4909223672`. The record is tied to source commit `7e01824`
+and the frozen publication protocol. These measurements satisfy the speed and
+memory rules for this capability on macOS only; they are not evidence for
+whole-method promotion or Linux performance.

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "canonical_source_commit": "7e01824ef0d02caf865e12dea3a51923e341331f",
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "execution_host": "ist-0153.vpn.private.upenn.edu",
+  "execution_threads": 1,
+  "platform": {
+    "system": "Darwin 25.2.0",
+    "machine": "arm64",
+    "cpu": "Apple M3 Pro",
+    "memory_bytes": 19327352832
+  },
+  "runtime": {
+    "python": "3.12.11",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "msprime": "1.4.1",
+    "psutil": "7.2.2",
+    "smckit": "0.0.1b2",
+    "java": "OpenJDK 25.0.2 Homebrew"
+  },
+  "source_sha256": {
+    "src/smckit/tl/_dical2.py": "7d0d0cca30ade937f08bf7f2295e197521ae20af8356345e03ad8b73b8ddef00",
+    "workflow/publication/scripts/benchmark_dical2_introgression.py": "74db11c47affb1722b3940fb4f471fa5023aee11803bf777479805eacf358370",
+    "vendor/diCal2/diCal2.jar": "edd72b7eaee65e8b2e12fdcc3200217a81983c50a1bded828395915dc77acfaf",
+    "vendor/diCal2/examples/introgression/mutRec.param": "69b0c99c1c960e7cc16636a190b188d4a0da89fee192a1a379c81c428438629d",
+    "vendor/diCal2/examples/introgression/introgression.demo": "15e4c7d4ea0c80e9221020dffeecee5a96619038b5eb287800e30b0a11d5a9aa",
+    "vendor/diCal2/examples/introgression/introgression.config": "0ed24faa5ed53768fc8de01a2e55a61b44207d2acd10e87a1720ee74f71501f7"
+  },
+  "fixture_sha256": {
+    "introgression.vcf": "e0991cb2c2e879bde931a50b2a2ffa339a91002055477f9177bbeb43f5a7d8b7",
+    "introgression.fa": "3ea3f90d0c3e4d2a4c5710dd482d8da64cd4d8f46ad051537bb807874e034f2b"
+  },
+  "benchmark_record_sha256": {
+    "native": "6a8506fd787618d4bf968545ecc21c403adedd738ac590d9d1bf9c04245c0536",
+    "upstream": "278c85d93a47ea6c60a01fc03efba4cad2f3a65c86a6464a0b9ac678b3e8fe3f"
+  },
+  "upstream_status": "Tracked immutable repository snapshot; origin commit metadata remains an explicit preservation-audit blocker.",
+  "privacy_note": "No private manuscript, continuation checkpoint, publication/ai-use.md, or excluded publication prose was included."
+}

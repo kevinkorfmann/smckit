@@ -1,0 +1,284 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-u",
+    "workflow/publication/scripts/benchmark_dical2_introgression.py",
+    "--implementation",
+    "upstream"
+  ],
+  "dataset": "introgression-msprime-seed109-v1",
+  "fresh_process_repetitions": 0,
+  "implementation": "upstream",
+  "measurement_component": "inference_api_excluding_input_preparation",
+  "measurement_scope": "in_process_call",
+  "method": "dical2",
+  "platform": {
+    "logical_cpu_count": 11,
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.12.11",
+    "release": "25.2.0",
+    "system": "Darwin"
+  },
+  "promotion_eligible": true,
+  "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
+  "record_sha256": "278c85d93a47ea6c60a01fc03efba4cad2f3a65c86a6464a0b9ac678b3e8fe3f",
+  "repetitions": [
+    {
+      "peak_memory_bytes": 487276544,
+      "preparation_peak_memory_bytes": 186941440,
+      "preparation_response_sha256": "1b852d811f759a7616609264970c93e700711c395a916749ea56a46009062b83",
+      "preparation_runtime_seconds": 0.015403833007439971,
+      "repetition": 0,
+      "return_code": 0,
+      "runtime_seconds": 1.5093791249673814,
+      "stdout_bytes": 211,
+      "stdout_sha256": "f07f4daaef8b7790bcb235659858e1e494c6b3597c153cbdc4a96c74bdd486a4",
+      "temperature": "cold",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 493633536,
+      "preparation_peak_memory_bytes": 187088896,
+      "preparation_response_sha256": "eb7d188e66900a7130ab3dbe0f9d31cae2a062a45231c1ee0e95366354064c36",
+      "preparation_runtime_seconds": 0.016890583967324346,
+      "repetition": 1,
+      "return_code": 0,
+      "runtime_seconds": 1.449463666009251,
+      "stdout_bytes": 211,
+      "stdout_sha256": "5df1fa6365c4c13aca0741d21aec018d79ad8de9a203252438eaedde0a73f7d6",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 489930752,
+      "preparation_peak_memory_bytes": 187170816,
+      "preparation_response_sha256": "bcb9be176484eee1da1fd2f4763be62736aaf3ceadfdcffb16784f9d88c75242",
+      "preparation_runtime_seconds": 0.015937040967401117,
+      "repetition": 2,
+      "return_code": 0,
+      "runtime_seconds": 1.4595225420198403,
+      "stdout_bytes": 211,
+      "stdout_sha256": "72bcaedf6d7722fe00dfbf701d660fc5835d56bd7e17e99a580d3fef5e89957a",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 484261888,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "f7e578ab478b460b502698ed5f2846c4e3c0255559bed4a1be646386258c1ebd",
+      "preparation_runtime_seconds": 0.015604874992277473,
+      "repetition": 3,
+      "return_code": 0,
+      "runtime_seconds": 1.4483625830034725,
+      "stdout_bytes": 211,
+      "stdout_sha256": "a177d8e8d871c691065dede906ff4fd744bd5bb9e807f611a8c86e64bf685efa",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 482164736,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "4960585c8a78aae116474a295f17e63f1046e93ade308cc4811383e161a540c6",
+      "preparation_runtime_seconds": 0.016613332962151617,
+      "repetition": 4,
+      "return_code": 0,
+      "runtime_seconds": 1.480356624990236,
+      "stdout_bytes": 211,
+      "stdout_sha256": "4122e03dd4c18621bdbaf2171a6ab5e32b628248cc38e583cf2e6d50d4d8266a",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 485228544,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "d60dea8adf7cb91dde19d049e10b3792f8d17e61f0f5f0bc2e49223785b061ae",
+      "preparation_runtime_seconds": 0.01665812503779307,
+      "repetition": 5,
+      "return_code": 0,
+      "runtime_seconds": 1.4647882919525728,
+      "stdout_bytes": 211,
+      "stdout_sha256": "cbc7b03c9b8a835962ba9647e302bbee8a9c335ce8aee5beeebf7f2f4f520df3",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 491044864,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "a17e9363a57b153ec323d22964eddc4830819e26744c4001fbf501dc32a753fe",
+      "preparation_runtime_seconds": 0.016329499951098114,
+      "repetition": 6,
+      "return_code": 0,
+      "runtime_seconds": 1.4543262500083074,
+      "stdout_bytes": 211,
+      "stdout_sha256": "35425942d6ebb9cf1a39313d12267d5c4de825c057188415ae8794e7e98785f2",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 479182848,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "9dd989d954d29a0a62c04abdc445a4678449c3ea903ddc5b5474fbdb59d903f7",
+      "preparation_runtime_seconds": 0.01661120797507465,
+      "repetition": 7,
+      "return_code": 0,
+      "runtime_seconds": 1.4620536669972353,
+      "stdout_bytes": 211,
+      "stdout_sha256": "cbc030a3a6c9ab940626f8eceda1ef66868dd0cf81d620b04d6337ba368e2575",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 480411648,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "e58ed9a6a568111d1ad18fe41af29113f384807710092c5ef46a373a2b2521c1",
+      "preparation_runtime_seconds": 0.016562292003072798,
+      "repetition": 8,
+      "return_code": 0,
+      "runtime_seconds": 1.4598176250001416,
+      "stdout_bytes": 211,
+      "stdout_sha256": "afb9bf4a7d0a50b37a3e0ea9a80850714d1fc74a709c607a6690c09fd13e9758",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 479854592,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "50e9e19a1fcd631143dfb19fc24f452d6126650e5bbb2adb27b65d140714dee1",
+      "preparation_runtime_seconds": 0.016551374981645495,
+      "repetition": 9,
+      "return_code": 0,
+      "runtime_seconds": 1.461453124997206,
+      "stdout_bytes": 211,
+      "stdout_sha256": "074a62ea2f7c9239af64596ba50a27bc477b896c9c0298262ae2e2b770d01217",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    },
+    {
+      "peak_memory_bytes": 485916672,
+      "preparation_peak_memory_bytes": 187203584,
+      "preparation_response_sha256": "8ac7149a23b19a9fd145f44eda80336df759f6e2ffa83219dfbd437947c5a369",
+      "preparation_runtime_seconds": 0.016483417013660073,
+      "repetition": 10,
+      "return_code": 0,
+      "runtime_seconds": 1.473761665984057,
+      "stdout_bytes": 212,
+      "stdout_sha256": "4a4322647d02f1abc8a6d0fbe36f58124ab9ca79631f1e01d77658e53ec55186",
+      "temperature": "warm",
+      "worker_result": {
+        "best_params": [
+          0.08000000000000002,
+          0.029999979999999996
+        ],
+        "core_type": null,
+        "implementation": "upstream",
+        "log_likelihood": -644.8550430062936,
+        "number_iterations_mstep": 1
+      }
+    }
+  ],
+  "schema_version": 2,
+  "startup": {
+    "peak_memory_bytes": 186826752,
+    "response_bytes": 275,
+    "response_sha256": "6facaa647def482539f47b323c1a761f1ec1e1963e07b53eb64918b7d7844f18",
+    "runtime_seconds": 1.0058694999897853
+  },
+  "threads": 1,
+  "warm_repetitions": 10,
+  "warmup_semantics": "first_call_then_same_process",
+  "worker_stream": {
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

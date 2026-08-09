@@ -221,8 +221,10 @@ fixed-point now agrees with the Java EigenCore oracle within the frozen
 `1e-5` total-likelihood tolerance. This closes fixed-point correctness only;
 the one-step fitted endpoint is now also frozen and returns the same parameter
 vector as Java within `1e-14`, with the likelihood inside the same strict
-tolerance. The fitted workflow remains unpromoted until broader structured
-families and cross-platform performance evidence close.
+tolerance. On the frozen macOS ARM64 benchmark, native was `1.1381x` faster
+(paired-bootstrap 95% CI `1.1343-1.1433x`) and used `0.4909x` peak process-tree
+memory across ten warmed repetitions. This capability remains unpromoted until
+broader structured families and Linux evidence close.
 
 The authoritative option-by-option status is recorded in
 [the diCal2 feature ledger](../parity/dical2-feature-ledger.json). PAC
@@ -243,3 +245,5 @@ scientifically consequential.
 - [Interpreting results](../guide/interpreting-results.md)
 - [Parity notes](../developer/parity.md)
 - [Developer parity notes](../developer/internals-dical2.md)
+- Frozen fitted-introgression performance evidence:
+  `workflow/publication/evidence/dical2-introgression/sha256-c339dbb6/`
