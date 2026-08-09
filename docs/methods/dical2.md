@@ -258,9 +258,12 @@ permutation controls and generated grid/random starts are implemented but
 remain unpromoted. Direct Java checks now cover generated fixed-point and
 one-step PAC EM, two file-backed per-contig permutation sets, and exact grid and
 seeded-random start sequences, four passing independent structured fixed
-points, fitted structured models, pulse introgression, exponential growth, and
-transition-type conditioning. Marginal-KL is explicitly experimental because
-the pinned Java oracle crashes. Broader empirical coverage and the complete cross-platform
+points, fitted structured models, generated and file-backed structured PAC,
+pulse introgression, exponential growth, and transition-type conditioning.
+Marginal-KL is explicitly experimental because the pinned Java oracle crashes.
+The pinned jar also crashes when PAC's default all-CSD set includes an empty
+trunk; native evaluates the scientifically meaningful non-empty CSDs and keeps
+that repaired behavior unpromoted. Broader empirical coverage and the complete cross-platform
 performance gate are still missing. Native parallel execution remains
 upstream-only; use exact upstream execution when those workflows are
 scientifically consequential.

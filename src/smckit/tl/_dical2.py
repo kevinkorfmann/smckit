@@ -4790,14 +4790,22 @@ def _q_function(
                     core.state_ancient if core.state_present is None else core.state_present
                 )
                 trunk_totals = np.asarray(trunk.sample_sizes, dtype=np.float64)[state_present]
-                log_stay = np.logaddexp(
-                    log_no_reco,
-                    np.diag(log_reco) - np.log(trunk_totals),
+                supported_states = trunk_totals > 0.0
+                log_stay = np.asarray(log_no_reco, dtype=np.float64).copy()
+                log_stay[supported_states] = np.logaddexp(
+                    log_no_reco[supported_states],
+                    np.diag(log_reco)[supported_states] - np.log(trunk_totals[supported_states]),
                 )
                 adjusted_reco_expect = reco_expect.copy()
                 diagonal = np.diag_indices_from(adjusted_reco_expect)
                 adjusted_reco_expect[diagonal] -= self_reco_expect
-                q_no += float(np.sum((no_reco_expect + self_reco_expect) * log_stay))
+                stay_expect = no_reco_expect + self_reco_expect
+                active_stay_states = stay_expect > 0.0
+                if np.any(active_stay_states & ~supported_states):
+                    return float(np.inf)
+                q_no += float(
+                    np.sum(stay_expect[active_stay_states] * log_stay[active_stay_states])
+                )
                 q_re += float(np.sum(adjusted_reco_expect * log_reco))
         q_em = float(np.sum(counts.emission_expect * core.log_emission))
         total_q += q_init + q_no + q_re + q_em

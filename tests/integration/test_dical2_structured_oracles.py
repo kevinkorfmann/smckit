@@ -411,6 +411,150 @@ def test_native_structured_one_step_matches_upstream(
 
 
 @pytest.mark.parametrize(
+    "scenario",
+    SCENARIOS[:3],
+    ids=lambda scenario: scenario.name,
+)
+def test_native_structured_pac_one_step_matches_upstream(
+    scenario: StructuredScenario,
+    tmp_path: Path,
+) -> None:
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(
+        ts,
+        tmp_path,
+        f"{scenario.name}-pac",
+    )
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": scenario.start_point,
+        "seed": scenario.seed,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "pac",
+        "bounds": scenario.bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+        "number_iterations_mstep": 1,
+        "num_permutations": 2,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    permutations = native["permutations"]["per_contig"][0]
+    assert len(permutations) == 2
+    for permutation in permutations:
+        assert sorted(permutation) == list(range(len(permutation)))
+        row = "\t".join(str(value) for value in permutation)
+        assert f"# HAP PERMUTATION:\t{row}\t" in upstream["upstream"]["stdout"]
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=STRUCTURED_LL_ABS_TOL,
+    )
+
+
+def test_native_clean_split_file_per_contig_pac_one_step_matches_upstream(
+    tmp_path: Path,
+) -> None:
+    scenario = SCENARIOS[0]
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(
+        ts,
+        tmp_path,
+        "clean-split-file-pac",
+    )
+    permutation_files = [tmp_path / "chunk-1.perm", tmp_path / "chunk-2.perm"]
+    permutation_files[0].write_text(
+        "0 1 2 3\n3 2 1 0\n",
+        encoding="utf-8",
+    )
+    permutation_files[1].write_text(
+        "1 0 3 2\n2 3 0 1\n",
+        encoding="utf-8",
+    )
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": [vcf_path, vcf_path],
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": [reference_path, reference_path],
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 1,
+        "start_point": scenario.start_point,
+        "seed": scenario.seed,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "pac",
+        "bounds": scenario.bounds,
+    }
+    options = {
+        "interval_type": "logUniform",
+        "interval_params": "8,0.01,4",
+        "number_iterations_mstep": 1,
+        "permutation_files": permutation_files,
+        "different_permutations_per_contig": True,
+        "num_csds_per_permutation": 2,
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options=options,
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["permutations"]["per_contig"] == [
+        [[0, 1, 2, 3], [3, 2, 1, 0]],
+        [[1, 0, 3, 2], [2, 3, 0, 1]],
+    ]
+    assert len(native["permutations"]["files"]) == 2
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=0.0,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"],
+        abs=STRUCTURED_LL_ABS_TOL,
+    )
+
+
+@pytest.mark.parametrize(
     ("objective_options", "objective_mode", "upstream_failure"),
     [
         (

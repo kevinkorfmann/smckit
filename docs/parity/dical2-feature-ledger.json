@@ -68,15 +68,15 @@
       "id": "composite_likelihoods",
       "manual_surface": ["LOL", "PCL", "PAC"],
       "native_status": "native_unpromoted",
-      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py"],
-      "remaining": "Generated PAC fixed-point and posterior-weighted one-step EM endpoints are frozen; broaden to structured and empirical fixtures."
+      "evidence": ["tests/unit/test_dical2.py", "tests/integration/test_dical2_upstream_validation.py", "test_native_structured_pac_one_step_matches_upstream"],
+      "remaining": "Generated PAC fixed-point and posterior-weighted one-step EM endpoints are frozen for one-population and three independent structured families; broaden to empirical fixtures."
     },
     {
       "id": "pac_permutations",
       "manual_surface": ["--numPermutations", "--permutationsFile", "--numCsdsPerPerm", "--diffPermsPerChunk"],
       "native_status": "native_unpromoted",
-      "evidence": ["TestPacPermutations", "TestReadDical2.test_native_pac_mixes_generated_permutations_with_logsumexp", "test_dical2_native_pac_permutations_match_upstream_fixed_point", "test_dical2_native_pac_one_step_em_matches_upstream", "test_dical2_native_file_permutations_match_upstream_per_contig", "TestReadDical2.test_upstream_bridge_preserves_multicontig_vcf_controls"],
-      "remaining": "Generated one-step EM and two-file/two-contig fixed-point parity are frozen; add structured and one-step file/per-contig Java oracles and characterize the pinned jar's empty-trunk failure."
+      "evidence": ["TestPacPermutations", "TestReadDical2.test_native_pac_mixes_generated_permutations_with_logsumexp", "test_dical2_native_pac_permutations_match_upstream_fixed_point", "test_dical2_native_pac_one_step_em_matches_upstream", "test_dical2_native_file_permutations_match_upstream_per_contig", "test_dical2_native_file_permutations_one_step_match_upstream_per_contig", "test_native_structured_pac_one_step_matches_upstream", "test_native_clean_split_file_per_contig_pac_one_step_matches_upstream", "test_dical2_pac_all_csds_characterizes_upstream_empty_trunk_failure", "TestReadDical2.test_upstream_bridge_preserves_multicontig_vcf_controls"],
+      "remaining": "Generated and file-backed one-step parity now covers structured and two-contig workflows. The pinned jar's null-trunk crash when all CSD sizes include zero is frozen; native intentionally evaluates the non-empty CSDs. Retain the repaired default as unpromoted until empirical validation."
     },
     {
       "id": "interval_factories",
@@ -132,7 +132,7 @@
     }
   ],
   "promotion_blockers": [
-    "Structured and one-step file/per-contig PAC Java oracles plus pinned empty-trunk failure characterization",
+    "Empirical PAC validation, including the native repaired all-CSD default",
     "Structured trunk-style oracle families and a repaired-source marginal-KL oracle",
     "Complete original-compatible artifact catalogue",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"

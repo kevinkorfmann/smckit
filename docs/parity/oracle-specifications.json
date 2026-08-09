@@ -237,7 +237,10 @@
         "independent fitted migration-window one-step EM",
         "independent fitted three-population one-step EM",
         "independent clean-split transition-type-conditioned one-step EM",
-        "independent clean-split native repaired marginal-KL one-step EM"
+        "independent clean-split native repaired marginal-KL one-step EM",
+        "independent clean-split, migration-window, and three-population PAC one-step EM",
+        "independent clean-split two-contig file-backed PAC one-step EM",
+        "README exponential pinned empty-trunk failure"
       ],
       "workflows": [
         "external and VCF-header references",
@@ -246,6 +249,8 @@
         "LOL, PCL, and PAC composite likelihoods",
         "generated, file-backed, and per-contig PAC permutations",
         "posterior-weighted PAC one-step EM",
+        "structured generated and file-backed per-contig PAC one-step EM",
+        "native repaired all-CSD PAC default with exact pinned-upstream failure preservation",
         "fitted clean-split, migration-window, and three-population one-step EM",
         "fitted pulse-introgression one-step EM",
         "fitted exponential-growth one-step EM",
@@ -266,6 +271,9 @@
         "readme_fixed_point_log_likelihood_atol": 1e-8,
         "pac_one_step_parameter_rtol": 1e-10,
         "pac_one_step_parameter_atol": 1e-12,
+        "structured_pac_one_step_parameter_atol": 1e-12,
+        "structured_pac_one_step_log_likelihood_atol": 1e-5,
+        "all_csd_pac_acceptance": "pinned Java null-trunk failure is frozen; native non-empty-CSD endpoint log likelihood must remain -24.1478058840125",
         "generated_start_sequence_atol": 1e-13,
         "structured_fixed_point_log_likelihood_atol": 1e-5,
         "structured_fixed_point_per_base_log_likelihood_atol": 1e-6,
