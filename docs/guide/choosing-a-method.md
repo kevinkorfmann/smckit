@@ -8,12 +8,13 @@ implementation maturity.
 | Method | Best for | Input | Output focus | Implementation reality |
 |---|---|---|---|---|
 | **PSMC** | one diploid genome | `.psmcfa` | `N_e(t)` | strong native path |
+| **PSMC+** | one diploid genome with background selection or other local rate heterogeneity | `.multihetsep` plus optional local coalescence/mutation/recombination maps | `N_e(t)`, posterior TMRCA, marginal recombination | native fit/decode passes cross-platform parity and speed gates; `auto` remains upstream pending empirical validation |
 | **eSMC2** | one diploid genome with dormancy/selfing | `.psmcfa` or pairwise sequence input | `N_e(t)` + `beta` + `sigma` | native and upstream |
-| **MSMC2** | 2-8 phased haplotypes | `.multihetsep` | coalescence rates and `N_e(t)` | native public path, upstream bridge pending |
-| **MSMC-IM** | two-population MSMC output | `.combined.msmc2.final.txt` | `N1(t)`, `N2(t)`, `m(t)`, `M(t)` | native and upstream, auto prefers upstream |
-| **SMC++** | many unphased genomes | `.smc.gz` | `N_e(t)` | native and upstream; tracked one-pop parity is enforced |
-| **ASMC** | per-site pairwise ancestry | hap/map/samples + decoding quantities | TMRCA along the genome | native public path |
-| **diCal2** | explicit structured demographic models | `.param`, `.demo`, `.config`, sequences | sizes, growth, migration parameters | native public path |
+| **MSMC2** | 2-8 phased haplotypes | `.multihetsep` | coalescence rates and `N_e(t)` | promoted native path plus exact upstream bridge |
+| **MSMC-IM** | two-population MSMC output | `.combined.msmc2.final.txt` | `N1(t)`, `N2(t)`, `m(t)`, `M(t)` | promoted native path plus exact upstream bridge |
+| **SMC++** | many unphased genomes | `.smc.gz` | `N_e(t)` and clean population splits | promoted native/upstream workflows with frozen split performance evidence |
+| **ASMC** | per-site pairwise ancestry | hap/map/samples + decoding quantities | TMRCA along the genome | promoted native path plus exact upstream bridge |
+| **diCal2** | explicit structured demographic models | `.param`, `.demo`, `.config`, sequences | sizes, growth, migration parameters | broad native oracle coverage; `auto` remains upstream pending empirical and Linux performance gates |
 | **PHLASH** | Bayesian history with uncertainty and larger samples | `.psmcfa`, VCF/BCF, tree sequence | posterior `N_e(t)` and credible intervals | maintained external package with normalized smckit results |
 | **PSMC-SSM** | research and optimizer experimentation | `psmcfa`-style observations | differentiable PSMC | native-only framework |
 
@@ -22,6 +23,8 @@ implementation maturity.
 ### One diploid genome
 
 - use **PSMC** for a standard demographic-history run
+- use **PSMC+** when background selection or local coalescence/mutation-rate
+  heterogeneity would bias the standard homogeneous model
 - use **eSMC2** if dormancy or selfing is biologically important
 - use **PSMC-SSM** only if you need the experimental differentiable framework
 
@@ -51,8 +54,9 @@ algorithm.
 - Choose `implementation="upstream"` when that bridge exists and you want the
   original algorithm ceremony.
 
-Today, only some methods have a public upstream bridge. Use the homepage status
-matrix and per-method pages to see which paths exist.
+All preserved method families now have a public upstream bridge. Use the
+homepage status matrix and per-method pages to see which native capabilities
+are promoted and which still make `auto` choose upstream.
 
 ## If you are unsure
 
@@ -67,5 +71,7 @@ Start with:
 ## See also
 
 - [I/O formats](io-formats.md)
+- [Runtime and resource planning](runtime-estimates.md)
+- [Project status](../get-started/project-status.md)
 - [Interpreting results](interpreting-results.md)
 - [Gallery](gallery.md)

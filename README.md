@@ -93,19 +93,35 @@ smckit upstream psmc --output-dir results/psmc -- -N 25 sample.psmcfa
 
 ## Status
 
-smckit is early-stage software. The priority is preserving access to upstream methods, making readiness explicit, and validating native implementations against upstream behavior before claiming equivalence.
+smckit is beta software with a mature preservation and validation foundation,
+but it is not yet the 1.0 publication release.
 
-Recent parity progress:
+- PSMC, ASMC, MSMC2, MSMC-IM, eSMC2, and SMC++ have promoted native
+  capabilities while exact upstream execution remains available.
+- PSMC+—the extension for background selection and local genomic-rate
+  heterogeneity—passes its complete 12-case native parity matrix on Linux
+  x86-64 and macOS ARM64. Frozen native fit/decode benchmarks are faster with
+  lower peak memory on both platforms; empirical validation remains before
+  `auto` switches to native.
+- diCal2 has broad native structured-model oracle coverage, but its repaired
+  PAC default, empirical validation, and broader cross-platform performance
+  still block native-by-default promotion.
+- PHLASH is integrated through its maintained external package with normalized
+  posterior and credible-interval results; the frozen full validation run is
+  pending.
+- A callability-aware VCF-to-multihetsep converter and an accession-recorded
+  NA12878/1000 Genomes source manifest establish the human empirical input
+  contract. CRAM-derived callability and retained empirical runs are next.
 
-- eSMC2 native/upstream interchangeability is now tracked across the public
-  `.psmcfa` and `multihetsep` input families, including missing-site,
-  multi-record, multi-pair, multi-file, and `skip_ambiguous=True` cases.
-- The docs landing page and gallery summarize which methods have fixture-only
-  validation and which now have broader public-surface parity gates.
+See the [full project status](docs/get-started/project-status.md) and
+[runtime/resource guide](docs/guide/runtime-estimates.md) for precise evidence,
+caveats, and remaining gates.
 
 ## Repository Guide
 
 - Method docs: `docs/agents/algorithms.md`
+- Project status: `docs/get-started/project-status.md`
+- Runtime estimates: `docs/guide/runtime-estimates.md`
 - Usage notes: `docs/agents/using-smckit.md`
 - Developer architecture: `docs/developer/architecture.md`
 

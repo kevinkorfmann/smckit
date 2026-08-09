@@ -1,9 +1,13 @@
 # PSMC+
 
-PSMC+ is a pairwise SMC method designed to account for genomic heterogeneity,
-including local mutation, recombination, and coalescence-rate variation. smckit
-preserves the complete original implementation and adds typed upstream and
-independent native fit/decoding engines with a shared normalized result schema.
+PSMC+ is the PSMC extension designed to correct demographic inference in the
+presence of background selection. It models background selection through
+locus-specific coalescence-rate scaling and can also account for local mutation
+and recombination-rate heterogeneity. smckit preserves the complete original
+implementation and adds typed upstream and independent native fit/decoding
+engines with a shared normalized result schema. See the [PSMC+
+paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC10838404/) for the biological
+motivation and validation.
 
 ## Preservation and implementation contract
 
