@@ -8,6 +8,7 @@ import json
 import os
 import platform
 import statistics
+import subprocess
 import tempfile
 import threading
 import time
@@ -18,6 +19,8 @@ import psutil
 
 import smckit
 from smckit._provenance import package_version, sha256_file
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -62,6 +65,35 @@ def _measure(call) -> tuple[Any, float, int]:
         thread.join()
         peak = max(peak, _rss_tree(process))
     return result, elapsed, peak
+
+
+def _git_state() -> dict[str, object]:
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    status = subprocess.run(
+        [
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=all",
+            "--ignore-submodules=dirty",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    status_lines = status.stdout.splitlines() if status.returncode == 0 else ["unknown"]
+    return {
+        "commit": head.stdout.strip() if head.returncode == 0 else "unknown",
+        "clean": not status_lines,
+        "status": status_lines,
+    }
 
 
 def main() -> int:
@@ -119,14 +151,19 @@ def main() -> int:
         )
     wall = [float(item["wall_seconds"]) for item in measurements]
     memory = [int(item["peak_rss_bytes"]) for item in measurements]
+    try:
+        input_label = str(input_path.relative_to(ROOT))
+    except ValueError:
+        input_label = str(input_path)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "psmcplus",
+        "source": _git_state(),
         "mode": args.mode,
         "implementation": args.implementation,
         "package_version": package_version(),
         "upstream_commit": "032168f2ceed3c0e46b7f214f890faf83dff41ae",
-        "input": str(input_path),
+        "input": input_label,
         "input_sha256": sha256_file(input_path),
         "options": {
             "number_time_windows": 4,

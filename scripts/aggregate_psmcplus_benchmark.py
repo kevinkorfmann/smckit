@@ -78,7 +78,8 @@ def _comparison(native: dict, upstream: dict, *, seed: int, replicates: int) -> 
         "memory_ratio": memory_ratio,
         "memory_within_25_percent": bool(memory_ratio <= 1.25),
         "native_cold_wall_seconds": None if warmup is None else warmup["wall_seconds"],
-        "promotable_performance": bool(interval[0] > 1.0 and memory_ratio <= 1.25),
+        "runtime_promotion_eligible": False,
+        "memory_gate_passed": bool(memory_ratio <= 1.25),
     }
 
 
@@ -98,6 +99,25 @@ def main() -> int:
                 raise ValueError(f"Unexpected benchmark identity in {path}.")
             records[mode][implementation] = record
             sources[mode][implementation] = _sha256(path)
+    flat_records = [record for by_mode in records.values() for record in by_mode.values()]
+    source_states = {json.dumps(record.get("source"), sort_keys=True) for record in flat_records}
+    if len(source_states) != 1:
+        raise ValueError("PSMC+ benchmark records must share one source state.")
+    source_state = json.loads(source_states.pop())
+    if not source_state or source_state.get("clean") is not True:
+        raise ValueError("PSMC+ benchmark evidence requires one clean source checkout.")
+    environments = {
+        json.dumps(record.get("environment"), sort_keys=True) for record in flat_records
+    }
+    if len(environments) != 1:
+        raise ValueError("PSMC+ benchmark records must share one execution environment.")
+    environment = json.loads(environments.pop())
+    upstream_commits = {record.get("upstream_commit") for record in flat_records}
+    input_hashes = {record.get("input_sha256") for record in flat_records}
+    if len(upstream_commits) != 1 or None in upstream_commits:
+        raise ValueError("PSMC+ benchmark records must share one upstream commit.")
+    if len(input_hashes) != 1 or None in input_hashes:
+        raise ValueError("PSMC+ benchmark records must share one input checksum.")
     comparisons = [
         _comparison(
             records[mode]["native"],
@@ -108,8 +128,12 @@ def main() -> int:
         for index, mode in enumerate(("fit", "decode"))
     ]
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "psmcplus",
+        "source": source_state,
+        "environment": environment,
+        "upstream_commit": upstream_commits.pop(),
+        "input_sha256": input_hashes.pop(),
         "protocol_id": "sha256:c339dbb68e7ec26c721d909916edea5e388d77a60f03c04847e9daaa5cf560dd",
         "dataset": "pinned-upstream-constant-population",
         "threads": 1,
@@ -117,7 +141,8 @@ def main() -> int:
         "bootstrap_replicates": args.bootstrap_replicates,
         "source_sha256": sources,
         "comparisons": comparisons,
-        "performance_gate_passed": all(item["promotable_performance"] for item in comparisons),
+        "runtime_design": "separate implementation processes; diagnostic only",
+        "memory_gate_passed": all(item["memory_within_25_percent"] for item in comparisons),
     }
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

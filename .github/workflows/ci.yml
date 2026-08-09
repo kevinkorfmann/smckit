@@ -52,6 +52,9 @@ jobs:
             src/smckit/upstream/_run.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
+            scripts/aggregate_psmcplus_benchmark.py \
+            scripts/aggregate_psmcplus_promotion.py \
+            scripts/benchmark_psmcplus_native.py \
             scripts/verify_upstreams.py \
             workflow/publication/scripts/aggregate_results.py \
             workflow/publication/scripts/aggregate_phlash_validation.py \
@@ -70,6 +73,9 @@ jobs:
             src/smckit/upstream/_run.py \
             scripts/build_dical2_repaired_oracle.py \
             scripts/benchmark_psmcplus_warm_core.py \
+            scripts/aggregate_psmcplus_benchmark.py \
+            scripts/aggregate_psmcplus_promotion.py \
+            scripts/benchmark_psmcplus_native.py \
             scripts/verify_upstreams.py \
             workflow/publication/scripts/aggregate_results.py \
             workflow/publication/scripts/aggregate_phlash_validation.py \
