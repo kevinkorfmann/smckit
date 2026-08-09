@@ -494,3 +494,24 @@ build the recursive trunk, then later dereferences the resulting null value.
 Middle cake is rejected earlier as invalid. Exact upstream execution preserves
 these failures; native reports the unsupported recursive path explicitly and
 does not silently substitute another trunk.
+
+### 22. Hidden-state boundaries must move with the fitted demography
+
+`ancientDemeStates` does not use a fixed time grid. Its hidden states are
+triples of demographic epoch, ancient deme, and present deme, so any fitted
+epoch boundary changes the state support during the M-step. Native now maps
+each refined interval into that dynamic state space and rebuilds it for every
+candidate demography. Freezing the template's placeholder boundaries happened
+to preserve simple-trunk likelihoods but changed cake-trunk results; the new
+combined oracle prevents that regression.
+
+`addTrunkIntervals` is likewise not a global grid. For each CSD, the original
+builds a balanced exponential partition in cumulative mean absorption rate,
+where the rate depends on that CSD's trunk population counts and the candidate
+demography. Native independently computes those quantiles, refines only the
+trunk process, and leaves the requested hidden-state grouping unchanged.
+Exponential and isolation-migration fixtures now cover fixed points for simple,
+mean-cake, and migrating-Ethan trunks plus fitted mean-cake endpoints. Both
+interval-present and ancient-deme hidden states agree with Java, including the
+combined additional-interval path, within the frozen `1e-7` likelihood and
+`1e-12` parameter tolerances.

@@ -142,6 +142,12 @@ This project follows Keep a Changelog and Semantic Versioning from 1.0 onward.
   fixed-point Java oracles, every new family has a fitted one-step oracle, and
   structured fixtures cover every non-exact family. The original `recursive`
   normal-CLI null-trunk failure is frozen and native fails explicitly.
+- Implement diCal2 epoch/ancient-deme/present-deme hidden states and per-CSD
+  mean-rate `addTrunkIntervals` refinement. Fixed-point and fitted Java oracles
+  cover exponential and isolation-migration models, interval and ancient-deme
+  state aggregation, and the combined controls. Moving demographic boundaries
+  are now recomputed during each EM objective evaluation rather than frozen
+  from the template model.
 - Apple-Silicon Pixi environments no longer request the unavailable D compiler.
 - MSMC2 bootstrap now detects `dmd` or `ldc2` and Homebrew/Linux GSL layouts
   without modifying the pinned upstream source.

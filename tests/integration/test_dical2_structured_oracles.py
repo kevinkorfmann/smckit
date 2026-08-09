@@ -350,6 +350,53 @@ def test_native_introgression_one_step_matches_upstream(tmp_path: Path) -> None:
     )
 
 
+def test_native_introgression_ancient_states_with_trunk_refinement_match_upstream(
+    tmp_path: Path,
+) -> None:
+    scenario = next(item for item in SCENARIOS if item.name == "introgression")
+    ts = _simulate(scenario)
+    vcf_path, reference_path = _write_vcf_and_reference(ts, tmp_path, scenario.name)
+    root = EXAMPLES / scenario.example_dir
+    data_kwargs = {
+        "sequences": vcf_path,
+        "param_file": root / "mutRec.param",
+        "demo_file": root / scenario.demo_file,
+        "config_file": root / scenario.config_file,
+        "reference_file": reference_path,
+        "filter_pass_string": "PASS",
+    }
+    common = {
+        "n_em_iterations": 0,
+        "start_point": scenario.start_point,
+        "seed": scenario.seed,
+        "loci_per_hmm_step": 50,
+        "composite_mode": "lol",
+    }
+    options = {
+        "ancient_deme_states": True,
+        "add_trunk_intervals": 2,
+        "trunk_style": "migratingEthan",
+        "cake_style": "average",
+    }
+    upstream = dical2(
+        read_dical2(**data_kwargs),
+        implementation="upstream",
+        upstream_options={**options, "cli_args": ["--useEigenCore"]},
+        **common,
+    ).results["dical2"]
+    native = dical2(
+        read_dical2(**data_kwargs),
+        implementation="native",
+        native_options=options,
+        **common,
+    ).results["dical2"]
+
+    assert native["core_type"] == "eigen"
+    assert native["log_likelihood"] == pytest.approx(
+        upstream["log_likelihood"], abs=STRUCTURED_LL_ABS_TOL
+    )
+
+
 @pytest.mark.parametrize(
     "scenario",
     [item for item in SCENARIOS if item.demography != "introgression"],

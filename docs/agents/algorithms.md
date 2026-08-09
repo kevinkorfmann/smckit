@@ -84,7 +84,8 @@
   coverage; cake and exact families also have fitted one-step coverage. The
   pinned recursive CLI path returns a null trunk and is preserved as a failure.
   Native marginal-KL and the all-CSD PAC default repair distinct pinned Java
-  null-reference crashes and remain experimental. Ancient-state/additional-
-  interval controls, detailed artifacts, and broader cross-platform
-  performance remain unpromoted.
+  null-reference crashes and remain experimental. Ancient-state aggregation
+  and per-CSD additional trunk intervals now have fixed-point and fitted
+  oracles. Detailed artifacts, empirical PAC validation, and broader
+  cross-platform performance remain unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.

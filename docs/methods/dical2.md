@@ -230,8 +230,8 @@ On the tracked README fixtures, parity is materially tighter than before:
 The tracked objective values and search winners now agree, and both execution
 paths produce original-parser-compatible text plus normalized JSON artifacts.
 Native promotion still requires empirical PAC validation, remaining
-ancient-state/additional-trunk-interval and artifact closure, and
-cross-platform performance gates.
+artifact closure, a repaired marginal-KL oracle, and cross-platform
+performance gates.
 
 Parameterized instantaneous migration is preserved by the native demo reader
 and refined into a stochastic pulse epoch. Pulse transitions are applied to
@@ -271,6 +271,11 @@ has a fixed-point Java oracle, and the new cake/exact families have fitted
 one-step coverage. The pinned normal CLI cannot construct its recursive trunk
 and returns a null-trunk exception; exact upstream preserves that behavior and
 native fails explicitly instead of substituting a different approximation.
+The original `ancientDemeStates` aggregation and `addTrunkIntervals` controls
+are also native: the latter recomputes mean-absorption quantiles independently
+for every CSD trunk and every candidate demography. README exponential and
+isolation-migration oracles cover fixed points, one-step fitting, and both
+controls in combination.
 Broader empirical coverage and the complete cross-platform performance gate
 are still missing. Native parallel execution remains upstream-only; use exact
 upstream execution when those workflows are scientifically consequential.

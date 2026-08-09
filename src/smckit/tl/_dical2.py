@@ -357,6 +357,10 @@ def _resolve_dical2_options(
         ),
         default=False,
     )
+    if ancient_deme_states and interval_type is not None:
+        raise ValueError("diCal2 ancient_deme_states and interval_type are mutually exclusive.")
+    if ancient_deme_states and interval_params not in {None, ""}:
+        raise ValueError("diCal2 ancient_deme_states does not accept interval_params.")
     condition_on_transition_type = _coerce_bool(
         _lookup_option(
             method_options,
@@ -708,6 +712,14 @@ def _resolve_interval_boundaries(
     config: DiCal2Config,
     resolved: DiCal2ResolvedOptions,
 ) -> np.ndarray:
+    if resolved.ancient_deme_states:
+        if demo is None:
+            raise ValueError("diCal2 ancient_deme_states requires a demographic model.")
+        # Ancient-deme states follow the *current* demographic epochs, whose
+        # fitted boundaries can move during EM.  Only provide the universal
+        # outer interval here; refine_demography adds the current demo's
+        # boundaries on every objective evaluation.
+        return np.asarray([0.0, DICAL2_T_INF], dtype=np.float64)
     if resolved.interval_type is None:
         interval_boundaries = compute_time_intervals(
             resolved.legacy_n_intervals,
@@ -775,6 +787,9 @@ def compute_time_intervals(
 def refine_demography(
     demo: DiCal2Demo,
     interval_boundaries: np.ndarray,
+    *,
+    ancient_deme_states: bool = False,
+    additional_boundaries: np.ndarray | None = None,
 ) -> RefinedDemography:
     """Refine a demographic model by inserting extra interval boundaries.
 
@@ -808,6 +823,12 @@ def refine_demography(
         for boundary in np.asarray(demo.epoch_boundaries, dtype=np.float64)
         if np.isfinite(boundary) and boundary <= DICAL2_T_INF + EPS
     )
+    if additional_boundaries is not None:
+        candidates.extend(
+            (float(boundary), False)
+            for boundary in np.asarray(additional_boundaries, dtype=np.float64)
+            if np.isfinite(boundary) and boundary <= DICAL2_T_INF + EPS
+        )
     candidates.append((DICAL2_T_INF, False))
     candidates.sort(key=lambda item: item[0])
 
@@ -886,7 +907,54 @@ def refine_demography(
         refined_boundaries=refined,
         epoch_map=epoch_map,
         refined_to_hidden=refined_to_hidden,
+        ancient_deme_states=ancient_deme_states,
     )
+
+
+def _mean_rate_additional_boundaries(
+    demo: DiCal2Demo,
+    trunk_sample_sizes: np.ndarray,
+    additional_trunk_intervals: int,
+) -> np.ndarray | None:
+    """Return the finite mean-absorption quantiles used to refine the trunk only."""
+    if additional_trunk_intervals <= 0:
+        return None
+    n_intervals = additional_trunk_intervals + 1
+    rate_space_boundaries = [
+        -math.log(1.0 - index / n_intervals) for index in range(1, n_intervals)
+    ]
+    result: list[float] = []
+    accumulated_rate_time = 0.0
+    target_index = 0
+    for epoch in demo.epochs:
+        if abs(epoch.end - epoch.start) < EPS:
+            continue
+        if epoch.pop_sizes is None:
+            continue
+        rate_sum = 0.0
+        for ancient, group in enumerate(epoch.partition):
+            rate_sum += sum(float(trunk_sample_sizes[present]) for present in group) / float(
+                epoch.pop_sizes[ancient]
+            )
+        mean_rate = rate_sum / len(epoch.partition)
+        if mean_rate <= 0.0:
+            continue
+        start = float(epoch.start)
+        end = float(epoch.end)
+        rate_duration = math.inf if not np.isfinite(end) else (end - start) * mean_rate
+        while (
+            target_index < len(rate_space_boundaries)
+            and rate_space_boundaries[target_index] <= accumulated_rate_time + rate_duration
+        ):
+            offset = (rate_space_boundaries[target_index] - accumulated_rate_time) / mean_rate
+            result.append(start + offset)
+            target_index += 1
+        if not np.isfinite(rate_duration):
+            break
+        accumulated_rate_time += rate_duration
+    if target_index != len(rate_space_boundaries):
+        raise ValueError("Could not place all diCal2 additional trunk intervals.")
+    return np.asarray(result, dtype=np.float64)
 
 
 def _refined_interval_epoch(refined: RefinedDemography, interval: int) -> DiCal2Epoch:
@@ -982,6 +1050,7 @@ class RefinedDemography:
     refined_boundaries: np.ndarray  # (n_refined+1,)
     epoch_map: np.ndarray  # (n_refined,) — index into demo.epochs
     refined_to_hidden: np.ndarray  # (n_refined,) → hidden interval index
+    ancient_deme_states: bool = False
 
     @property
     def n_refined(self) -> int:
@@ -1739,6 +1808,50 @@ class SimpleTrunk:
                 return float(fractions[present_deme, ancient_deme])
             return 0.0
         return 0.0
+
+
+def _build_native_trunk(
+    *,
+    demo: DiCal2Demo,
+    interval_boundaries: np.ndarray,
+    base_refined: RefinedDemography,
+    config: DiCal2Config,
+    additional_hap_idx: int,
+    trunk_hap_indices: list[int],
+    trunk_style: str,
+    cake_style: str,
+    ancient_deme_states: bool,
+    additional_trunk_intervals: int,
+) -> SimpleTrunk:
+    trunk = SimpleTrunk(
+        config=config,
+        additional_hap_idx=additional_hap_idx,
+        trunk_hap_indices=trunk_hap_indices,
+        refined=base_refined,
+        trunk_style=trunk_style,
+        cake_style=cake_style,
+    )
+    additional_boundaries = _mean_rate_additional_boundaries(
+        demo,
+        trunk.sample_sizes,
+        additional_trunk_intervals,
+    )
+    if additional_boundaries is None:
+        return trunk
+    refined = refine_demography(
+        demo,
+        interval_boundaries,
+        ancient_deme_states=ancient_deme_states,
+        additional_boundaries=additional_boundaries,
+    )
+    return SimpleTrunk(
+        config=config,
+        additional_hap_idx=additional_hap_idx,
+        trunk_hap_indices=trunk_hap_indices,
+        refined=refined,
+        trunk_style=trunk_style,
+        cake_style=cake_style,
+    )
 
 
 # ===========================================================================
@@ -2638,13 +2751,30 @@ class EigenCore:
         n_present = len(self.trunk.sample_sizes)
         demo_state_interval = []
         demo_state_present = []
-        self.demo_state_index_map: dict[tuple[int, int], int] = {}
-        for hidden in range(self.refined.n_hidden):
-            for present in range(n_present):
-                idx = len(demo_state_interval)
-                demo_state_interval.append(hidden)
-                demo_state_present.append(present)
-                self.demo_state_index_map[(hidden, present)] = idx
+        self.demo_state_lookup: dict[tuple[int, int, int], int] = {}
+        if self.refined.ancient_deme_states:
+            for demo_epoch, epoch in enumerate(self.refined.demo.epochs):
+                if abs(epoch.end - epoch.start) < EPS:
+                    continue
+                for ancient in range(len(epoch.partition)):
+                    for present in range(n_present):
+                        idx = len(demo_state_interval)
+                        demo_state_interval.append(demo_epoch)
+                        demo_state_present.append(present)
+                        for interval in range(n_ref):
+                            if int(self.refined.epoch_map[interval]) == demo_epoch:
+                                self.demo_state_lookup[(interval, ancient, present)] = idx
+        else:
+            for hidden in range(self.refined.n_hidden):
+                for present in range(n_present):
+                    idx = len(demo_state_interval)
+                    demo_state_interval.append(hidden)
+                    demo_state_present.append(present)
+                    for interval in range(n_ref):
+                        if int(self.refined.refined_to_hidden[interval]) != hidden:
+                            continue
+                        for ancient in range(self.n_anc_per_interval[interval]):
+                            self.demo_state_lookup[(interval, ancient, present)] = idx
         self.demo_state_interval = np.asarray(demo_state_interval, dtype=np.int64)
         self.demo_state_present = np.asarray(demo_state_present, dtype=np.int64)
         self.n_demo_states = len(demo_state_interval)
@@ -2656,13 +2786,14 @@ class EigenCore:
             if base_value <= LOG_ZERO / 2:
                 continue
             interval = int(self.state_interval[state])
-            hidden = int(self.refined.refined_to_hidden[interval])
+            if self.refined.is_pulse(interval):
+                continue
             ancient = int(self.state_ancient[state])
             for present in range(len(self.trunk.sample_sizes)):
                 frac = self.trunk.fraction_ancient_to_present(interval, present, ancient)
                 if frac <= 0.0:
                     continue
-                demo_state = self.demo_state_index_map[(hidden, present)]
+                demo_state = self.demo_state_lookup[(interval, ancient, present)]
                 demo_log[demo_state] = np.logaddexp(
                     demo_log[demo_state], base_value + np.log(frac)
                 )
@@ -2676,7 +2807,8 @@ class EigenCore:
         )
         for src in range(self.n_states):
             src_interval = int(self.state_interval[src])
-            src_hidden = int(self.refined.refined_to_hidden[src_interval])
+            if self.refined.is_pulse(src_interval):
+                continue
             src_ancient = int(self.state_ancient[src])
             src_fracs = [
                 self.trunk.fraction_ancient_to_present(src_interval, present, src_ancient)
@@ -2687,12 +2819,13 @@ class EigenCore:
                 if base_value <= LOG_ZERO / 2:
                     continue
                 dst_interval = int(self.state_interval[dst])
-                dst_hidden = int(self.refined.refined_to_hidden[dst_interval])
+                if self.refined.is_pulse(dst_interval):
+                    continue
                 dst_ancient = int(self.state_ancient[dst])
                 for src_present, src_frac in enumerate(src_fracs):
                     if src_frac <= 0.0:
                         continue
-                    src_demo = self.demo_state_index_map[(src_hidden, src_present)]
+                    src_demo = self.demo_state_lookup[(src_interval, src_ancient, src_present)]
                     for dst_present in range(len(self.trunk.sample_sizes)):
                         dst_frac = self.trunk.fraction_ancient_to_present(
                             dst_interval,
@@ -2701,7 +2834,7 @@ class EigenCore:
                         )
                         if dst_frac <= 0.0:
                             continue
-                        dst_demo = self.demo_state_index_map[(dst_hidden, dst_present)]
+                        dst_demo = self.demo_state_lookup[(dst_interval, dst_ancient, dst_present)]
                         demo_log[src_demo, dst_demo] = np.logaddexp(
                             demo_log[src_demo, dst_demo],
                             base_value + np.log(src_frac) + np.log(dst_frac),
@@ -2716,13 +2849,14 @@ class EigenCore:
         )
         for state in range(self.n_states):
             interval = int(self.state_interval[state])
-            hidden = int(self.refined.refined_to_hidden[interval])
+            if self.refined.is_pulse(interval):
+                continue
             ancient = int(self.state_ancient[state])
             for present in range(len(self.trunk.sample_sizes)):
                 frac = self.trunk.fraction_ancient_to_present(interval, present, ancient)
                 if frac <= 0.0:
                     continue
-                demo_state = self.demo_state_index_map[(hidden, present)]
+                demo_state = self.demo_state_lookup[(interval, ancient, present)]
                 frac_log = np.log(frac)
                 for trunk_type in range(self.n_alleles):
                     for emission_type in range(self.n_alleles):
@@ -5076,6 +5210,8 @@ def _q_function(
     cake_style: str,
     half_migration_rate: bool,
     objective_mode: str,
+    ancient_deme_states: bool = False,
+    additional_trunk_intervals: int = 0,
 ) -> float:
     """Negative Q-function (for minimization).
 
@@ -5092,7 +5228,11 @@ def _q_function(
     if new_demo is None:
         return float(np.inf)
     objective_demo = _halve_demo_migration_rates(new_demo) if half_migration_rate else new_demo
-    refined = refine_demography(objective_demo, interval_boundaries)
+    refined = refine_demography(
+        objective_demo,
+        interval_boundaries,
+        ancient_deme_states=ancient_deme_states,
+    )
 
     total_q = 0.0
     core_cache: dict[
@@ -5100,13 +5240,17 @@ def _q_function(
         CoreMatrices,
     ] = {}
     for (additional_idx, trunk_idxs, observed_present), counts in zip(csd_setups, counts_list):
-        trunk = SimpleTrunk(
+        trunk = _build_native_trunk(
+            demo=objective_demo,
+            interval_boundaries=interval_boundaries,
+            base_refined=refined,
             config=config,
             additional_hap_idx=additional_idx,
-            trunk_hap_indices=trunk_idxs,
-            refined=refined,
+            trunk_hap_indices=list(trunk_idxs),
             trunk_style=trunk_style,
             cake_style=cake_style,
+            ancient_deme_states=ancient_deme_states,
+            additional_trunk_intervals=additional_trunk_intervals,
         )
         cache_key = (
             int(observed_present),
@@ -5115,7 +5259,7 @@ def _q_function(
         core = core_cache.get(cache_key)
         if core is None:
             core_obj, _ = _build_native_core(
-                refined=refined,
+                refined=cast(RefinedDemography, trunk.refined),
                 trunk=trunk,
                 observed_present_deme=observed_present,
                 mutation_matrix=mutation_matrix,
@@ -5215,9 +5359,15 @@ def _evaluate_total_log_likelihood(
     trunk_style: str = "migratingethan",
     cake_style: str = "average",
     half_migration_rate: bool = False,
+    ancient_deme_states: bool = False,
+    additional_trunk_intervals: int = 0,
 ) -> float:
     objective_demo = _halve_demo_migration_rates(demo) if half_migration_rate else demo
-    refined = refine_demography(objective_demo, interval_boundaries)
+    refined = refine_demography(
+        objective_demo,
+        interval_boundaries,
+        ancient_deme_states=ancient_deme_states,
+    )
     total_ll = 0.0
     core_cache: dict[
         tuple[int, tuple[float, ...]],
@@ -5227,13 +5377,17 @@ def _evaluate_total_log_likelihood(
         if not trunk_idxs:
             continue
         present_deme = config.haplotype_populations[additional_idx]
-        trunk = SimpleTrunk(
+        trunk = _build_native_trunk(
+            demo=objective_demo,
+            interval_boundaries=interval_boundaries,
+            base_refined=refined,
             config=config,
             additional_hap_idx=additional_idx,
-            trunk_hap_indices=trunk_idxs,
-            refined=refined,
+            trunk_hap_indices=list(trunk_idxs),
             trunk_style=trunk_style,
             cake_style=cake_style,
+            ancient_deme_states=ancient_deme_states,
+            additional_trunk_intervals=additional_trunk_intervals,
         )
         cache_key = (
             int(present_deme),
@@ -5242,7 +5396,7 @@ def _evaluate_total_log_likelihood(
         cached_core = core_cache.get(cache_key)
         if cached_core is None:
             core_obj, _ = _build_native_core(
-                refined=refined,
+                refined=cast(RefinedDemography, trunk.refined),
                 trunk=trunk,
                 observed_present_deme=present_deme,
                 mutation_matrix=mutation_matrix,
@@ -5367,6 +5521,8 @@ def _q_function_ordered(
     cake_style: str,
     half_migration_rate: bool,
     objective_mode: str,
+    ancient_deme_states: bool = False,
+    additional_trunk_intervals: int = 0,
 ) -> float:
     candidate = _clone_demo_parameters(params_template)
     ordered_params = np.asarray(ordered_params, dtype=np.float64)
@@ -5387,6 +5543,8 @@ def _q_function_ordered(
         cake_style,
         half_migration_rate,
         objective_mode,
+        ancient_deme_states,
+        additional_trunk_intervals,
     )
 
 
@@ -5933,6 +6091,8 @@ def _run_dical2_em(
     cake_style: str,
     half_migration_rate: bool,
     objective_mode: str,
+    ancient_deme_states: bool,
+    additional_trunk_intervals: int,
     number_iterations_em: int,
     number_iterations_mstep: int | None,
     relative_error_e: float | None,
@@ -5965,7 +6125,11 @@ def _run_dical2_em(
         objective_demo = (
             _halve_demo_migration_rates(current_demo) if half_migration_rate else current_demo
         )
-        refined = refine_demography(objective_demo, interval_boundaries)
+        refined = refine_demography(
+            objective_demo,
+            interval_boundaries,
+            ancient_deme_states=ancient_deme_states,
+        )
 
         counts_list: list[ExpectedCounts] = []
         csd_setups: list[tuple[int, list[int], int]] = []
@@ -5992,13 +6156,17 @@ def _run_dical2_em(
                     if not trunk_idxs:
                         continue
                     present_deme = config.haplotype_populations[additional_idx]
-                    trunk = SimpleTrunk(
+                    trunk = _build_native_trunk(
+                        demo=objective_demo,
+                        interval_boundaries=interval_boundaries,
+                        base_refined=refined,
                         config=config,
                         additional_hap_idx=additional_idx,
-                        trunk_hap_indices=trunk_idxs,
-                        refined=refined,
+                        trunk_hap_indices=list(trunk_idxs),
                         trunk_style=trunk_style,
                         cake_style=cake_style,
+                        ancient_deme_states=ancient_deme_states,
+                        additional_trunk_intervals=additional_trunk_intervals,
                     )
                     cache_key = (
                         int(present_deme),
@@ -6007,7 +6175,7 @@ def _run_dical2_em(
                     cached_core = core_cache.get(cache_key)
                     if cached_core is None:
                         core_obj, selected_core_type = _build_native_core(
-                            refined=refined,
+                            refined=cast(RefinedDemography, trunk.refined),
                             trunk=trunk,
                             observed_present_deme=present_deme,
                             mutation_matrix=mutation_matrix,
@@ -6170,6 +6338,8 @@ def _run_dical2_em(
                 cake_style,
                 half_migration_rate,
                 objective_mode,
+                ancient_deme_states,
+                additional_trunk_intervals,
             )
             objective_cache[cache_key] = value
             return value
@@ -6764,6 +6934,8 @@ def dical2(
                         resolved_native.trunk_style
                     ),
                     objective_mode=resolved_native.objective_mode,
+                    ancient_deme_states=resolved_native.ancient_deme_states,
+                    additional_trunk_intervals=resolved_native.add_trunk_intervals,
                     number_iterations_em=resolved_native.number_iterations_em,
                     number_iterations_mstep=resolved_native.number_iterations_mstep,
                     relative_error_e=resolved_native.relative_error_e,
@@ -6871,6 +7043,8 @@ def dical2(
             cake_style=resolved_native.cake_style,
             half_migration_rate=_trunk_style_halves_migration_rates(resolved_native.trunk_style),
             objective_mode=resolved_native.objective_mode,
+            ancient_deme_states=resolved_native.ancient_deme_states,
+            additional_trunk_intervals=resolved_native.add_trunk_intervals,
             number_iterations_em=resolved_native.number_iterations_em,
             number_iterations_mstep=resolved_native.number_iterations_mstep,
             relative_error_e=resolved_native.relative_error_e,

@@ -329,6 +329,125 @@ def test_dical2_recursive_trunk_characterizes_upstream_null_trunk_failure() -> N
 
 
 @pytest.mark.oracle
+@pytest.mark.parametrize("dataset", ["exp", "im"])
+@pytest.mark.parametrize("n_em_iterations", [0, 1])
+def test_dical2_native_ancient_deme_states_match_upstream(
+    dataset: str,
+    n_em_iterations: int,
+) -> None:
+    is_exp = dataset == "exp"
+    data_reader = _read_exp_data if is_exp else _read_im_data
+    common = {
+        "n_em_iterations": n_em_iterations,
+        "start_point": np.loadtxt(ROOT / ("exp.rand" if is_exp else "IM.rand"), ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3 if is_exp else 4,
+        "composite_mode": "lol",
+    }
+    options = {
+        "ancient_deme_states": True,
+        "disableCoordinateWiseMStep": True,
+        "number_iterations_mstep": 1,
+        "trunk_style": "simple",
+    }
+    upstream = dical2(
+        data_reader(), implementation="upstream", upstream_options=options, **common
+    ).results["dical2"]
+    native = dical2(
+        data_reader(), implementation="native", native_options=options, **common
+    ).results["dical2"]
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-8)
+
+
+@pytest.mark.oracle
+@pytest.mark.parametrize("dataset", ["exp", "im"])
+@pytest.mark.parametrize("ancient_deme_states", [False, True])
+@pytest.mark.parametrize("trunk_style", ["simple", "meanCake", "migratingEthan"])
+def test_dical2_native_additional_trunk_intervals_match_upstream(
+    dataset: str,
+    ancient_deme_states: bool,
+    trunk_style: str,
+) -> None:
+    is_exp = dataset == "exp"
+    data_reader = _read_exp_data if is_exp else _read_im_data
+    common = {
+        "n_em_iterations": 0,
+        "start_point": np.loadtxt(ROOT / ("exp.rand" if is_exp else "IM.rand"), ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3 if is_exp else 4,
+        "composite_mode": "lol",
+    }
+    options = {
+        "add_trunk_intervals": 2,
+        "disableCoordinateWiseMStep": True,
+        "trunk_style": trunk_style,
+        "cake_style": "average",
+    }
+    if ancient_deme_states:
+        options["ancient_deme_states"] = True
+    else:
+        options.update(interval_type="logUniform", interval_params="11,0.01,4")
+    upstream = dical2(
+        data_reader(), implementation="upstream", upstream_options=options, **common
+    ).results["dical2"]
+    native = dical2(
+        data_reader(), implementation="native", native_options=options, **common
+    ).results["dical2"]
+
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-7)
+
+
+@pytest.mark.oracle
+@pytest.mark.parametrize("dataset", ["exp", "im"])
+@pytest.mark.parametrize("ancient_deme_states", [False, True])
+def test_dical2_native_additional_trunk_intervals_one_step_matches_upstream(
+    dataset: str,
+    ancient_deme_states: bool,
+) -> None:
+    is_exp = dataset == "exp"
+    data_reader = _read_exp_data if is_exp else _read_im_data
+    common = {
+        "n_em_iterations": 1,
+        "start_point": np.loadtxt(ROOT / ("exp.rand" if is_exp else "IM.rand"), ndmin=2)[0],
+        "seed": 1,
+        "loci_per_hmm_step": 3 if is_exp else 4,
+        "composite_mode": "lol",
+    }
+    options = {
+        "add_trunk_intervals": 2,
+        "disableCoordinateWiseMStep": True,
+        "number_iterations_mstep": 1,
+        "trunk_style": "meanCake",
+        "cake_style": "average",
+    }
+    if ancient_deme_states:
+        options["ancient_deme_states"] = True
+    else:
+        options.update(interval_type="logUniform", interval_params="11,0.01,4")
+    upstream = dical2(
+        data_reader(), implementation="upstream", upstream_options=options, **common
+    ).results["dical2"]
+    native = dical2(
+        data_reader(), implementation="native", native_options=options, **common
+    ).results["dical2"]
+
+    np.testing.assert_allclose(
+        np.asarray(native["best_params"]),
+        np.asarray(upstream["best_params"]),
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    assert native["log_likelihood"] == pytest.approx(upstream["log_likelihood"], abs=1e-7)
+
+
+@pytest.mark.oracle
 def test_dical2_native_pac_permutations_match_upstream_fixed_point() -> None:
     common = {
         "n_em_iterations": 0,

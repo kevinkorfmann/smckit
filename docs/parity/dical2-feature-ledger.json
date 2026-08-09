@@ -114,8 +114,8 @@
       "id": "trunk_and_hidden_state_controls",
       "manual_surface": ["--trunkStyle", "--cakeStyle", "--ancientDemeStates", "--addTrunkIntervals"],
       "native_status": "native_unpromoted",
-      "evidence": ["TestSimpleTrunk", "test_dical2_native_trunk_style_fixed_points_match_upstream", "test_dical2_native_trunk_style_one_step_matches_upstream", "test_dical2_native_structured_trunk_fixed_points_match_upstream", "test_dical2_recursive_trunk_characterizes_upstream_null_trunk_failure"],
-      "remaining": "Simple, oldCake, meanCake, multiCake, multiCakeUpdating, migratingMultiCake, migMultiCakeUpdating, exactCake, and migratingEthan are implemented. All four valid cake sampling modes have fixed-point Java oracles, all newly implemented families have fitted one-step oracles, and structured average-cake oracles cover every non-exact family. The pinned recursive factory returns a null trunk in the normal CLI and its failure is frozen. Ancient-deme-state and additional-trunk-interval breadth remains unpromoted."
+      "evidence": ["TestSimpleTrunk", "TestIntervalFactories.test_mean_rate_additional_boundaries_match_constant_rate_quantiles", "test_dical2_native_trunk_style_fixed_points_match_upstream", "test_dical2_native_trunk_style_one_step_matches_upstream", "test_dical2_native_structured_trunk_fixed_points_match_upstream", "test_dical2_native_ancient_deme_states_match_upstream", "test_dical2_native_additional_trunk_intervals_match_upstream", "test_dical2_native_additional_trunk_intervals_one_step_matches_upstream", "test_native_introgression_ancient_states_with_trunk_refinement_match_upstream", "test_dical2_recursive_trunk_characterizes_upstream_null_trunk_failure"],
+      "remaining": "The full runnable normal-CLI surface is implemented: simple, oldCake, meanCake, multiCake, multiCakeUpdating, migratingMultiCake, migMultiCakeUpdating, exactCake, and migratingEthan; all valid cake modes; interval-present and epoch-ancient-present hidden states; and per-CSD mean-rate additional trunk intervals. Fixed-point and fitted Java oracles cover one-population and structured models, both hidden-state modes, and their combination. The pinned recursive factory returns a null trunk in the normal CLI and its failure is frozen. Keep this surface unpromoted until empirical and performance gates close."
     },
     {
       "id": "original_compatible_outputs",
@@ -133,7 +133,7 @@
   ],
   "promotion_blockers": [
     "Empirical PAC validation, including the native repaired all-CSD default",
-    "Ancient-deme-state/additional-trunk-interval breadth and a repaired-source marginal-KL oracle",
+    "A repaired-source marginal-KL oracle and empirical PAC validation",
     "Complete original-compatible artifact catalogue",
     "Linux x86-64 and broader-workflow warmed runtime confidence intervals and peak-memory gates"
   ]
