@@ -3,6 +3,22 @@
 This directory contains public workflow code and immutable evidence schemas.
 It does not contain the private manuscript, supplement, or submission files.
 
+## PSMC+ promotion capability matrix
+
+Run the deterministic native-versus-upstream matrix from a clean checkout with
+the PSMC+ optional dependencies installed:
+
+```bash
+PYTHONPATH=src python workflow/publication/scripts/validate_psmcplus_matrix.py \
+  --output psmcplus-promotion-matrix.json
+```
+
+The retained clean-commit Linux x86-64 record is under
+`evidence/psmcplus-promotion/sha256-5aa89ae3/`. It passes all twelve fit/decode
+cases. This closes the expanded deterministic simulation surface, but does not
+by itself authorize native `auto`; human/nonhuman empirical validation and the
+macOS ARM64 matrix remain open gates.
+
 The conceptual preservation/promotion schematic is code-generated and can be
 rendered independently of benchmark evidence:
 
