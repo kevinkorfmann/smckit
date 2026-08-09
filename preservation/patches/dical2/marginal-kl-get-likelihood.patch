@@ -1,0 +1,8 @@
+diff --git a/src/edu/berkeley/diCal2/csd/SMCSDemoEMObjectiveFunction.java b/src/edu/berkeley/diCal2/csd/SMCSDemoEMObjectiveFunction.java
+--- a/src/edu/berkeley/diCal2/csd/SMCSDemoEMObjectiveFunction.java
++++ b/src/edu/berkeley/diCal2/csd/SMCSDemoEMObjectiveFunction.java
+@@ -772,3 +772 @@ public abstract class SMCSDemoEMObjectiveFunction<H extends FSAHaplotype> {
+-			//TODO: Fix this to work with the theta estimation
+-			assert(false);
+-			return this.value(this.oldCore, 1d, null);
++			return this.logLikelihood;

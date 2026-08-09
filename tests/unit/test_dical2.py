@@ -732,7 +732,7 @@ class TestReadDical2:
         )
         assert from_header.uns["source_paths"]["reference_file"] is None
 
-    def test_multiple_contigs_reset_the_native_hmm(self):
+    def test_multiple_contigs_reset_the_native_hmm(self, tmp_path):
         root = Path("vendor/diCal2/examples/fromReadme")
         common = {
             "param_file": root / "test.param",
@@ -755,6 +755,7 @@ class TestReadDical2:
             native_options=native_options,
             loci_per_hmm_step=3,
             composite_mode="lol",
+            output_prefix=tmp_path / "single",
         ).results["dical2"]
         repeated = dical2(
             read_dical2(sequences=[root / "test.vcf", root / "test.vcf"], **common),
@@ -767,6 +768,20 @@ class TestReadDical2:
         ).results["dical2"]
 
         assert single["n_contigs"] == 1
+        assert len(single["em_path"]) == 1
+        assert single["em_path"][0]["id"] == "[0_0_0]"
+        assert single["em_path"][0]["elapsed_ms"] >= 0
+        persisted_rows, persisted_best = _parse_dical2_stdout(
+            (tmp_path / "single.dical2.txt").read_text()
+        )
+        assert len(persisted_rows) == 1
+        assert persisted_best is not None
+        assert persisted_best["id"] == single["em_path"][0]["id"]
+        assert persisted_best["elapsed_ms"] == single["em_path"][0]["elapsed_ms"]
+        np.testing.assert_allclose(
+            persisted_best["params"],
+            single["em_path"][0]["params"],
+        )
         assert repeated["n_contigs"] == 2
         assert repeated["log_likelihood"] == pytest.approx(2 * single["log_likelihood"])
 
@@ -959,7 +974,34 @@ class TestDical2Output:
         assert best is not None
         assert best["log_likelihood"] == pytest.approx(-12.75)
         np.testing.assert_allclose(best["params"], [1.25, 2.5])
-        assert best["id"] == "smckit-native-best"
+        assert best["id"] == "[smckit-native-best]"
+
+    def test_native_objective_output_preserves_complete_em_path(self, tmp_path):
+        result = {
+            "best_params": np.array([1.5, 2.5]),
+            "log_likelihood": -10.0,
+            "em_path": [
+                {
+                    "log_likelihood": -12.0,
+                    "elapsed_ms": 7,
+                    "params": np.array([1.0, 2.0]),
+                    "id": "[0_0_0]",
+                },
+                {
+                    "log_likelihood": -10.0,
+                    "elapsed_ms": 9,
+                    "params": np.array([1.5, 2.5]),
+                    "id": "[0_1_0]",
+                },
+            ],
+        }
+        path = write_dical2_output(result, tmp_path / "fit.txt")
+        rows, best = _parse_dical2_stdout(path.read_text())
+
+        assert [row["id"] for row in rows] == ["[0_0_0]", "[0_1_0]"]
+        assert [row["elapsed_ms"] for row in rows] == [7.0, 9.0]
+        np.testing.assert_allclose(rows[0]["params"], [1.0, 2.0])
+        assert best == rows[1]
 
     def test_output_prefix_records_objective_and_json_artifacts(self, tmp_path):
         data = SmcData()

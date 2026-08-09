@@ -439,9 +439,12 @@ objective. Native implements that intended formula. The pinned jar cannot
 serve as a runnable oracle: its first E-step calls the objective with a null
 mutation-rate vector and raises a Java `NullPointerException`. Exact upstream
 execution deliberately preserves that failure. A deterministic native
-endpoint and the upstream error are both frozen, and native emits a specific
-experimental warning. Marginal-KL remains unpromoted until a legally distinct
-repaired-source oracle is available; PAC weighting is not claimed equivalent.
+endpoint and the upstream error are both frozen. A one-method GPL repair is
+applied with zero fuzz to a temporary copy of the checksum-pinned source and
+compiled against the immutable jar; two independent builds produce the same
+derived-jar SHA-256. Native fitted endpoints now match this repaired-source
+oracle for both LOL and posterior-weighted PAC. The repaired jar is never
+packaged or substituted for exact upstream execution.
 
 ### 20. Structured and file-backed PAC fitting must ignore impossible zero-trunk states
 
@@ -515,3 +518,22 @@ mean-cake, and migrating-Ethan trunks plus fitted mean-cake endpoints. Both
 interval-present and ancient-deme hidden states agree with Java, including the
 combined additional-interval path, within the frozen `1e-7` likelihood and
 `1e-12` parameter tolerances.
+
+### 23. The normal inference artifact is stdout, and every particle matters
+
+The vendored manual and `StructureEstimationEM` source define no generated
+result-file family for normal inference. The original artifact is redirected
+stdout. Its stable post-processing contract is every non-comment E-step row:
+log likelihood, E-step milliseconds, ordered parameters, and a bracketed
+generation/step/particle identifier. The remaining `#` lines are diagnostic
+text, and stderr carries warnings and failures.
+
+Exact upstream persistence therefore writes the captured Java stdout without
+reconstruction. Native persistence now records every E-step, including every
+meta-start particle, and writes those rows in the same grammar and ordering.
+This path is independent of the optional detailed optimizer trace, so asking
+for a durable artifact cannot silently collapse a genetic search to its best
+particle. The normalized JSON retains the same complete `em_path`, the selected
+optimum, resolved controls, permutations, demography, and provenance. The
+audited contract and evidence are listed in
+`docs/parity/dical2-output-catalogue.md`.

@@ -1013,12 +1013,14 @@ def write_dical2_output(
     value: SmcData | dict,
     path: str | Path,
 ) -> Path:
-    """Write captured upstream stdout or a parser-compatible native fit row.
+    """Write captured upstream stdout or parser-compatible native EM rows.
 
-    The native form preserves the tab-separated objective-row contract used by
-    diCal2 stdout: log likelihood, elapsed milliseconds, ordered parameters,
-    and a run identifier. Comment lines record that the artifact came from the
-    independent smckit implementation.
+    The native form preserves the complete machine-readable output described
+    by the diCal2 manual: one tab-separated row per E-step containing log
+    likelihood, elapsed milliseconds, ordered parameters, and the original
+    generation/step/particle identifier. Comment lines identify the independent
+    smckit implementation. Exact upstream execution retains captured Java
+    stdout byte-for-byte apart from adding a final newline when absent.
     """
     result = value.results.get("dical2") if isinstance(value, SmcData) else value
     if not isinstance(result, dict):
@@ -1031,25 +1033,43 @@ def write_dical2_output(
         if text and not text.endswith("\n"):
             text += "\n"
     else:
-        params = np.asarray(
-            result.get("best_params", result.get("ordered_params", [])),
-            dtype=np.float64,
-        )
-        if params.ndim != 1 or params.size == 0:
-            raise ValueError("Native diCal2 result lacks a one-dimensional best_params array.")
-        log_likelihood = float(result["log_likelihood"])
-        row = "\t".join(
-            [
-                f"{log_likelihood:.17g}",
-                "0",
-                *(f"{float(parameter):.17g}" for parameter in params),
-                "smckit-native-best",
+        em_path = result.get("em_path")
+        if not isinstance(em_path, list) or not em_path:
+            em_path = [
+                {
+                    "log_likelihood": result["log_likelihood"],
+                    "elapsed_ms": 0,
+                    "params": result.get("best_params", result.get("ordered_params", [])),
+                    "id": "[smckit-native-best]",
+                }
             ]
-        )
+        rows: list[str] = []
+        for record in em_path:
+            if not isinstance(record, dict):
+                raise ValueError("Native diCal2 em_path entries must be mappings.")
+            params = np.asarray(record.get("params", []), dtype=np.float64)
+            if params.ndim != 1 or params.size == 0:
+                raise ValueError(
+                    "Native diCal2 result lacks one-dimensional parameters in an EM row."
+                )
+            run_id = str(record.get("id", "[smckit-native]"))
+            if not (run_id.startswith("[") and run_id.endswith("]")):
+                run_id = f"[{run_id}]"
+            rows.append(
+                "\t".join(
+                    [
+                        f"{float(record['log_likelihood']):.17g}",
+                        f"{float(record.get('elapsed_ms', 0)):.17g}",
+                        *(f"{float(parameter):.17g}" for parameter in params),
+                        run_id,
+                    ]
+                )
+            )
         text = (
-            "# smckit native diCal2-compatible objective output\n"
-            "# log_likelihood\telapsed_ms\tparameters...\trun_id\n"
-            f"{row}\n"
+            "# smckit native diCal2-compatible EM output\n"
+            "# The original CLI's result artifact is stdout; no additional result files "
+            "are generated.\n"
+            "# LogLikelihood\tTime\tcoordinates...\t[idString]\n" + "\n".join(rows) + "\n"
         )
     target.write_text(text, encoding="utf-8")
     return target
