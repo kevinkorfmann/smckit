@@ -67,17 +67,34 @@ def _fixture() -> tuple[SmcData, tuple[dict[str, Any], dict[str, Any]]]:
     return data, (_model("pop-a", [1.0, 2.0, 0.8]), _model("pop-b", [1.5, 0.7, 1.2]))
 
 
+def _json_default(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
 def _summary(result: dict[str, Any]) -> dict[str, Any]:
-    model = json.dumps(result["model"], sort_keys=True, separators=(",", ":"))
-    return {
+    model_payload = result.get("population_models", result.get("model"))
+    if model_payload is None:
+        raise KeyError("SMC++ split result is missing normalized population models.")
+    model = json.dumps(
+        model_payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=_json_default,
+    )
+    summary = {
         "analysis": result["analysis"],
         "implementation": result["implementation"],
         "split": float(result["split"]),
-        "log_scale": float(result["log_scale"]),
         "log_likelihood": float(result["log_likelihood"]),
-        "joint_emission_sum": float(result["joint_emission_sum"]),
         "model_sha256": hashlib.sha256(model.encode()).hexdigest(),
     }
+    if "joint_emission_sum" in result:
+        summary["joint_emission_sum"] = float(result["joint_emission_sum"])
+    return summary
 
 
 def _write(message: dict[str, Any]) -> None:
