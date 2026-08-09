@@ -53,6 +53,7 @@ from smckit.io._dical2 import (
     write_dical2_output,
 )
 from smckit.tl._implementation import (
+    NativeTrustWarning,
     annotate_result,
     choose_method_implementation,
     method_upstream_available,
@@ -117,6 +118,7 @@ class DiCal2ResolvedOptions:
     nm_fraction: float | None
     use_param_rel_err: bool
     use_param_rel_err_m: bool
+    objective_mode: str
     interval_type: str | None
     interval_params: str | None
     ancient_deme_states: bool
@@ -355,6 +357,30 @@ def _resolve_dical2_options(
         ),
         default=False,
     )
+    condition_on_transition_type = _coerce_bool(
+        _lookup_option(
+            method_options,
+            "condition_on_transition_type",
+            "cond_on_transition_type",
+            "condOnTransitionType",
+        ),
+        default=False,
+    )
+    marginal_kl = _coerce_bool(
+        _lookup_option(method_options, "marginal_kl", "marginalKL"),
+        default=False,
+    )
+    if condition_on_transition_type and marginal_kl:
+        raise ValueError("condition_on_transition_type and marginal_kl are mutually exclusive.")
+    objective_mode = (
+        "marginal_kl"
+        if marginal_kl
+        else (
+            "condition_lineage_transition_type"
+            if condition_on_transition_type
+            else "condition_lineage"
+        )
+    )
     resolved_number_iterations_em = int(
         _lookup_option(
             method_options,
@@ -470,6 +496,7 @@ def _resolve_dical2_options(
             _lookup_option(method_options, "use_param_rel_err_m", "useParamRelErrM"),
             default=False,
         ),
+        objective_mode=objective_mode,
         interval_type=interval_type,
         interval_params=interval_params,
         ancient_deme_states=ancient_deme_states,
@@ -557,6 +584,7 @@ def _resolved_options_metadata(resolved: DiCal2ResolvedOptions) -> dict[str, obj
         "nm_fraction": resolved.nm_fraction,
         "use_param_rel_err": resolved.use_param_rel_err,
         "use_param_rel_err_m": resolved.use_param_rel_err_m,
+        "objective_mode": resolved.objective_mode,
         "interval_type": resolved.interval_type,
         "interval_params": resolved.interval_params,
         "ancient_deme_states": resolved.ancient_deme_states,
@@ -3641,6 +3669,10 @@ class ExpectedCounts:
     transition_expectations: dict[int, tuple[np.ndarray, np.ndarray]] | None = None
     self_reco_expectations: dict[int, np.ndarray] | None = None
 
+    def average_marginal_expectation(self) -> np.ndarray:
+        """Sum posterior demographic-state occupancy over decoded HMM steps."""
+        return self.initial_expect + self.no_reco_expect + np.sum(self.reco_expect, axis=0)
+
 
 @dataclass
 class ExpandedCore:
@@ -4676,6 +4708,7 @@ def _q_function(
     trunk_style: str,
     cake_style: str,
     half_migration_rate: bool,
+    objective_mode: str,
 ) -> float:
     """Negative Q-function (for minimization).
 
@@ -4729,8 +4762,14 @@ def _q_function(
         if core.n_states != counts.n_states if hasattr(counts, "n_states") else False:
             continue
 
-        q_init = float(np.sum(counts.initial_expect * core.log_initial))
-        if counts.transition_expectations is None:
+        initial_expect = counts.initial_expect
+        if objective_mode == "marginal_kl":
+            initial_expect = counts.average_marginal_expectation()
+        q_init = float(np.sum(initial_expect * core.log_initial))
+        if objective_mode == "marginal_kl":
+            q_no = 0.0
+            q_re = 0.0
+        elif counts.transition_expectations is None:
             q_no = float(np.sum(counts.no_reco_expect * core.log_no_reco))
             q_re = float(np.sum(counts.reco_expect * core.log_reco))
         else:
@@ -4738,6 +4777,10 @@ def _q_function(
             q_re = 0.0
             for step_size, (no_reco_expect, reco_expect) in counts.transition_expectations.items():
                 log_no_reco, log_reco = _scaled_transition_logs(core, step_size)
+                if objective_mode == "condition_lineage_transition_type":
+                    q_no += float(np.sum(no_reco_expect * log_no_reco))
+                    q_re += float(np.sum(reco_expect * log_reco))
+                    continue
                 self_reco_expect = (
                     np.zeros_like(no_reco_expect)
                     if counts.self_reco_expectations is None
@@ -4948,6 +4991,7 @@ def _q_function_ordered(
     trunk_style: str,
     cake_style: str,
     half_migration_rate: bool,
+    objective_mode: str,
 ) -> float:
     candidate = _clone_demo_parameters(params_template)
     ordered_params = np.asarray(ordered_params, dtype=np.float64)
@@ -4967,6 +5011,7 @@ def _q_function_ordered(
         trunk_style,
         cake_style,
         half_migration_rate,
+        objective_mode,
     )
 
 
@@ -5512,6 +5557,7 @@ def _run_dical2_em(
     trunk_style: str,
     cake_style: str,
     half_migration_rate: bool,
+    objective_mode: str,
     number_iterations_em: int,
     number_iterations_mstep: int | None,
     relative_error_e: float | None,
@@ -5748,6 +5794,7 @@ def _run_dical2_em(
                 trunk_style,
                 cake_style,
                 half_migration_rate,
+                objective_mode,
             )
             objective_cache[cache_key] = value
             return value
@@ -5989,7 +6036,6 @@ def dical2(
         method_name="dical2",
         requested_capabilities={"upstream_options"} if upstream_options else None,
     )
-    warn_if_native_not_trusted("dical2", implementation_used)
     source_paths = data.uns.get("source_paths", {})
     upstream_required_inputs = [
         "param_file",
@@ -6008,6 +6054,9 @@ def dical2(
         "bounds",
         "cake_style",
         "cakeStyle",
+        "condition_on_transition_type",
+        "cond_on_transition_type",
+        "condOnTransitionType",
         "composite_mode",
         "compositeLikelihood",
         "coordinate_order",
@@ -6022,6 +6071,8 @@ def dical2(
         "intervalParams",
         "loci_per_hmm_step",
         "lociPerHmmStep",
+        "marginal_kl",
+        "marginalKL",
         "meta_disperse_factor",
         "metaDisperseFactor",
         "meta_keep_best",
@@ -6132,6 +6183,17 @@ def dical2(
         seed=seed,
         method_options=upstream_method_options,
     )
+    if implementation_used == "native" and resolved_native.objective_mode == "marginal_kl":
+        warnings.warn(
+            "Native diCal2 marginal-KL implements the objective intended by the "
+            "vendored source, but the pinned upstream Java implementation crashes "
+            "because it passes a null mutation-rate vector. This capability remains "
+            "experimental until a repaired-source oracle is established.",
+            NativeTrustWarning,
+            stacklevel=2,
+        )
+    else:
+        warn_if_native_not_trusted("dical2", implementation_used)
     if implementation_used == "upstream":
         result_data = _dical2_upstream(
             data,
@@ -6326,6 +6388,7 @@ def dical2(
                     half_migration_rate=_trunk_style_halves_migration_rates(
                         resolved_native.trunk_style
                     ),
+                    objective_mode=resolved_native.objective_mode,
                     number_iterations_em=resolved_native.number_iterations_em,
                     number_iterations_mstep=resolved_native.number_iterations_mstep,
                     relative_error_e=resolved_native.relative_error_e,
@@ -6432,6 +6495,7 @@ def dical2(
             trunk_style=resolved_native.trunk_style,
             cake_style=resolved_native.cake_style,
             half_migration_rate=_trunk_style_halves_migration_rates(resolved_native.trunk_style),
+            objective_mode=resolved_native.objective_mode,
             number_iterations_em=resolved_native.number_iterations_em,
             number_iterations_mstep=resolved_native.number_iterations_mstep,
             relative_error_e=resolved_native.relative_error_e,
@@ -6467,6 +6531,7 @@ def dical2(
             "rounds": rounds,
             "composite_mode": resolved_native.composite_mode,
             "loci_per_hmm_step": resolved_native.loci_per_hmm_step,
+            "objective_mode": resolved_native.objective_mode,
             "n_contigs": len(contigs),
             "core_type": best_core_type,
             "resolved_options": _resolved_options_metadata(resolved_native),
@@ -6687,6 +6752,10 @@ def _dical2_upstream(
         cmd.extend(["--addTrunkIntervals", str(int(resolved.add_trunk_intervals))])
     if resolved.ancient_deme_states:
         cmd.append("--ancientDemeStates")
+    if resolved.objective_mode == "condition_lineage_transition_type":
+        cmd.append("--condOnTransitionType")
+    elif resolved.objective_mode == "marginal_kl":
+        cmd.append("--marginalKL")
     cmd.extend(cli_args)
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=jar.parent)
     if proc.returncode != 0:

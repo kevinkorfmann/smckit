@@ -78,6 +78,8 @@
 - Upstream status: vendored `diCal2.jar` plus public stdout-parsing upstream bridge.
 - Native status: README searches and independent fitted clean-split,
   migration-window, three-population, pulse-introgression, and growth oracles
-  reproduce the Java endpoints. Structured PAC/trunk controls, detailed
-  artifacts, and broader cross-platform performance remain unpromoted.
+  reproduce the Java endpoints; transition-type conditioning also has a strict
+  fitted oracle. Native marginal-KL repairs a pinned Java null-rate crash and
+  remains experimental. Structured PAC/trunk controls, detailed artifacts,
+  and broader cross-platform performance remain unpromoted.
 - Main outputs: best-fit parameters, refined demography, likelihood metadata.
